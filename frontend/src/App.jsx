@@ -10,24 +10,39 @@ import About from "./Components/About/About";
 import Login from "./Components/Login/Login";
 import SignUp from "./Components/SignUp/SignUp.jsx";
 
-
 const App = () => {
   const [showLogin, setShowLogin] = useState(false);
   const [showSignUp, setShowSignUp] = useState(false);
+
+  // Authentication state
+  const [token, setToken] = useState(localStorage.getItem("token") || "");
+
+  // Logout function
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    setToken("");
+  };
 
   return (
     <Router>
       <Navbar
         onLoginClick={() => setShowLogin(true)}
         onSignUpClick={() => setShowSignUp(true)}
+        token={token}
+        onLogout={handleLogout}
       />
+
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/blogs" element={<Blogs />} />
         <Route path="/contact" element={<Contact />} />
-        <Route path="/add-blog" element={<AddBlog />} />
+        <Route
+          path="/add-blog"
+          element={token ? <AddBlog token={token} /> : <Home />}
+        />
         <Route path="/about" element={<About />} />
       </Routes>
+
       <Footer />
 
       {/* Login Popup */}
@@ -35,7 +50,7 @@ const App = () => {
         <div className="popup-overlay">
           <div className="popup-content">
             <button className="close-popup" onClick={() => setShowLogin(false)}>X</button>
-            <Login />
+            <Login setToken={setToken} closePopup={() => setShowLogin(false)} />
           </div>
         </div>
       )}
@@ -45,7 +60,7 @@ const App = () => {
         <div className="popup-overlay">
           <div className="popup-content">
             <button className="close-popup" onClick={() => setShowSignUp(false)}>X</button>
-            <SignUp />
+            <SignUp setToken={setToken} closePopup={() => setShowSignUp(false)} />
           </div>
         </div>
       )}

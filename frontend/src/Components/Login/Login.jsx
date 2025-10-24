@@ -1,24 +1,32 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import "../Auth/Auth.css";
+import { login as loginAPI } from "../../api/auth";
 
-const Login = () => {
-  const [formData, setFormData] = useState({
-    email: "",
-    password: ""
-  });
-
+const Login = ({ setToken, closePopup }) => {
+  const [formData, setFormData] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("User logged in:", formData);
-    alert("Login successful!");
-    setFormData({ email: "", password: "" });
+    try {
+      const data = await loginAPI(formData.email, formData.password);
+
+      if (data.token) {
+        localStorage.setItem("token", data.token);
+        setToken(data.token);
+        closePopup(); // Close popup
+      } else {
+        setError(data.message || "Login failed");
+      }
+    } catch (err) {
+      console.error(err);
+      setError("An error occurred. Please try again.");
+    }
   };
 
   return (

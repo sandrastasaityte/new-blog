@@ -1,33 +1,42 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import "../Auth/Auth.css";
+import { register as registerAPI } from "../../api/auth";
 
-const SignUp = () => {
+const SignUp = ({ setToken, closePopup }) => {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     password: "",
     confirmPassword: ""
   });
-
   const [error, setError] = useState("");
 
   const handleChange = (e) => {
-    setFormData({...formData, [e.target.name]: e.target.value});
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (formData.password !== formData.confirmPassword) {
       setError("Passwords do not match");
       return;
     }
 
-    console.log("User signed up:", formData);
-    setError("");
-    alert("Sign up successful!");
-    setFormData({ name: "", email: "", password: "", confirmPassword: "" });
+    try {
+      const data = await registerAPI(formData.email, formData.password);
+
+      if (data.token) {
+        localStorage.setItem("token", data.token);
+        setToken(data.token);
+        closePopup(); // Close popup
+      } else {
+        setError(data.message || "Sign up failed");
+      }
+    } catch (err) {
+      console.error(err);
+      setError("An error occurred. Please try again.");
+    }
   };
 
   return (

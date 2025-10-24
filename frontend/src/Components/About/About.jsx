@@ -12,16 +12,16 @@ const authors = [
     bio: "Sandra is passionate about technology & economics, blogging, and sharing insights with readers around the world.",
   },
   {
-    name: "John Doe",
+    name: "Maria Mema",
     role: "Tech Writer",
     image: user02,
-    bio: "John writes about software development, coding tutorials, and emerging tech trends.",
+    bio: "Maria writes about software development, coding tutorials, and emerging tech trends.",
   },
   {
-    name: "Jane Smith",
+    name: "John Smith",
     role: "Content Creator",
     image: user03,
-    bio: "Jane focuses on lifestyle, productivity tips, and creative writing.",
+    bio: "John focuses on lifestyle, productivity tips, and creative writing.",
   },
 ];
 

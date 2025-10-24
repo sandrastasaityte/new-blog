@@ -1,0 +1,212 @@
+[
+  {
+    "id": "1",
+    "title": "Global Trade Trends in 2025",
+    "content": "International trade has seen significant shifts in 2025 due to emerging markets, policy changes, and technological innovations. Businesses must adapt to these trends to stay competitive...",
+    "image": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTGsMfsNiVzTUYcb-yr_7icQZvvUvUni1rp6w&s",
+    "tags": ["Economics", "Trade", "International"],
+    "date": "2025-10-24",
+    "views": 230,
+    "author": "Sandra Stasaityte",
+    "authorImage": "author1.png"
+  },
+  {
+    "id": "2",
+    "title": "Data Analytics for Market Forecasting",
+    "content": "Leveraging data analytics in market forecasting allows companies to predict trends, optimize resources, and reduce risks. Advanced algorithms and machine learning models provide actionable insights...",
+    "image": "https://images.unsplash.com/photo-1581092335198-8d44f9c20f2a?auto=format&fit=crop&w=800&q=80",
+    "tags": ["Data Analytics", "Economics", "Forecasting"],
+    "date": "2025-10-22",
+    "views": 180,
+    "author": "Sandra Stasaityte",
+    "authorImage": "https://images.unsplash.com/photo-1595152772835-219674b2a8a1?auto=format&fit=crop&w=80&q=80"
+  },
+  {
+    "id": "3",
+    "title": "The Impact of AI on Global Supply Chains",
+    "content": "Artificial intelligence is revolutionizing global supply chains by improving efficiency, predicting demand, and minimizing disruptions. Companies embracing AI are seeing increased resilience and cost savings...",
+    "image": "https://images.unsplash.com/photo-1581092789771-1b7f4b20f4b5?auto=format&fit=crop&w=800&q=80",
+    "tags": ["AI", "Supply Chain", "International Trade"],
+    "date": "2025-10-20",
+    "views": 150,
+    "author": "Sandra Stasaityte",
+    "authorImage": "https://images.unsplash.com/photo-1595152772835-219674b2a8a1?auto=format&fit=crop&w=80&q=80"
+  },
+  {
+    "id": "4",
+    "title": "Economic Indicators Every Analyst Should Watch",
+    "content": "Understanding key economic indicators like GDP, inflation, and employment rates helps analysts and investors make informed decisions. Monitoring these metrics is essential for strategy and risk management...",
+    "image": "https://images.unsplash.com/photo-1565372916662-5c5c7f3e27b4?auto=format&fit=crop&w=800&q=80",
+    "tags": ["Economics", "Analytics", "Finance"],
+    "date": "2025-10-18",
+    "views": 200,
+    "author": "Sandra Stasaityte",
+    "authorImage": "https://images.unsplash.com/photo-1595152772835-219674b2a8a1?auto=format&fit=crop&w=80&q=80"
+  },
+  {
+    "id": "5",
+    "title": "Blockchain in International Trade",
+    "content": "Blockchain technology is enhancing transparency and security in international trade by reducing fraud, improving tracking, and streamlining payments...",
+    "image": "https://images.unsplash.com/photo-1612832021370-0ccfaeb48e9c?auto=format&fit=crop&w=800&q=80",
+    "tags": ["Blockchain", "Trade", "Economics"],
+    "date": "2025-10-16",
+    "views": 120,
+    "author": "Sandra Stasaityte",
+    "authorImage": "https://images.unsplash.com/photo-1595152772835-219674b2a8a1?auto=format&fit=crop&w=80&q=80"
+  },
+  {
+    "id": "6",
+    "title": "AI-Driven Financial Forecasting",
+    "content": "AI models are being used to forecast financial markets more accurately, helping investors identify opportunities and manage risk in volatile environments...",
+    "image": "https://images.unsplash.com/photo-1581093448792-8b05c8478f8f?auto=format&fit=crop&w=800&q=80",
+    "tags": ["AI", "Finance", "Analytics"],
+    "date": "2025-10-14",
+    "views": 95,
+    "author": "Sandra Stasaityte",
+    "authorImage": "https://images.unsplash.com/photo-1595152772835-219674b2a8a1?auto=format&fit=crop&w=80&q=80"
+  },
+  {
+    "id": "7",
+    "title": "Trade Policies and Emerging Markets",
+    "content": "Emerging markets are reshaping global trade flows. Understanding trade policies and economic reforms is key to capitalizing on new opportunities...",
+    "image": "https://images.unsplash.com/photo-1581092580497-80d431d2370e?auto=format&fit=crop&w=800&q=80",
+    "tags": ["Trade", "Economics", "Markets"],
+    "date": "2025-10-12",
+    "views": 140,
+    "author": "Sandra Stasaityte",
+    "authorImage": "https://images.unsplash.com/photo-1595152772835-219674b2a8a1?auto=format&fit=crop&w=80&q=80"
+  },
+  {
+    "id": "8",
+    "title": "Big Data in Supply Chain Management",
+    "content": "Big Data analytics allows companies to track inventory, predict demand, and optimize logistics, creating more efficient supply chains...",
+    "image": "https://images.unsplash.com/photo-1581091870622-41e2d1b2a7e7?auto=format&fit=crop&w=800&q=80",
+    "tags": ["Data Analytics", "Supply Chain", "Business"],
+    "date": "2025-10-10",
+    "views": 110,
+    "author": "Sandra Stasaityte",
+    "authorImage": "https://images.unsplash.com/photo-1595152772835-219674b2a8a1?auto=format&fit=crop&w=80&q=80"
+  },
+  {
+    "id": "9",
+    "title": "Machine Learning in Market Predictions",
+    "content": "Machine learning algorithms are helping businesses anticipate market trends and consumer behavior with unprecedented accuracy...",
+    "image": "https://images.unsplash.com/photo-1581092335204-6aaad0e41d1f?auto=format&fit=crop&w=800&q=80",
+    "tags": ["Machine Learning", "Analytics", "Markets"],
+    "date": "2025-10-08",
+    "views": 90,
+    "author": "Sandra Stasaityte",
+    "authorImage": "https://images.unsplash.com/photo-1595152772835-219674b2a8a1?auto=format&fit=crop&w=80&q=80"
+  },
+  {
+    "id": "10",
+    "title": "Global Inflation and Economic Stability",
+    "content": "Rising inflation rates around the world are influencing monetary policy, affecting investment strategies, and shaping global economic stability...",
+    "image": "https://images.unsplash.com/photo-1581092807573-c33897b0d6db?auto=format&fit=crop&w=800&q=80",
+    "tags": ["Economics", "Finance", "Inflation"],
+    "date": "2025-10-06",
+    "views": 175,
+    "author": "Sandra Stasaityte",
+    "authorImage": "https://images.unsplash.com/photo-1595152772835-219674b2a8a1?auto=format&fit=crop&w=80&q=80"
+  },
+  {
+    "id": "11",
+    "title": "Digital Transformation in Trade Finance",
+    "content": "Digital tools are streamlining trade finance processes, reducing paperwork, and improving efficiency for importers and exporters worldwide...",
+    "image": "https://images.unsplash.com/photo-1581092818157-6eae257d55be?auto=format&fit=crop&w=800&q=80",
+    "tags": ["Finance", "Trade", "Digital"],
+    "date": "2025-10-04",
+    "views": 130,
+    "author": "Sandra Stasaityte",
+    "authorImage": "https://images.unsplash.com/photo-1595152772835-219674b2a8a1?auto=format&fit=crop&w=80&q=80"
+  },
+  {
+    "id": "12",
+    "title": "Predictive Analytics in Retail Markets",
+    "content": "Retailers are using predictive analytics to understand customer preferences, optimize inventory, and improve sales forecasting...",
+    "image": "https://images.unsplash.com/photo-1581092326924-5b2b4a0f74f8?auto=format&fit=crop&w=800&q=80",
+    "tags": ["Analytics", "Retail", "Data"],
+    "date": "2025-10-02",
+    "views": 105,
+    "author": "Sandra Stasaityte",
+    "authorImage": "https://images.unsplash.com/photo-1595152772835-219674b2a8a1?auto=format&fit=crop&w=80&q=80"
+  },
+  {
+    "id": "13",
+    "title": "Sustainable Supply Chain Practices",
+    "content": "Sustainability in supply chain operations is becoming essential, reducing environmental impact while improving brand reputation...",
+    "image": "https://images.unsplash.com/photo-1581092369807-d2c1ee7b2e6b?auto=format&fit=crop&w=800&q=80",
+    "tags": ["Sustainability", "Supply Chain", "Economics"],
+    "date": "2025-09-30",
+    "views": 95,
+    "author": "Sandra Stasaityte",
+    "authorImage": "https://images.unsplash.com/photo-1595152772835-219674b2a8a1?auto=format&fit=crop&w=80&q=80"
+  },
+  {
+    "id": "14",
+    "title": "The Rise of E-Commerce in Emerging Economies",
+    "content": "E-commerce is growing rapidly in emerging markets, providing opportunities for startups, logistics companies, and payment providers...",
+    "image": "https://images.unsplash.com/photo-1581092383030-d4a0f848b6c5?auto=format&fit=crop&w=800&q=80",
+    "tags": ["E-Commerce", "Trade", "Markets"],
+    "date": "2025-09-28",
+    "views": 115,
+    "author": "Sandra Stasaityte",
+    "authorImage": "https://images.unsplash.com/photo-1595152772835-219674b2a8a1?auto=format&fit=crop&w=80&q=80"
+  },
+  {
+    "id": "15",
+    "title": "Financial Risk Management Using AI",
+    "content": "AI is enhancing financial risk management by detecting anomalies, predicting crises, and providing automated risk reports for decision-making...",
+    "image": "https://images.unsplash.com/photo-1581092411747-b2c0b0f9c6e6?auto=format&fit=crop&w=800&q=80",
+    "tags": ["AI", "Finance", "Analytics"],
+    "date": "2025-09-26",
+    "views": 125,
+    "author": "Sandra Stasaityte",
+    "authorImage": "https://images.unsplash.com/photo-1595152772835-219674b2a8a1?auto=format&fit=crop&w=80&q=80"
+  },
+  {
+    "id": "16",
+    "title": "Trade Agreements Shaping the Future",
+    "content": "New trade agreements between countries are affecting tariffs, supply chains, and international business strategies...",
+    "image": "https://images.unsplash.com/photo-1581092402116-0dcd0b1df7d0?auto=format&fit=crop&w=800&q=80",
+    "tags": ["Trade", "Economics", "Policy"],
+    "date": "2025-09-24",
+    "views": 140,
+    "author": "Sandra Stasaityte",
+    "authorImage": "https://images.unsplash.com/photo-1595152772835-219674b2a8a1?auto=format&fit=crop&w=80&q=80"
+  },
+  {
+    "id": "17",
+    "title": "Machine Learning in International Marketing",
+    "content": "Companies are applying machine learning to segment global markets, predict demand, and personalize campaigns for international audiences...",
+    "image": "https://images.unsplash.com/photo-1581092456464-3c7c3f70c1e2?auto=format&fit=crop&w=800&q=80",
+    "tags": ["Machine Learning", "Marketing", "International"],
+    "date": "2025-09-22",
+    "views": 100,
+    "author": "Sandra Stasaityte",
+    "authorImage": "https://images.unsplash.com/photo-1595152772835-219674b2a8a1?auto=format&fit=crop&w=80&q=80"
+  },
+  {
+    "id": "18",
+    "title": "Big Data for Economic Research",
+    "content": "Big data is transforming economic research, enabling scholars to analyze trends, forecast crises, and develop evidence-based policies...",
+    "image": "https://images.unsplash.com/photo-1581092304332-b0d204c8d0bb?auto=format&fit=crop&w=800&q=80",
+    "tags": ["Big Data", "Economics", "Research"],
+    "date": "2025-09-20",
+    "views": 115,
+    "author": "Sandra Stasaityte",
+    "authorImage": "https://images.unsplash.com/photo-1595152772835-219674b2a8a1?auto=format&fit=crop&w=80&q=80"
+  },
+  {
+    "id": "19",
+    "title": "AI for Global Financial Regulation",
+    "content": "AI tools are helping regulators monitor financial markets, detect fraud, and ensure compliance more efficiently...",
+    "image": "https://images.unsplash.com/photo-1581092325005-0f5b2e7d91c1?auto=format&fit=crop&w=800&q=80",
+    "tags": ["AI", "Finance", "Regulation"],
+    "date": "2025-09-18",
+    "views": 90,
+    "author": "Sandra Stasaityte",
+    "authorImage": "https://images.unsplash.com/photo-1595152772835-219674b2a8a1?auto=format&fit=crop&w=80&q=80"
+  }
+  
+  ]

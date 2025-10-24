@@ -1,0 +1,110 @@
+.blog-main-container {
+  display: flex;
+  gap: 2rem;
+  padding: 2rem;
+}
+
+/* Blog grid: 4-5 cards per row */
+.blog-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1.5rem;
+  flex: 1; /* takes available space */
+}
+
+/* Sidebar on the right */
+.sidebar {
+  width: 250px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 2rem; /* stays visible while scrolling */
+  height: fit-content;
+}
+
+/* Pagination */
+.pagination {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin: 2rem 0;
+}
+
+.pagination button {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  background: #eee;
+}
+
+.pagination button.active {
+  background: #007bff;
+  color: #fff;
+}
+
+/* Add Blog Popup */
+.popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.popup-content {
+  background: #fff;
+  padding: 2rem;
+  border-radius: 8px;
+  position: relative;
+  width: 500px;
+  max-width: 90%;
+}
+
+.close-popup {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: red;
+  color: #fff;
+  border: none;
+  padding: 0.3rem 0.6rem;
+  cursor: pointer;
+  border-radius: 50%;
+}
+
+.open-add-btn {
+  margin-top: 1rem;
+  padding: 0.5rem 1rem;
+  background: #007bff;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  border-radius: 5px;
+}
+.blog-main-container {
+  display: flex;
+  gap: 2rem;
+  padding: 2rem 7%;
+  align-items: flex-start;
+}
+
+/* Blog Grid: multiple rows and columns */
+.blog-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); /* 4-5 cards per row depending on screen */
+  grid-auto-rows: auto;
+  gap: 1.5rem;
+  flex: 3; /* take more space than sidebar */
+}
+
+.sidebar {
+  flex: 1;
+  position: sticky;
+  top: 2rem; /* stays visible when scrolling */
+  align-self: flex-start;
+}

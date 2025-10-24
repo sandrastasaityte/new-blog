@@ -1,0 +1,50 @@
+.home-wrapper {
+  padding: 2rem;
+}
+
+.home-hero {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.home-hero h1 {
+  font-size: 3rem;
+}
+
+.view-blogs-btn {
+  display: inline-block;
+  margin-top: 1rem;
+  padding: 0.8rem 1.5rem;
+  background-color: #0077ff;
+  color: #fff;
+  border-radius: 5px;
+  text-decoration: none;
+}
+
+.home-featured {
+  margin-bottom: 3rem;
+}
+
+.home-blog-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+}
+
+.home-tags {
+  text-align: center;
+}
+
+.tags-list {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.tag {
+  background-color: #f1f1f1;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  cursor: pointer;
+}

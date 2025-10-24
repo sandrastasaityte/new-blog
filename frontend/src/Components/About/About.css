@@ -1,0 +1,61 @@
+.about-wrapper {
+  padding: 2rem;
+}
+
+.about-hero {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.about-hero h1 {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.about-hero p {
+  font-size: 1.1rem;
+  color: #555;
+}
+
+/* Authors Grid */
+.authors-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 2rem;
+}
+
+.author-card {
+  background-color: #f9f9f9;
+  padding: 1rem;
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+  transition: transform 0.2s;
+}
+
+.author-card:hover {
+  transform: translateY(-5px);
+}
+
+.author-image {
+  width: 120px;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 50%;
+  margin-bottom: 1rem;
+}
+
+.author-card h3 {
+  margin: 0.5rem 0 0.25rem 0;
+}
+
+.author-card small {
+  display: block;
+  color: #888;
+  margin-bottom: 0.5rem;
+}
+
+.author-card p {
+  font-size: 0.95rem;
+  color: #555;
+}

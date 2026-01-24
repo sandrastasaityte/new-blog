@@ -1,79 +1,98 @@
-import React, { useState } from "react";
+import React, { useMemo } from "react";
 import "./Sidebar.css";
 
-const Sidebar = ({ posts, uniqueTags, filterTags, setFilterTags, onSelectPost }) => {
-  const [searchTerm, setSearchTerm] = useState("");
+const getId = (p) => p?.id ?? p?._id;
 
-  // Filter posts by search term
-  const filteredPosts = posts.filter(post =>
-    post.title.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+const safeDateNum = (d) => {
+  const t = new Date(d).getTime();
+  return Number.isNaN(t) ? 0 : t;
+};
 
-  // Popular posts by views
-  const popularPosts = [...posts].sort((a, b) => b.views - a.views).slice(0, 5);
+const safeDateLabel = (d) => {
+  const t = new Date(d);
+  return Number.isNaN(t.getTime()) ? "" : t.toLocaleDateString();
+};
 
-  // Latest posts by date
-  const latestPosts = [...posts].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
-
-  // Handle tag click
+export default function Sidebar({
+  posts = [],
+  uniqueTags = [],
+  filterTags = [],
+  setFilterTags,
+  onSelectPost,
+}) {
   const toggleTag = (tag) => {
-    if (filterTags.includes(tag)) {
-      setFilterTags(filterTags.filter(t => t !== tag));
-    } else {
-      setFilterTags([...filterTags, tag]);
-    }
+    if (typeof setFilterTags !== "function") return;
+
+    setFilterTags((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+    );
   };
+
+  const recent = useMemo(() => {
+    return [...(posts || [])]
+      .sort((a, b) => safeDateNum(b?.date) - safeDateNum(a?.date))
+      .slice(0, 6);
+  }, [posts]);
 
   return (
     <aside className="sidebar">
-      <div className="sidebar-section">
-        <h4>Search</h4>
-        <input
-          type="text"
-          placeholder="Search posts..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
+      <div className="sidebar-card">
+        <h3 className="sidebar-title">Tags</h3>
+
+        {uniqueTags.length === 0 ? (
+          <p className="sidebar-muted">No tags yet.</p>
+        ) : (
+          <div className="sidebar-tags" aria-label="Filter by tags">
+            {uniqueTags.map((tag) => {
+              const active = filterTags.includes(tag);
+              return (
+                <button
+                  key={tag}
+                  type="button"
+                  className={`sidebar-tag ${active ? "active" : ""}`}
+                  onClick={() => toggleTag(tag)}
+                  aria-pressed={active}
+                >
+                  {tag}
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
-      <div className="sidebar-section">
-        <h4>Popular Posts</h4>
-        <ul>
-          {popularPosts.map(post => (
-            <li key={post.id} onClick={() => onSelectPost(post)}>
-              {post.title} ({post.views} views)
-            </li>
-          ))}
-        </ul>
-      </div>
+      <div className="sidebar-card">
+        <h3 className="sidebar-title">Recent Posts</h3>
 
-      <div className="sidebar-section">
-        <h4>Latest Posts</h4>
-        <ul>
-          {latestPosts.map(post => (
-            <li key={post.id} onClick={() => onSelectPost(post)}>
-              {post.title} ({post.date})
-            </li>
-          ))}
-        </ul>
-      </div>
+        {recent.length === 0 ? (
+          <p className="sidebar-muted">No posts yet.</p>
+        ) : (
+          <div className="sidebar-list">
+            {recent.map((p, idx) => {
+              const id = getId(p);
+              const key = id ? String(id) : `recent-${idx}`;
 
-      <div className="sidebar-section">
-        <h4>Tags</h4>
-        <div className="tags">
-          {uniqueTags.map(tag => (
-            <span
-              key={tag}
-              className={`tag ${filterTags.includes(tag) ? "active" : ""}`}
-              onClick={() => toggleTag(tag)}
-            >
-              {tag}
-            </span>
-          ))}
-        </div>
+              const title = p?.title || "Untitled post";
+              const meta = `${p?.author || "Admin"}${
+                p?.date ? ` • ${safeDateLabel(p.date)}` : ""
+              }`;
+
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  className="sidebar-post"
+                  onClick={() => onSelectPost?.(p)}
+                  aria-label={`Open post: ${title}`}
+                >
+                  <p className="sidebar-post-title">{title}</p>
+                  <p className="sidebar-post-meta">{meta}</p>
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
     </aside>
   );
-};
-
-export default Sidebar;
+}

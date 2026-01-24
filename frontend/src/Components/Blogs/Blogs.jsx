@@ -1,162 +1,212 @@
-import React, { useState, useEffect } from "react";
-import { v4 as uuidv4 } from "uuid";
-import blogsData from "../../assets/blogsData.json";
-
-import AddBlog from "../AddBlog/AddBlog";
+import React, { useEffect, useMemo, useState } from "react";
 import BlogCard from "./BlogCard";
 import BlogModal from "./BlogModal";
+import Pagination from "./Pagination";
 import Sidebar from "../Sidebar/Sidebar";
-
 import "./Blogs.css";
 
-const POSTS_PER_PAGE = 6;
+import { usePosts } from "../../Context/PostsContext";
+
+const PER_PAGE = 6;
+
+const safeDateNum = (d) => {
+  const t = new Date(d).getTime();
+  return Number.isNaN(t) ? 0 : t;
+};
+
+const getId = (p) => p?.id ?? p?._id;
+
+const norm = (s) => String(s || "").trim().toLowerCase();
 
 const Blogs = () => {
-  const [posts, setPosts] = useState([]);
-  const [selectedPost, setSelectedPost] = useState(null);
+  // If you have like handler in context, add it here (example: toggleLike)
+  const { posts, incViews, addComment, toggleLike } = usePosts();
+
+  const [selectedId, setSelectedId] = useState(null);
   const [filterTags, setFilterTags] = useState([]);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [showAddPopup, setShowAddPopup] = useState(false);
+  const [page, setPage] = useState(1);
+
+  // ✅ Unique tags (normalized display, but keep original case if you want)
+  const uniqueTags = useMemo(() => {
+    const map = new Map(); // lower -> original
+    (posts || []).forEach((p) => {
+      (p?.tags || []).forEach((t) => {
+        const raw = String(t || "").trim();
+        if (!raw) return;
+        const key = raw.toLowerCase();
+        if (!map.has(key)) map.set(key, raw);
+      });
+    });
+    return Array.from(map.values()).sort((a, b) => a.localeCompare(b));
+  }, [posts]);
+
+  // ✅ Filtered posts (AND logic across selected tags, case-insensitive)
+  const filteredPosts = useMemo(() => {
+    if (!filterTags.length) return posts || [];
+    const selected = filterTags.map(norm);
+
+    return (posts || []).filter((p) => {
+      const postTags = (p?.tags || []).map(norm);
+      return selected.every((t) => postTags.includes(t));
+    });
+  }, [posts, filterTags]);
+
+  // ✅ Sorted newest first
+  const sortedPosts = useMemo(() => {
+    return [...filteredPosts].sort(
+      (a, b) => safeDateNum(b?.date) - safeDateNum(a?.date)
+    );
+  }, [filteredPosts]);
+
+  const totalPages = useMemo(() => {
+    return Math.max(1, Math.ceil(sortedPosts.length / PER_PAGE));
+  }, [sortedPosts.length]);
+
+  // ✅ When filters change -> go page 1 (stable key)
+  const filterKey = useMemo(
+    () => JSON.stringify(filterTags.slice().map(norm).sort()),
+    [filterTags]
+  );
 
   useEffect(() => {
-    const initialBlogs = blogsData.map(blog => ({
-      ...blog,
-      id: blog.id || uuidv4(),
-      views: blog.views || 0,
-      comments: blog.comments || [],
-      rating: blog.rating || 0,
-      date: blog.date || new Date().toISOString().slice(0, 10),
-    }));
-    setPosts(initialBlogs);
-  }, []);
+    setPage(1);
+  }, [filterKey]);
 
-  // Add new blog
-  const handleAddPost = (newPost) => {
-    const postWithId = {
-      ...newPost,
-      id: uuidv4(),
-      views: 0,
-      comments: [],
-      rating: 0,
-      date: new Date().toISOString().slice(0, 10),
-    };
-    setPosts([postWithId, ...posts]);
-    setShowAddPopup(false); // Close popup after adding
+  // ✅ Clamp page (safe)
+  useEffect(() => {
+    setPage((p) => Math.min(Math.max(1, p), totalPages));
+  }, [totalPages]);
+
+  // ✅ Current page items
+  const pagedPosts = useMemo(() => {
+    const start = (page - 1) * PER_PAGE;
+    return sortedPosts.slice(start, start + PER_PAGE);
+  }, [sortedPosts, page]);
+
+  // ✅ Selected post by id/_id
+  const selectedPost = useMemo(() => {
+    if (!selectedId) return null;
+    return (
+      (posts || []).find((p) => String(getId(p)) === String(selectedId)) || null
+    );
+  }, [selectedId, posts]);
+
+  const openPost = (post) => {
+    const id = getId(post);
+    if (!id) return;
+
+    incViews?.(id);
+    setSelectedId(String(id));
   };
 
-  // Add comment
-  const handleAddComment = (postId, commentText) => {
-    const updatedPosts = posts.map(post =>
-      post.id === postId
-        ? { ...post, comments: [...(post.comments || []), commentText] }
-        : post
-    );
-    setPosts(updatedPosts);
+  // ✅ Supports both payload formats: string or {name,text}
+  const handleAddComment = (postId, payload) => {
+    if (!postId) return;
 
-    if (selectedPost?.id === postId) {
-      setSelectedPost(prev => ({
-        ...prev,
-        comments: [...(prev.comments || []), commentText],
-      }));
+    if (typeof payload === "string") {
+      const text = payload.trim();
+      if (!text) return;
+      addComment?.(postId, text);
+      return;
+    }
+
+    if (payload && typeof payload === "object") {
+      const name = String(payload.name || "Anonymous").trim();
+      const text = String(payload.text || "").trim();
+      if (!text) return;
+
+      // If your context supports object comments, use this:
+      // addComment?.(postId, { name, text });
+
+      // If your context currently expects string only, keep it:
+      addComment?.(postId, text);
+
+      return;
     }
   };
 
-  // Open post modal
-  const handleViewPost = (post) => {
-    const updatedPosts = posts.map(p =>
-      p.id === post.id ? { ...p, views: (p.views || 0) + 1 } : p
-    );
-    setPosts(updatedPosts);
-    setSelectedPost({ ...post, views: (post.views || 0) + 1 });
+  const handleLike = (postId) => {
+    if (!postId) return;
+    toggleLike?.(postId); // rename based on your context implementation
   };
 
-  const handleCloseModal = () => setSelectedPost(null);
-
-  const filteredPosts =
-    filterTags.length > 0
-      ? posts.filter(post => filterTags.every(tag => post.tags?.includes(tag)))
-      : posts;
-
-  const totalPages = Math.ceil(filteredPosts.length / POSTS_PER_PAGE);
-  const paginatedPosts = filteredPosts.slice(
-    (currentPage - 1) * POSTS_PER_PAGE,
-    currentPage * POSTS_PER_PAGE
-  );
-
-  const goToPage = (page) => {
-    if (page < 1 || page > totalPages) return;
-    setCurrentPage(page);
-  };
-
-  const uniqueTags = [...new Set(posts.flatMap(post => post.tags || []))];
+  const removeTag = (t) => setFilterTags((prev) => prev.filter((x) => x !== t));
+  const clearFilters = () => setFilterTags([]);
 
   return (
-    <div className="blog-wrapper">
-      <div className="blog-hero">
-        <h1>Our Blog</h1>
-        <p>Explore insights, tutorials, and latest updates.</p>
-        <button className="open-add-btn" onClick={() => setShowAddPopup(true)}>
-          + Add New Blog
-        </button>
-      </div>
+    <div className="blogs-page">
+      <div className="blogs-layout">
+        <main className="blogs-main">
+          <div className="blogs-head">
+            <h1>Blogs</h1>
 
-      {/* Add Blog Popup */}
-      {showAddPopup && (
-        <div className="popup-overlay">
-          <div className="popup-content">
-            <button className="close-popup" onClick={() => setShowAddPopup(false)}>X</button>
-            <AddBlog onAddPost={handleAddPost} />
+            {filterTags.length > 0 && (
+              <div className="active-filters">
+                <span className="filters-label">Active filters:</span>
+
+                {filterTags.map((t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    className="filter-chip"
+                    onClick={() => removeTag(t)}
+                  >
+                    {t} <span aria-hidden>×</span>
+                  </button>
+                ))}
+
+                <button
+                  type="button"
+                  className="clear-filters"
+                  onClick={clearFilters}
+                >
+                  Clear
+                </button>
+              </div>
+            )}
           </div>
-        </div>
-      )}
 
-      <div className="blog-main-container">
-        <div className="blog-grid">
-          {paginatedPosts.length > 0 ? (
-            paginatedPosts.map(post => (
-              <BlogCard
-                key={post.id}
-                post={post}
-                onReadMore={() => handleViewPost(post)}
-              />
-            ))
+          {sortedPosts.length === 0 ? (
+            <div className="blogs-empty">
+              <h3>No posts found</h3>
+              <p>Try removing filters.</p>
+            </div>
           ) : (
-            <p>No posts found.</p>
+            <>
+              <div className="blogs-grid">
+                {pagedPosts.map((post) => (
+                  <BlogCard
+                    key={String(getId(post))}
+                    post={post}
+                    onReadMore={() => openPost(post)}
+                  />
+                ))}
+              </div>
+
+              <Pagination
+                currentPage={page}
+                totalPages={totalPages}
+                setPage={setPage}
+              />
+            </>
           )}
-        </div>
+        </main>
 
         <Sidebar
-          posts={posts}
+          posts={sortedPosts}
           uniqueTags={uniqueTags}
           filterTags={filterTags}
           setFilterTags={setFilterTags}
-          onSelectPost={handleViewPost}
+          onSelectPost={openPost}
         />
       </div>
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="pagination">
-          <button onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1}>Prev</button>
-          {Array.from({ length: totalPages }, (_, i) => (
-            <button
-              key={i + 1}
-              className={currentPage === i + 1 ? "active" : ""}
-              onClick={() => goToPage(i + 1)}
-            >
-              {i + 1}
-            </button>
-          ))}
-          <button onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages}>Next</button>
-        </div>
-      )}
-
-      {/* Blog Modal */}
       {selectedPost && (
         <BlogModal
           post={selectedPost}
-          onClose={handleCloseModal}
+          onClose={() => setSelectedId(null)}
           onAddComment={handleAddComment}
+          onLike={handleLike} // ✅ now Like works (if toggleLike exists)
         />
       )}
     </div>

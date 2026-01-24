@@ -8,21 +8,60 @@ const Contact = () => {
     message: "",
   });
 
-  const [submitted, setSubmitted] = useState(false);
+  const [status, setStatus] = useState({
+    loading: false,
+    success: false,
+    error: "",
+  });
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    setFormData((p) => ({ ...p, [name]: value }));
+    if (status.error) setStatus((s) => ({ ...s, error: "" }));
   };
 
-  const handleSubmit = (e) => {
+  const validate = () => {
+    if (!formData.name.trim()) return "Please enter your name.";
+    if (!formData.email.trim()) return "Please enter your email.";
+    if (!formData.email.includes("@")) return "Please enter a valid email.";
+    if (formData.message.trim().length < 10)
+      return "Message must be at least 10 characters.";
+    return "";
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    if (status.loading) return;
 
-    // Here you can connect to backend or email API
-    console.log("Contact form submitted:", formData);
+    const msg = validate();
+    if (msg) {
+      setStatus({ loading: false, success: false, error: msg });
+      return;
+    }
 
-    setSubmitted(true);
-    setFormData({ name: "", email: "", message: "" });
+    try {
+      setStatus({ loading: true, success: false, error: "" });
+
+      // 🔌 Later: connect backend here
+      console.log("Contact form submitted:", formData);
+
+      // simulate network delay
+      await new Promise((res) => setTimeout(res, 800));
+
+      setStatus({ loading: false, success: true, error: "" });
+      setFormData({ name: "", email: "", message: "" });
+
+      // auto-hide success after 3s
+      setTimeout(() => {
+        setStatus((s) => ({ ...s, success: false }));
+      }, 3000);
+    } catch (err) {
+      setStatus({
+        loading: false,
+        success: false,
+        error: "Something went wrong. Please try again.",
+      });
+    }
   };
 
   return (
@@ -38,7 +77,9 @@ const Contact = () => {
           value={formData.name}
           onChange={handleChange}
           required
+          disabled={status.loading}
         />
+
         <input
           type="email"
           name="email"
@@ -46,7 +87,9 @@ const Contact = () => {
           value={formData.email}
           onChange={handleChange}
           required
+          disabled={status.loading}
         />
+
         <textarea
           name="message"
           placeholder="Your Message"
@@ -54,11 +97,25 @@ const Contact = () => {
           value={formData.message}
           onChange={handleChange}
           required
-        ></textarea>
-        <button type="submit">Send Message</button>
+          disabled={status.loading}
+        />
+
+        {status.error && (
+          <p className="contact-error" role="alert">
+            {status.error}
+          </p>
+        )}
+
+        <button type="submit" disabled={status.loading}>
+          {status.loading ? "Sending…" : "Send Message"}
+        </button>
       </form>
 
-      {submitted && <p className="success-message">Thank you! Your message has been sent.</p>}
+      {status.success && (
+        <p className="success-message">
+          Thank you! Your message has been sent.
+        </p>
+      )}
     </div>
   );
 };

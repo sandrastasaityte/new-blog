@@ -1,52 +1,100 @@
-import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import blogsData from "../../assets/blogsData.json";
+import React, { useMemo } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import BlogCard from "../Blogs/BlogCard";
-
 import "./Home.css";
 
-const Home = () => {
-  const [featuredBlogs, setFeaturedBlogs] = useState([]);
+import { usePosts } from "../../Context/PostsContext";
 
-  useEffect(() => {
-    // Get latest 4 blogs for home
-    const sortedBlogs = [...blogsData].sort(
-      (a, b) => new Date(b.date) - new Date(a.date)
+const safeDateNum = (d) => {
+  const t = new Date(d).getTime();
+  return Number.isNaN(t) ? 0 : t;
+};
+
+const getId = (p) => p?.id ?? p?._id;
+
+const Home = () => {
+  const { posts = [] } = usePosts();
+  const navigate = useNavigate();
+
+  const featuredBlogs = useMemo(() => {
+    const sorted = [...(posts || [])].sort(
+      (a, b) => safeDateNum(b?.date) - safeDateNum(a?.date)
     );
-    setFeaturedBlogs(sortedBlogs.slice(0, 4));
-  }, []);
+    return sorted.slice(0, 4);
+  }, [posts]);
+
+  const tags = useMemo(() => {
+    const set = new Set();
+    (posts || []).forEach((b) => {
+      (b?.tags || []).forEach((t) => {
+        const tag = String(t || "").trim();
+        if (tag) set.add(tag);
+      });
+    });
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [posts]);
+
+  const openBlog = (blog) => {
+    const id = getId(blog);
+    if (!id) return;
+    // Opens the modal from Blogs page (you'll handle ?open= in Blogs.jsx)
+    navigate(`/blogs?open=${encodeURIComponent(String(id))}`);
+  };
+
+  const goTag = (tag) => {
+    if (!tag) return;
+    navigate(`/blogs?tag=${encodeURIComponent(String(tag))}`);
+  };
 
   return (
     <div className="home-wrapper">
-      {/* Hero Section */}
       <section className="home-hero">
         <h1>Welcome to Our Blog</h1>
         <p>Explore insights, tutorials, and latest updates.</p>
+
         <Link to="/blogs" className="view-blogs-btn">
           View All Blogs
         </Link>
       </section>
 
-      {/* Featured Blogs */}
       <section className="home-featured">
         <h2>Latest Articles</h2>
-        <div className="home-blog-grid">
-          {featuredBlogs.map(blog => (
-            <BlogCard key={blog.id} post={blog} />
-          ))}
-        </div>
+
+        {featuredBlogs.length === 0 ? (
+          <p style={{ opacity: 0.75, margin: 0 }}>No posts yet.</p>
+        ) : (
+          <div className="home-blog-grid">
+            {featuredBlogs.map((blog) => (
+              <BlogCard
+                key={String(getId(blog))}
+                post={blog}
+                onReadMore={() => openBlog(blog)}
+              />
+            ))}
+          </div>
+        )}
       </section>
 
-      {/* Categories / Tags Preview */}
       <section className="home-tags">
         <h3>Browse by Tags</h3>
-        <div className="tags-list">
-          {[...new Set(blogsData.flatMap(blog => blog.tags || []))].map(tag => (
-            <span key={tag} className="tag">
-              {tag}
-            </span>
-          ))}
-        </div>
+
+        {tags.length === 0 ? (
+          <p style={{ opacity: 0.75, margin: 0 }}>No tags yet.</p>
+        ) : (
+          <div className="tags-list">
+            {tags.map((tag) => (
+              <button
+                key={tag}
+                type="button"
+                className="tag"
+                onClick={() => goTag(tag)}
+                aria-label={`Browse tag ${tag}`}
+              >
+                {tag}
+              </button>
+            ))}
+          </div>
+        )}
       </section>
     </div>
   );

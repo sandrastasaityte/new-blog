@@ -1,0 +1,168 @@
+/* src/components/layout/sidebar.css */
+.admin-sidebar {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 14px 12px;
+  gap: 12px;
+}
+
+.sb-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 10px;
+}
+
+.sb-logo {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.sb-name {
+  font-weight: 800;
+  letter-spacing: 0.2px;
+}
+
+.sb-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sb-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 10px;
+  border-radius: 12px;
+  color: #111;
+  text-decoration: none;
+  border: 1px solid transparent;
+}
+
+.sb-link:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.sb-link.active {
+  background: rgba(0, 0, 0, 0.06);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+.sb-ico {
+  width: 22px;
+  display: inline-flex;
+  justify-content: center;
+}
+
+.admin-sidebar.collapsed .sb-name,
+.admin-sidebar.collapsed .sb-link span:last-child,
+.admin-sidebar.collapsed .sb-muted {
+  display: none;
+}
+
+.sb-footer {
+  margin-top: auto;
+  padding: 10px;
+}
+
+.sb-muted {
+  font-size: 0.85rem;
+  opacity: 0.6;
+}
+/* Collapsed: center brand + links */
+.admin-sidebar.collapsed .sb-brand {
+  justify-content: center;
+  padding: 10px 6px;
+}
+
+.admin-sidebar.collapsed .sb-link {
+  justify-content: center;
+  padding: 10px 6px;
+}
+
+.admin-sidebar.collapsed .sb-ico {
+  width: 34px; /* gives icon a nice tap target */
+}
+.sb-link {
+  position: relative;
+}
+
+.admin-sidebar.collapsed .sb-link.active::before {
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: 10px;
+  bottom: 10px;
+  width: 3px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.35);
+}
+.admin-sidebar.collapsed .sb-link[data-tip]::after {
+  content: attr(data-tip);
+  position: absolute;
+  left: calc(100% + 10px);
+  top: 50%;
+  transform: translateY(-50%);
+  white-space: nowrap;
+  font-size: 0.85rem;
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: #111;
+  color: #fff;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s ease;
+}
+
+.admin-sidebar.collapsed .sb-link[data-tip]:hover::after,
+.admin-sidebar.collapsed .sb-link[data-tip]:focus-visible::after {
+  opacity: 1;
+}
+.admin-sidebar {
+  box-sizing: border-box;
+}
+
+.sb-section {
+  margin-top: 4px;
+}
+/* Tooltip for collapsed sidebar */
+.admin-sidebar.collapsed .sb-link {
+  position: relative;
+}
+
+.admin-sidebar.collapsed .sb-link[data-tip]::after {
+  content: attr(data-tip);
+  position: absolute;
+  left: calc(100% + 10px);
+  top: 50%;
+  transform: translateY(-50%);
+  white-space: nowrap;
+  font-size: 0.85rem;
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: #111;
+  color: #fff;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s ease;
+}
+
+.admin-sidebar.collapsed .sb-link[data-tip]:hover::after,
+.admin-sidebar.collapsed .sb-link[data-tip]:focus-visible::after {
+  opacity: 1;
+}
+
+/* Nice keyboard focus */
+.sb-link:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0, 119, 255, 0.25);
+  border-color: rgba(0, 119, 255, 0.35);
+}

@@ -1,0 +1,107 @@
+.admin-topbar {
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  background: #ffffff;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.tb-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.tb-title {
+  font-weight: 900;
+  font-size: 1.05rem;
+  color: #0f172a;
+}
+
+.tb-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tb-icon-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: #fff;
+  cursor: pointer;
+}
+
+.tb-icon-btn:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.tb-pill {
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.05);
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.tb-btn {
+  padding: 9px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: #fff;
+  cursor: pointer;
+  font-weight: 900;
+}
+
+.tb-btn:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.tb-mobile-only {
+  display: none;
+}
+.tb-desktop-only {
+  display: inline-flex;
+}
+
+@media (max-width: 980px) {
+  .tb-mobile-only {
+    display: inline-flex;
+  }
+  .tb-desktop-only {
+    display: none;
+  }
+}
+.tb-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;         /* makes ☰ and «/» look consistent */
+  line-height: 1;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.tb-icon-btn:focus-visible,
+.tb-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0, 119, 255, 0.25);
+  border-color: rgba(0, 119, 255, 0.35);
+}
+.tb-title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+@media (max-width: 420px) {
+  .tb-pill {
+    display: none;
+  }
+}
+.tb-icon-btn:active,
+.tb-btn:active {
+  transform: translateY(1px);
+}

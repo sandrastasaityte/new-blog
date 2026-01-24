@@ -1,96 +1,176 @@
 .footer {
-  background-color: #222;
-  color: #eee;
-  padding: 40px 20px 20px 20px;
-  font-family: sans-serif;
+  margin-top: 3rem;
+  background: #fff;
+  border-top: 1px solid rgba(0,0,0,0.06);
+  box-shadow: 0 -10px 30px rgba(0,0,0,0.04);
 }
 
 .footer-container {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: 30px;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2.4rem 1.6rem 1.8rem;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 2rem;
 }
 
-.footer-section {
-  flex: 1;
-  min-width: 200px;
-}
-
+/* Sections */
 .footer-section h3 {
-  margin-bottom: 15px;
-  font-size: 18px;
-  color: #fff;
+  margin: 0 0 0.8rem;
+  font-size: 1.05rem;
+  font-weight: 900;
+  color: #111;
 }
 
-.footer-section p,
-.footer-section a,
-.footer-section li {
-  color: #ccc;
-  font-size: 14px;
-  text-decoration: none;
-  margin-bottom: 10px;
+.footer-section p {
+  margin: 0.35rem 0;
+  color: rgba(0,0,0,0.65);
+  font-size: 0.95rem;
+  line-height: 1.6;
 }
 
-.footer-section ul {
+/* About */
+.footer-section.about p {
+  max-width: 320px;
+}
+
+/* Links */
+.footer-section.links ul {
   list-style: none;
   padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 8px;
 }
 
-.footer-section ul li {
-  margin-bottom: 8px;
+.footer-section.links a {
+  text-decoration: none;
+  color: rgba(0,0,0,0.75);
+  font-weight: 700;
+  transition: color 0.15s ease;
 }
 
-.footer-section ul li a:hover {
-  color: #fff;
+.footer-section.links a:hover {
+  color: #ff6600;
 }
 
-.social-icons a img {
-  width: 24px;
-  margin-right: 10px;
-  filter: brightness(0.8);
-  transition: 0.3s;
+/* Social icons */
+.social-icons {
+  margin-top: 0.7rem;
+  display: flex;
+  gap: 10px;
 }
 
-.social-icons a img:hover {
-  filter: brightness(1);
+.social-icons a {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid rgba(0,0,0,0.08);
+  background: rgba(0,0,0,0.02);
+  display: grid;
+  place-items: center;
+  transition: transform 0.12s ease, box-shadow 0.2s ease;
 }
 
-.footer-bottom {
-  text-align: center;
-  margin-top: 30px;
-  font-size: 13px;
-  color: #999;
+.social-icons a:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.08);
 }
 
-@media (max-width: 768px) {
-  .footer-container {
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-  }
-
-  .footer-section {
-    min-width: unset;
-  }
+.social-icons img {
+  width: 20px;
+  height: 20px;
 }
+
+/* Subscribe */
+.footer-section.subscribe form {
+  margin-top: 0.6rem;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+}
+
 .footer-section.subscribe input {
-  padding: 8px;
-  margin-right: 5px;
-  border-radius: 4px;
-  border: none;
-  width: 150px;
+  padding: 0.75rem 0.85rem;
+  border-radius: 12px;
+  border: 1px solid rgba(0,0,0,0.14);
+  outline: none;
+}
+
+.footer-section.subscribe input:focus {
+  border-color: rgba(255, 102, 0, 0.7);
+  box-shadow: 0 0 0 4px rgba(255, 102, 0, 0.15);
 }
 
 .footer-section.subscribe button {
-  padding: 8px 12px;
-  border-radius: 4px;
   border: none;
-  background-color: #ff6600;
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  background: linear-gradient(135deg, #ff6600, #ff8a3d);
   color: #fff;
+  font-weight: 900;
   cursor: pointer;
+  transition: transform 0.12s ease, filter 0.12s ease;
 }
 
 .footer-section.subscribe button:hover {
-  background-color: #e65c00;
+  filter: brightness(1.04);
+  transform: translateY(-1px);
+}
+
+.footer-section.subscribe button:active {
+  transform: translateY(0);
+}
+
+/* Success */
+.subscribe-success {
+  margin-top: 0.6rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #007a3d;
+}
+
+/* Bottom */
+.footer-bottom {
+  text-align: center;
+  padding: 1rem 1rem 1.4rem;
+  border-top: 1px solid rgba(0,0,0,0.05);
+}
+
+.footer-bottom p {
+  margin: 0;
+  font-size: 0.88rem;
+  color: rgba(0,0,0,0.55);
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .footer-container {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 520px) {
+  .footer-container {
+    grid-template-columns: 1fr;
+    gap: 1.6rem;
+  }
+
+  .footer-section.about p {
+    max-width: none;
+  }
+}
+.subscribe-error {
+  margin-top: 6px;
+  padding: 0.65rem 0.85rem;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  color: #b42318;
+  background: rgba(180, 35, 24, 0.08);
+  border: 1px solid rgba(180, 35, 24, 0.16);
+}
+
+.footer-section.subscribe button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
 }

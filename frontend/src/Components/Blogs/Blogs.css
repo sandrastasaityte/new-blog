@@ -1,110 +1,140 @@
-.blog-main-container {
+.blogs-page {
+  padding: 2.5rem 1.5rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.blogs-layout {
   display: flex;
   gap: 2rem;
-  padding: 2rem;
-}
-
-/* Blog grid: 4-5 cards per row */
-.blog-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 1.5rem;
-  flex: 1; /* takes available space */
-}
-
-/* Sidebar on the right */
-.sidebar {
-  width: 250px;
-  flex-shrink: 0;
-  position: sticky;
-  top: 2rem; /* stays visible while scrolling */
-  height: fit-content;
-}
-
-/* Pagination */
-.pagination {
-  display: flex;
-  justify-content: center;
-  gap: 0.5rem;
-  margin: 2rem 0;
-}
-
-.pagination button {
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  background: #eee;
-}
-
-.pagination button.active {
-  background: #007bff;
-  color: #fff;
-}
-
-/* Add Blog Popup */
-.popup-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,0.6);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
-
-.popup-content {
-  background: #fff;
-  padding: 2rem;
-  border-radius: 8px;
-  position: relative;
-  width: 500px;
-  max-width: 90%;
-}
-
-.close-popup {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  background: red;
-  color: #fff;
-  border: none;
-  padding: 0.3rem 0.6rem;
-  cursor: pointer;
-  border-radius: 50%;
-}
-
-.open-add-btn {
-  margin-top: 1rem;
-  padding: 0.5rem 1rem;
-  background: #007bff;
-  color: #fff;
-  border: none;
-  cursor: pointer;
-  border-radius: 5px;
-}
-.blog-main-container {
-  display: flex;
-  gap: 2rem;
-  padding: 2rem 7%;
   align-items: flex-start;
 }
 
-/* Blog Grid: multiple rows and columns */
-.blog-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); /* 4-5 cards per row depending on screen */
-  grid-auto-rows: auto;
-  gap: 1.5rem;
-  flex: 3; /* take more space than sidebar */
+.blogs-main {
+  flex: 3;
+  min-width: 0; /* prevents overflow in flex layouts */
 }
 
-.sidebar {
-  flex: 1;
-  position: sticky;
-  top: 2rem; /* stays visible when scrolling */
-  align-self: flex-start;
+.blogs-head {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 1.2rem;
+}
+
+.blogs-head h1 {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 800;
+  color: #111;
+}
+
+/* Grid */
+.blogs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.6rem;
+}
+
+/* Empty */
+.blogs-empty {
+  background: #fff;
+  border-radius: 16px;
+  padding: 1.6rem;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.06);
+}
+
+/* Filters */
+.active-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.filters-label {
+  color: #666;
+  font-size: 0.95rem;
+}
+
+.filter-chip {
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: #fff;
+  border-radius: 999px;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-weight: 700;
+  transition: 0.12s ease;
+}
+
+.filter-chip:hover {
+  border-color: #ff6600;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.06);
+}
+
+.filter-chip:focus-visible {
+  outline: 2px solid #ff6600;
+  outline-offset: 3px;
+}
+
+.clear-filters {
+  border: none;
+  background: linear-gradient(135deg, #ff6600, #ff8a3d);
+  color: #fff;
+  padding: 7px 12px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 800;
+  transition: transform 0.12s ease, filter 0.12s ease;
+}
+
+.clear-filters:hover {
+  filter: brightness(1.03);
+  transform: translateY(-1px);
+}
+
+.clear-filters:active {
+  transform: translateY(0);
+}
+
+.clear-filters:focus-visible {
+  outline: 2px solid #ff6600;
+  outline-offset: 3px;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .blogs-layout {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 480px) {
+  .blogs-page {
+    padding: 1.8rem 1rem;
+  }
+
+  .blogs-head h1 {
+    font-size: 1.6rem;
+  }
+}
+/* Make grid cards equal height */
+.blogs-grid > * {
+  height: 100%;
+}
+
+/* Desktop: consistent 3-column grid */
+@media (min-width: 1024px) {
+  .blogs-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* Very small screens: avoid squeeze */
+@media (max-width: 360px) {
+  .blogs-grid {
+    grid-template-columns: 1fr;
+  }
 }

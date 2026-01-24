@@ -1,38 +1,71 @@
-const API_URL = import.meta.env.VITE_API_URL;
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
-export const getBlogs = async () => {
-  const res = await fetch(`${API_URL}/blogs`);
-  return res.json();
-};
+export const getToken = () => localStorage.getItem("token");
 
-export const createBlog = async (blog, token) => {
-  const res = await fetch(`${API_URL}/blogs`, {
+function authHeaders(token, json = true) {
+  const t = token ?? getToken();
+  return {
+    ...(json && { "Content-Type": "application/json" }),
+    ...(t && { Authorization: `Bearer ${t}` }),
+  };
+}
+
+async function handleResponse(res) {
+  const contentType = res.headers.get("content-type") || "";
+  const hasJson = contentType.includes("application/json");
+
+  let data = null;
+
+  if (res.status !== 204) {
+    try {
+      data = hasJson ? await res.json() : await res.text();
+    } catch {
+      data = null;
+    }
+  }
+
+  if (!res.ok) {
+    const msg =
+      (data && typeof data === "object" && data.message) ||
+      (typeof data === "string" && data) ||
+      "Request failed";
+    throw new Error(msg);
+  }
+
+  return data;
+}
+
+async function apiFetch(path, { token, json = true, ...options } = {}) {
+  const res = await fetch(`${API_URL}${path}`, {
+    ...options,
+    headers: {
+      ...authHeaders(token, json),
+      ...(options.headers || {}),
+    },
+  });
+  return handleResponse(res);
+}
+
+// ===== Blogs API =====
+export const getBlogs = () => apiFetch("/blogs", { json: false }); // no need for Content-Type
+
+export const createBlog = (blog, token) =>
+  apiFetch("/blogs", {
     method: "POST",
-    headers: { 
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${token}`
-    },
+    token,
     body: JSON.stringify(blog),
   });
-  return res.json();
-};
 
-export const deleteBlog = async (id, token) => {
-  const res = await fetch(`${API_URL}/blogs/${id}`, {
+export const deleteBlog = (id, token) =>
+  apiFetch(`/blogs/${id}`, {
     method: "DELETE",
-    headers: { "Authorization": `Bearer ${token}` },
+    token,
+    json: false,
   });
-  return res.json();
-};
 
-export const updateBlog = async (id, blog, token) => {
-  const res = await fetch(`${API_URL}/blogs/${id}`, {
+export const updateBlog = (id, blog, token) =>
+  apiFetch(`/blogs/${id}`, {
     method: "PUT",
-    headers: { 
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${token}`
-    },
+    token,
     body: JSON.stringify(blog),
   });
-  return res.json();
-};

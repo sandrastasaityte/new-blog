@@ -1,158 +1,158 @@
+/* =========================
+   NAVBAR BASE
+========================= */
 .navbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background-color: orange;
-  padding: 1rem 2rem;
   position: sticky;
   top: 0;
-  z-index: 1000;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-}
-
-.logo a {
-  color: black;
-  font-size: 1.8rem;
-  font-weight: bold;
-  text-decoration: none;
-}
-
-.nav-links, .nav-links-mobile {
+  z-index: 2500;
+  background: #fff;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.04);
+  padding: 14px 18px;
   display: flex;
-  list-style: none;
-  gap: 1.5rem;
+  align-items: center;
+  justify-content: space-between;
 }
 
-.nav-links li a {
-  color: black;
+/* Logo */
+.logo a {
+  font-weight: 900;
+  font-size: 1.4rem;
+  color: #ff6600;
   text-decoration: none;
-  font-weight: 500;
-  transition: color 0.3s;
 }
 
-.nav-links li a:hover {
+/* =========================
+   DESKTOP LINKS
+========================= */
+.nav-links {
+  display: flex;
+  gap: 16px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.nav-links a {
+  text-decoration: none;
   color: #333;
+  font-weight: 800;
+  padding: 8px 12px;
+  border-radius: 10px;
+  transition: 0.15s ease;
 }
 
+.nav-links a:hover {
+  background: rgba(0,0,0,0.05);
+}
+
+.nav-links a.active {
+  background: rgba(255, 102, 0, 0.12);
+  color: #ff6600;
+}
+
+/* =========================
+   RIGHT ACTIONS
+========================= */
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Login / Logout */
 .auth-btn {
-  background: black;
-  color: orange;
   border: none;
-  padding: 0.4rem 1rem;
-  border-radius: 5px;
+  background: linear-gradient(135deg, #ff6600, #ff8a3d);
+  color: #fff;
+  padding: 10px 14px;
+  border-radius: 12px;
   cursor: pointer;
-  font-weight: 600;
-  transition: 0.3s;
+  font-weight: 900;
+  transition: transform 0.12s ease, filter 0.12s ease;
 }
 
 .auth-btn:hover {
-  background: #333;
-  color: white;
+  filter: brightness(1.03);
+  transform: translateY(-1px);
 }
 
-.mobile-menu-icon {
-  display: none;
-  font-size: 1.8rem;
-  background: none;
+.auth-btn:active {
+  transform: translateY(0);
+}
+
+/* Icon button (user icon / burger) */
+.icon-btn {
   border: none;
+  background: transparent;
   cursor: pointer;
+  display: grid;
+  place-items: center;
+  padding: 6px;
+  border-radius: 12px;
 }
 
-/* Mobile Styles */
-@media (max-width: 768px) {
+.icon-btn:hover {
+  background: rgba(0,0,0,0.06);
+}
+
+/* =========================
+   MOBILE MENU
+========================= */
+.nav-toggle {
+  display: none;
+}
+
+.nav-mobile-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  display: grid;
+  place-items: start end;
+  padding: 14px;
+  z-index: 3000;
+}
+
+.nav-mobile {
+  width: min(320px, 92vw);
+  background: #fff;
+  border-radius: 16px;
+  padding: 14px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+  display: grid;
+  gap: 10px;
+}
+
+.nav-mobile a {
+  text-decoration: none;
+  font-weight: 800;
+  color: #222;
+  padding: 10px 12px;
+  border-radius: 12px;
+}
+
+.nav-mobile a.active {
+  background: rgba(255, 102, 0, 0.12);
+  color: #ff6600;
+}
+
+.nav-mobile-actions {
+  margin-top: 6px;
+}
+
+/* =========================
+   RESPONSIVE
+========================= */
+@media (max-width: 900px) {
   .nav-links {
     display: none;
   }
 
-  .nav-links-mobile {
-    display: flex;
-    flex-direction: column;
-    position: absolute;
-    top: 70px;
-    right: 0;
-    background-color: orange;
-    width: 100%;
-    text-align: center;
-    gap: 1rem;
-    padding: 1rem 0;
+  .nav-toggle {
+    display: inline-grid;
   }
 
-  .mobile-menu-icon {
-    display: block;
+  .logo a {
+    font-size: 1.2rem;
   }
 }
-.auth-icon {
-  font-size: 1.8rem;
-  cursor: pointer;
-  color: black;
-}
-.auth-icon:hover {
-  transform: scale(1.2);
-  transition: 0.3s;
-}
-.auth-icon {
-  font-size: 1.8rem;
-  cursor: pointer;
-  color: black;
-  margin-left: 1rem;
-}
-
-.auth-icon:hover {
-  transform: scale(1.2);
-  transition: 0.3s;
-}
-.nav-btn {
-  background: none;
-  border: none;
-  color: black;
-  cursor: pointer;
-  font-size: 16px;
-  padding: 5px 10px;
-  transition: 0.3s;
-}
-
-.nav-btn:hover {
-  color: white;
-}
-.navbar {
-  background: orange;
-  color: black;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.8rem 2rem;
-}
-
-.nav-links {
-  display: flex;
-  gap: 1.5rem;
-  list-style: none;
-}
-
-.nav-links a {
-  color: black;
-  font-weight: 600;
-  text-decoration: none;
-}
-
-.nav-links a:hover {
-  text-decoration: underline;
-}
-
-.logo a {
-  color: black;
-  font-size: 1.4rem;
-  font-weight: bold;
-  text-decoration: none;
-}
-
-.user-icon {
-  cursor: pointer;
-  color: black;
-  transition: 0.2s ease;
-}
-
-.user-icon:hover {
-  color: #222;
-}
-

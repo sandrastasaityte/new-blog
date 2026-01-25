@@ -41,6 +41,7 @@
   outline: none;
   transition: box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease;
   background: #fff;
+  font: inherit;
 }
 
 .field textarea {
@@ -61,12 +62,25 @@
   cursor: not-allowed;
 }
 
+/* File input tweak */
+.field input[type="file"] {
+  padding: 0.55rem 0.6rem;
+}
+
 /* Errors */
 .field-error {
   font-size: 0.9rem;
   color: #b42318;
 }
 
+/* Error border state */
+.field.is-error input,
+.field.is-error textarea {
+  border-color: rgba(180, 35, 24, 0.35);
+  box-shadow: 0 0 0 4px rgba(180, 35, 24, 0.08);
+}
+
+/* Tags */
 .tag-preview {
   display: flex;
   flex-wrap: wrap;
@@ -113,6 +127,7 @@
   gap: 0.75rem;
   justify-content: flex-end;
   margin-top: 0.6rem;
+  flex-wrap: wrap;
 }
 
 .btn {
@@ -123,14 +138,15 @@
   cursor: pointer;
   font-weight: 800;
   transition: transform 0.12s ease, box-shadow 0.2s ease, opacity 0.12s ease;
+  font: inherit;
 }
 
-.btn:hover {
+.btn:hover:not(:disabled) {
   transform: translateY(-1px);
   box-shadow: 0 10px 20px rgba(0,0,0,0.06);
 }
 
-.btn:active {
+.btn:active:not(:disabled) {
   transform: translateY(0);
   box-shadow: none;
 }
@@ -159,49 +175,13 @@
   outline-offset: 3px;
   border-radius: 10px;
 }
-/* Error border state */
-.field.is-error input,
-.field.is-error textarea {
-  border-color: rgba(180, 35, 24, 0.35);
-  box-shadow: 0 0 0 4px rgba(180, 35, 24, 0.08);
-}
-
-/* File input tweak */
-.field input[type="file"] {
-  padding: 0.55rem 0.6rem;
-}
-
-/* Keep font consistent */
-.field input,
-.field textarea,
-.btn {
-  font: inherit;
-}
 
 /* Mobile: full-width actions */
 @media (max-width: 520px) {
   .form-actions {
     justify-content: stretch;
-    flex-wrap: wrap;
   }
   .btn {
     width: 100%;
   }
-}
-@media (max-width: 520px) {
-  .form-actions {
-    justify-content: stretch;
-    flex-wrap: wrap;
-  }
-  .btn {
-    width: 100%;
-  }
-}
-.blog-form .tag-chip {
-  font-size: 0.82rem;
-  padding: 0.25rem 0.55rem;
-  border-radius: 999px;
-  background: rgba(0,0,0,0.06);
-  border: 1px solid rgba(0,0,0,0.06);
-  color: rgba(0,0,0,0.78);
 }

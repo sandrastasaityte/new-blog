@@ -34,8 +34,8 @@
   border-radius: 14px;
   border: 1px solid rgba(0,0,0,0.14);
   outline: none;
-  font-size: 0.95rem;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  font: inherit;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
   background: #fff;
 }
 
@@ -44,10 +44,27 @@
   min-height: 140px;
 }
 
+/* Focus (orange theme) */
 .contact-form input:focus,
 .contact-form textarea:focus {
   border-color: rgba(255, 102, 0, 0.7);
   box-shadow: 0 0 0 4px rgba(255, 102, 0, 0.15);
+}
+
+/* Better keyboard focus */
+.contact-form input:focus-visible,
+.contact-form textarea:focus-visible,
+.contact-form button:focus-visible {
+  outline: 2px solid rgba(255, 102, 0, 0.85);
+  outline-offset: 3px;
+}
+
+/* Disabled */
+.contact-form input:disabled,
+.contact-form textarea:disabled {
+  background: rgba(0,0,0,0.03);
+  color: rgba(0,0,0,0.6);
+  cursor: not-allowed;
 }
 
 /* Button */
@@ -61,7 +78,7 @@
   font-weight: 900;
   font-size: 1rem;
   cursor: pointer;
-  transition: transform 0.12s ease, filter 0.12s ease, box-shadow 0.2s ease;
+  transition: transform 0.12s ease, filter 0.12s ease, box-shadow 0.2s ease, opacity 0.12s ease;
 }
 
 .contact-form button:hover {
@@ -75,9 +92,24 @@
   box-shadow: none;
 }
 
-.contact-form button:focus-visible {
-  outline: 2px solid #ff6600;
-  outline-offset: 3px;
+.contact-form button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+  filter: none;
+}
+
+/* Error message */
+.contact-error {
+  margin: 0;
+  padding: 0.75rem 0.9rem;
+  border-radius: 12px;
+  color: #b42318;
+  background: rgba(180, 35, 24, 0.08);
+  border: 1px solid rgba(180, 35, 24, 0.16);
+  font-size: 0.92rem;
+  line-height: 1.25;
 }
 
 /* Success message */
@@ -91,6 +123,19 @@
   font-weight: 700;
 }
 
+/* Screen-reader only helper */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 /* Responsive */
 @media (max-width: 520px) {
   .contact-wrapper {
@@ -102,13 +147,4 @@
   .contact-wrapper h1 {
     font-size: 1.6rem;
   }
-}
-.contact-error {
-  margin: 8px 0;
-  padding: 0.75rem 0.9rem;
-  border-radius: 12px;
-  color: #b42318;
-  background: rgba(180, 35, 24, 0.08);
-  border: 1px solid rgba(180, 35, 24, 0.16);
-  font-size: 0.92rem;
 }

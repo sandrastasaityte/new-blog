@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import BlogCard from "./BlogCard";
 import BlogModal from "./BlogModal";
 import Pagination from "./Pagination";
@@ -15,18 +16,19 @@ const safeDateNum = (d) => {
 };
 
 const getId = (p) => p?.id ?? p?._id;
-
 const norm = (s) => String(s || "").trim().toLowerCase();
 
 const Blogs = () => {
-  // If you have like handler in context, add it here (example: toggleLike)
   const { posts, incViews, addComment, toggleLike } = usePosts();
 
   const [selectedId, setSelectedId] = useState(null);
   const [filterTags, setFilterTags] = useState([]);
   const [page, setPage] = useState(1);
 
-  // ✅ Unique tags (normalized display, but keep original case if you want)
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // ✅ Unique tags
   const uniqueTags = useMemo(() => {
     const map = new Map(); // lower -> original
     (posts || []).forEach((p) => {
@@ -40,7 +42,7 @@ const Blogs = () => {
     return Array.from(map.values()).sort((a, b) => a.localeCompare(b));
   }, [posts]);
 
-  // ✅ Filtered posts (AND logic across selected tags, case-insensitive)
+  // ✅ Filtered posts (AND logic)
   const filteredPosts = useMemo(() => {
     if (!filterTags.length) return posts || [];
     const selected = filterTags.map(norm);
@@ -62,7 +64,7 @@ const Blogs = () => {
     return Math.max(1, Math.ceil(sortedPosts.length / PER_PAGE));
   }, [sortedPosts.length]);
 
-  // ✅ When filters change -> go page 1 (stable key)
+  // ✅ Reset page when filters change
   const filterKey = useMemo(
     () => JSON.stringify(filterTags.slice().map(norm).sort()),
     [filterTags]
@@ -72,18 +74,18 @@ const Blogs = () => {
     setPage(1);
   }, [filterKey]);
 
-  // ✅ Clamp page (safe)
+  // ✅ Clamp page
   useEffect(() => {
     setPage((p) => Math.min(Math.max(1, p), totalPages));
   }, [totalPages]);
 
-  // ✅ Current page items
+  // ✅ Page slice
   const pagedPosts = useMemo(() => {
     const start = (page - 1) * PER_PAGE;
     return sortedPosts.slice(start, start + PER_PAGE);
   }, [sortedPosts, page]);
 
-  // ✅ Selected post by id/_id
+  // ✅ Selected post object
   const selectedPost = useMemo(() => {
     if (!selectedId) return null;
     return (
@@ -99,7 +101,6 @@ const Blogs = () => {
     setSelectedId(String(id));
   };
 
-  // ✅ Supports both payload formats: string or {name,text}
   const handleAddComment = (postId, payload) => {
     if (!postId) return;
 
@@ -111,27 +112,58 @@ const Blogs = () => {
     }
 
     if (payload && typeof payload === "object") {
-      const name = String(payload.name || "Anonymous").trim();
       const text = String(payload.text || "").trim();
       if (!text) return;
 
-      // If your context supports object comments, use this:
-      // addComment?.(postId, { name, text });
-
-      // If your context currently expects string only, keep it:
+      // Keep your current string-only context expectation:
       addComment?.(postId, text);
-
-      return;
     }
   };
 
   const handleLike = (postId) => {
     if (!postId) return;
-    toggleLike?.(postId); // rename based on your context implementation
+    toggleLike?.(postId);
   };
 
   const removeTag = (t) => setFilterTags((prev) => prev.filter((x) => x !== t));
   const clearFilters = () => setFilterTags([]);
+
+  // ✅ NEW: read query params (?open= and ?tag=)
+  useEffect(() => {
+    const sp = new URLSearchParams(location.search);
+    const openId = sp.get("open");
+    const tag = sp.get("tag");
+
+    // apply tag filter (single tag)
+    if (tag) {
+      const decoded = decodeURIComponent(tag).trim();
+      if (decoded) setFilterTags([decoded]);
+    }
+
+    // open modal by id
+    if (openId) {
+      const id = decodeURIComponent(openId).trim();
+      if (!id) return;
+
+      // find post
+      const found = (posts || []).find((p) => String(getId(p)) === String(id));
+      if (found) openPost(found);
+    }
+    // only re-run when search/posts changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.search, posts]);
+
+  // ✅ NEW: when modal closes, remove ?open= from URL (keep tag if exists)
+  const closeModal = () => {
+    setSelectedId(null);
+
+    const sp = new URLSearchParams(location.search);
+    if (sp.has("open")) {
+      sp.delete("open");
+      const next = sp.toString();
+      navigate(`/blogs${next ? `?${next}` : ""}`, { replace: true });
+    }
+  };
 
   return (
     <div className="blogs-page">
@@ -204,9 +236,9 @@ const Blogs = () => {
       {selectedPost && (
         <BlogModal
           post={selectedPost}
-          onClose={() => setSelectedId(null)}
+          onClose={closeModal}
           onAddComment={handleAddComment}
-          onLike={handleLike} // ✅ now Like works (if toggleLike exists)
+          onLike={handleLike}
         />
       )}
     </div>

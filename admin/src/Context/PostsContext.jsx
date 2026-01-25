@@ -6,22 +6,25 @@ import React, {
   useState,
   useCallback,
 } from "react";
+import { useAuth } from "./AuthContext";
 
 const PostsContext = createContext(null);
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 const LS_POSTS = "admin_posts_v1";
 
-// Toggle when backend is ready
-const USE_BACKEND = false;
+// ✅ Toggle from .env
+// VITE_USE_POSTS_BACKEND=false  (later true)
+const USE_BACKEND = import.meta.env.VITE_USE_POSTS_BACKEND === "true";
 
 function uid() {
-  // Best available unique id
   if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID();
   return Math.random().toString(36).slice(2) + Date.now().toString(36);
 }
 
 export function PostsProvider({ children }) {
+  const { token } = useAuth();
+
   const [posts, setPosts] = useState(() => {
     try {
       const raw = localStorage.getItem(LS_POSTS);
@@ -34,7 +37,9 @@ export function PostsProvider({ children }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // Only persist local posts when NOT using backend
   useEffect(() => {
+    if (USE_BACKEND) return;
     try {
       localStorage.setItem(LS_POSTS, JSON.stringify(posts));
     } catch {}
@@ -48,12 +53,19 @@ export function PostsProvider({ children }) {
     }
   }, []);
 
+  const authHeaders = useCallback(() => {
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  }, [token]);
+
   const refetch = useCallback(async () => {
     if (!USE_BACKEND) return;
+
     setLoading(true);
     setError("");
     try {
-      const res = await fetch(`${API_URL}/posts`);
+      const res = await fetch(`${API_URL}/posts`, {
+        headers: { ...authHeaders() },
+      });
       const data = await safeJson(res);
       if (!res.ok) throw new Error(data?.message || "Failed to load posts");
       setPosts(Array.isArray(data) ? data : data?.posts || []);
@@ -62,15 +74,14 @@ export function PostsProvider({ children }) {
     } finally {
       setLoading(false);
     }
-  }, [safeJson]);
+  }, [safeJson, authHeaders]);
 
   useEffect(() => {
-    // if backend enabled, load from backend on start
     refetch();
   }, [refetch]);
 
   const addPost = useCallback(
-    async ({ title, content, image, tags }, token) => {
+    async ({ title, content, image, tags }) => {
       setError("");
 
       // Local mode
@@ -96,7 +107,7 @@ export function PostsProvider({ children }) {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...authHeaders(),
         },
         body: JSON.stringify({ title, content, image, tags }),
       });
@@ -106,11 +117,11 @@ export function PostsProvider({ children }) {
       await refetch();
       return data;
     },
-    [safeJson, refetch]
+    [safeJson, refetch, authHeaders]
   );
 
   const deletePost = useCallback(
-    async (id, token) => {
+    async (id) => {
       setError("");
 
       if (!USE_BACKEND) {
@@ -120,51 +131,118 @@ export function PostsProvider({ children }) {
 
       const res = await fetch(`${API_URL}/posts/${id}`, {
         method: "DELETE",
-        headers: {
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
+        headers: { ...authHeaders() },
       });
 
       const data = await safeJson(res);
       if (!res.ok) throw new Error(data?.message || "Delete failed");
       await refetch();
     },
-    [safeJson, refetch]
+    [safeJson, refetch, authHeaders]
   );
 
-  // ✅ local-only helpers (safe even if backend later; you can swap to API)
-  const likePost = useCallback((id) => {
-    setPosts((prev) =>
-      prev.map((p) =>
-        p.id === id ? { ...p, likes: Number(p.likes || 0) + 1 } : p
-      )
-    );
-  }, []);
+  // Like post
+  const likePost = useCallback(
+    async (id) => {
+      setError("");
 
-  const addComment = useCallback((postId, comment) => {
-    const newComment = {
-      id: uid(),
-      name: (comment?.name || "Anonymous").trim(),
-      text: (comment?.text || "").trim(),
-      date: new Date().toISOString(),
-    };
+      if (!USE_BACKEND) {
+        setPosts((prev) =>
+          prev.map((p) =>
+            p.id === id ? { ...p, likes: Number(p.likes || 0) + 1 } : p
+          )
+        );
+        return;
+      }
 
-    if (!newComment.text) return;
+      // Optional backend route: POST /posts/:id/like
+      try {
+        const res = await fetch(`${API_URL}/posts/${id}/like`, {
+          method: "POST",
+          headers: { ...authHeaders() },
+        });
+        const data = await safeJson(res);
+        if (!res.ok) throw new Error(data?.message || "Like failed");
+        await refetch();
+      } catch (e) {
+        // If you don't have /like route yet, you can remove this and keep local-only.
+        setError(e?.message || "Like failed");
+      }
+    },
+    [safeJson, refetch, authHeaders]
+  );
 
-    setPosts((prev) =>
-      prev.map((p) =>
-        p.id === postId
-          ? { ...p, comments: [...(p.comments || []), newComment] }
-          : p
-      )
-    );
-  }, []);
+  // Add comment
+  const addComment = useCallback(
+    async (postId, comment) => {
+      setError("");
 
-  const updatePost = useCallback((postId, patch) => {
-    setPosts((prev) =>
-      prev.map((p) => (p.id === postId ? { ...p, ...patch } : p))
-    );
-  }, []);
+      const newComment = {
+        id: uid(),
+        name: (comment?.name || "Anonymous").trim(),
+        text: (comment?.text || "").trim(),
+        date: new Date().toISOString(),
+      };
+
+      if (!newComment.text) return;
+
+      if (!USE_BACKEND) {
+        setPosts((prev) =>
+          prev.map((p) =>
+            p.id === postId
+              ? { ...p, comments: [...(p.comments || []), newComment] }
+              : p
+          )
+        );
+        return newComment;
+      }
+
+      // Optional backend route: POST /posts/:id/comments
+      const res = await fetch(`${API_URL}/posts/${postId}/comments`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...authHeaders(),
+        },
+        body: JSON.stringify(newComment),
+      });
+
+      const data = await safeJson(res);
+      if (!res.ok) throw new Error(data?.message || "Add comment failed");
+      await refetch();
+      return data;
+    },
+    [safeJson, refetch, authHeaders]
+  );
+
+  const updatePost = useCallback(
+    async (postId, patch) => {
+      setError("");
+
+      if (!USE_BACKEND) {
+        setPosts((prev) =>
+          prev.map((p) => (p.id === postId ? { ...p, ...patch } : p))
+        );
+        return;
+      }
+
+      // Backend route: PUT /posts/:id
+      const res = await fetch(`${API_URL}/posts/${postId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          ...authHeaders(),
+        },
+        body: JSON.stringify(patch),
+      });
+
+      const data = await safeJson(res);
+      if (!res.ok) throw new Error(data?.message || "Update failed");
+      await refetch();
+      return data;
+    },
+    [safeJson, refetch, authHeaders]
+  );
 
   const value = useMemo(
     () => ({
@@ -177,6 +255,7 @@ export function PostsProvider({ children }) {
       likePost,
       addComment,
       updatePost,
+      USE_BACKEND, // helpful for UI badges
     }),
     [posts, loading, error, refetch, addPost, deletePost, likePost, addComment, updatePost]
   );

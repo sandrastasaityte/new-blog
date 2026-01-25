@@ -3,6 +3,10 @@ import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 
 function signToken(user) {
+  if (!process.env.JWT_SECRET) {
+    throw new Error("JWT_SECRET is missing in .env");
+  }
+
   return jwt.sign(
     { id: user._id, username: user.username },
     process.env.JWT_SECRET,
@@ -12,14 +16,17 @@ function signToken(user) {
 
 export async function register(req, res, next) {
   try {
-    const { username, password } = req.body || {};
+    let { username, password } = req.body || {};
+
+    username = String(username || "").trim().toLowerCase();
+    password = String(password || "");
 
     if (!username || !password) {
       res.status(400);
       throw new Error("Username and password are required");
     }
 
-    if (String(password).length < 6) {
+    if (password.length < 6) {
       res.status(400);
       throw new Error("Password must be at least 6 characters");
     }
@@ -33,8 +40,12 @@ export async function register(req, res, next) {
     const passwordHash = await bcrypt.hash(password, 10);
     const user = await User.create({ username, passwordHash });
 
+    // ✅ IMPORTANT: return token so frontend can log in immediately
+    const token = signToken(user);
+
     res.status(201).json({
       message: "Registered successfully",
+      token,
       user: { id: user._id, username: user.username },
     });
   } catch (err) {
@@ -44,7 +55,10 @@ export async function register(req, res, next) {
 
 export async function login(req, res, next) {
   try {
-    const { username, password } = req.body || {};
+    let { username, password } = req.body || {};
+
+    username = String(username || "").trim().toLowerCase();
+    password = String(password || "");
 
     if (!username || !password) {
       res.status(400);

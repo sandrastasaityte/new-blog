@@ -6,14 +6,23 @@ export default function ProtectedRoute({ children }) {
   const { isAuthed, isLoading } = useAuth();
   const location = useLocation();
 
-  if (isLoading) return null; // or a loader component
+  if (isLoading) {
+    return (
+      <div style={{ minHeight: "100vh", display: "grid", placeItems: "center" }}>
+        Checking session…
+      </div>
+    );
+  }
 
   if (!isAuthed) {
     return (
       <Navigate
         to="/login"
         replace
-        state={{ from: location.pathname + location.search }}
+        state={{
+          from:
+            location.pathname + location.search + location.hash,
+        }}
       />
     );
   }

@@ -1,17 +1,21 @@
 /* src/components/layout/sidebar.css */
+
 .admin-sidebar {
   height: 100%;
   display: flex;
   flex-direction: column;
   padding: 14px 12px;
   gap: 12px;
+  box-sizing: border-box;
 }
 
+/* ---------- Brand ---------- */
 .sb-brand {
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 10px 10px;
+  min-width: 0;
 }
 
 .sb-logo {
@@ -23,20 +27,27 @@
   font-weight: 800;
   border: 1px solid rgba(0, 0, 0, 0.1);
   background: rgba(0, 0, 0, 0.03);
+  flex: 0 0 auto;
 }
 
 .sb-name {
   font-weight: 800;
   letter-spacing: 0.2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
+/* ---------- Links ---------- */
 .sb-section {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  margin-top: 4px;
 }
 
 .sb-link {
+  position: relative; /* for active marker + tooltip */
   display: flex;
   align-items: center;
   gap: 10px;
@@ -45,6 +56,10 @@
   color: #111;
   text-decoration: none;
   border: 1px solid transparent;
+
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
 }
 
 .sb-link:hover {
@@ -60,14 +75,10 @@
   width: 22px;
   display: inline-flex;
   justify-content: center;
+  flex: 0 0 auto;
 }
 
-.admin-sidebar.collapsed .sb-name,
-.admin-sidebar.collapsed .sb-link span:last-child,
-.admin-sidebar.collapsed .sb-muted {
-  display: none;
-}
-
+/* ---------- Footer ---------- */
 .sb-footer {
   margin-top: auto;
   padding: 10px;
@@ -76,7 +87,23 @@
 .sb-muted {
   font-size: 0.85rem;
   opacity: 0.6;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
+
+/* ---------- Collapsed state ---------- */
+.admin-sidebar.collapsed .sb-name,
+.admin-sidebar.collapsed .sb-muted {
+  display: none;
+}
+
+/* In your JSX you already hide the label span when collapsed,
+   but keep this safe fallback: */
+.admin-sidebar.collapsed .sb-link span:last-child {
+  display: none;
+}
+
 /* Collapsed: center brand + links */
 .admin-sidebar.collapsed .sb-brand {
   justify-content: center;
@@ -89,12 +116,10 @@
 }
 
 .admin-sidebar.collapsed .sb-ico {
-  width: 34px; /* gives icon a nice tap target */
-}
-.sb-link {
-  position: relative;
+  width: 34px; /* bigger tap target */
 }
 
+/* Active indicator (collapsed) */
 .admin-sidebar.collapsed .sb-link.active::before {
   content: "";
   position: absolute;
@@ -105,6 +130,8 @@
   border-radius: 999px;
   background: rgba(0, 0, 0, 0.35);
 }
+
+/* Tooltip (collapsed) */
 .admin-sidebar.collapsed .sb-link[data-tip]::after {
   content: attr(data-tip);
   position: absolute;
@@ -120,39 +147,8 @@
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.12s ease;
-}
-
-.admin-sidebar.collapsed .sb-link[data-tip]:hover::after,
-.admin-sidebar.collapsed .sb-link[data-tip]:focus-visible::after {
-  opacity: 1;
-}
-.admin-sidebar {
-  box-sizing: border-box;
-}
-
-.sb-section {
-  margin-top: 4px;
-}
-/* Tooltip for collapsed sidebar */
-.admin-sidebar.collapsed .sb-link {
-  position: relative;
-}
-
-.admin-sidebar.collapsed .sb-link[data-tip]::after {
-  content: attr(data-tip);
-  position: absolute;
-  left: calc(100% + 10px);
-  top: 50%;
-  transform: translateY(-50%);
-  white-space: nowrap;
-  font-size: 0.85rem;
-  padding: 6px 10px;
-  border-radius: 10px;
-  background: #111;
-  color: #fff;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.12s ease;
+  z-index: 30;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.22);
 }
 
 .admin-sidebar.collapsed .sb-link[data-tip]:hover::after,

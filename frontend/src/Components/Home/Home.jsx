@@ -12,6 +12,8 @@ const safeDateNum = (d) => {
 
 const getId = (p) => p?.id ?? p?._id;
 
+const norm = (s) => String(s || "").trim().toLowerCase();
+
 const Home = () => {
   const { posts = [] } = usePosts();
   const navigate = useNavigate();
@@ -23,21 +25,28 @@ const Home = () => {
     return sorted.slice(0, 4);
   }, [posts]);
 
+  // ✅ Unique tags (case-insensitive), but keep a nice display value
   const tags = useMemo(() => {
-    const set = new Set();
+    const map = new Map(); // lower -> original display
+
     (posts || []).forEach((b) => {
       (b?.tags || []).forEach((t) => {
-        const tag = String(t || "").trim();
-        if (tag) set.add(tag);
+        const raw = String(t || "").trim();
+        if (!raw) return;
+
+        const key = raw.toLowerCase();
+        if (!map.has(key)) map.set(key, raw);
       });
     });
-    return Array.from(set).sort((a, b) => a.localeCompare(b));
+
+    return Array.from(map.values()).sort((a, b) =>
+      a.localeCompare(b, undefined, { sensitivity: "base" })
+    );
   }, [posts]);
 
   const openBlog = (blog) => {
     const id = getId(blog);
     if (!id) return;
-    // Opens the modal from Blogs page (you'll handle ?open= in Blogs.jsx)
     navigate(`/blogs?open=${encodeURIComponent(String(id))}`);
   };
 
@@ -84,7 +93,7 @@ const Home = () => {
           <div className="tags-list">
             {tags.map((tag) => (
               <button
-                key={tag}
+                key={norm(tag)}
                 type="button"
                 className="tag"
                 onClick={() => goTag(tag)}

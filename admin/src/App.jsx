@@ -1,12 +1,18 @@
 import React from "react";
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+} from "react-router-dom";
 
 import { AuthProvider } from "./Context/AuthContext";
 import { PostsProvider } from "./Context/PostsContext";
 
 import ProtectedRoute from "./Components/ProtectedRoute";
 import AdminLayout from "./Components/Layout/AdminLayout";
-import ErrorBoundary from "./Components/ErrorBoundary"; // adjust path to yours
+import ErrorBoundary from "./Components/ErrorBoundary";
 
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
@@ -35,7 +41,7 @@ function AppRoutes() {
         </Route>
 
         <Route path="/" element={<Navigate to="/admin" replace />} />
-        <Route path="*" element={<Navigate to="/admin" replace />} />
+        <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </ErrorBoundary>
   );

@@ -43,10 +43,10 @@ function normalizeCreatedBlog(created, fallback) {
       (globalThis.crypto?.randomUUID?.() || Date.now())
   );
 
-  return { ...fallback, ...(b || {}), id };
+  return { ...fallback, ...(b && typeof b === "object" ? b : {}), id };
 }
 
-const AddBlogModal = ({ isOpen, onClose }) => {
+export default function AddBlogModal({ isOpen, onClose }) {
   const { addPost } = usePosts();
 
   const overlayRef = useRef(null);
@@ -57,7 +57,6 @@ const AddBlogModal = ({ isOpen, onClose }) => {
   const [submitting, setSubmitting] = useState(false);
   const [apiError, setApiError] = useState("");
 
-  const token = localStorage.getItem("token");
   const tagsArray = useMemo(() => parseTags(form.tags), [form.tags]);
 
   useEffect(() => {
@@ -78,12 +77,14 @@ const AddBlogModal = ({ isOpen, onClose }) => {
       document.body.style.overflow = prevOverflow;
       document.removeEventListener("keydown", onEsc);
 
+      // reset on close
       setApiError("");
       setErrors({});
       setForm(initialForm);
       setSubmitting(false);
     };
-  }, [isOpen, onClose, submitting]);
+    // ✅ do NOT include `submitting` here (prevents unwanted cleanup/resets)
+  }, [isOpen, onClose]);
 
   const setField = (key) => (e) => {
     const value = e.target.value;
@@ -94,7 +95,6 @@ const AddBlogModal = ({ isOpen, onClose }) => {
 
   const validate = () => {
     const next = {};
-
     const title = form.title.trim();
     const content = form.content.trim();
 
@@ -114,7 +114,7 @@ const AddBlogModal = ({ isOpen, onClose }) => {
     }
 
     const ratingNum = Number(form.rating);
-    if (Number.isNaN(ratingNum) || ratingNum < 0 || ratingNum > 5) {
+    if (!Number.isFinite(ratingNum) || ratingNum < 0 || ratingNum > 5) {
       next.rating = "Rating must be between 0 and 5.";
     }
 
@@ -133,6 +133,7 @@ const AddBlogModal = ({ isOpen, onClose }) => {
   const onStarKeyDown = (star) => (e) => {
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
+      if (submitting) return;
       setForm((p) => ({ ...p, rating: star }));
       setErrors((prev) => ({ ...prev, rating: "" }));
       setApiError("");
@@ -145,6 +146,8 @@ const AddBlogModal = ({ isOpen, onClose }) => {
 
     setApiError("");
 
+    // ✅ read token at submit time (no stale token)
+    const token = localStorage.getItem("token");
     if (!token) {
       setApiError("Please log in first.");
       return;
@@ -181,6 +184,8 @@ const AddBlogModal = ({ isOpen, onClose }) => {
 
   if (!isOpen) return null;
 
+  const tokenExists = !!localStorage.getItem("token");
+
   return (
     <div
       className="addblog-modal-overlay"
@@ -209,7 +214,7 @@ const AddBlogModal = ({ isOpen, onClose }) => {
         </div>
 
         <div className="addblog-body">
-          {!token ? (
+          {!tokenExists ? (
             <div className="form-error">Please log in to add a blog.</div>
           ) : apiError ? (
             <div className="form-error">{apiError}</div>
@@ -244,13 +249,9 @@ const AddBlogModal = ({ isOpen, onClose }) => {
 
             <label className="field">
               <span>Tags</span>
-              <input
-                value={form.tags}
-                onChange={setField("tags")}
-                disabled={submitting}
-              />
+              <input value={form.tags} onChange={setField("tags")} disabled={submitting} />
               {tagsArray.length > 0 && (
-                <div className="tag-preview">
+                <div className="tag-preview" aria-label="Parsed tags">
                   {tagsArray.map((t) => (
                     <span key={t.toLowerCase()} className="tag-chip">
                       {t}
@@ -262,36 +263,48 @@ const AddBlogModal = ({ isOpen, onClose }) => {
 
             <label className={`field ${errors.image ? "is-error" : ""}`}>
               <span>Image URL</span>
-              <input
-                value={form.image}
-                onChange={setField("image")}
-                disabled={submitting}
-              />
+              <input value={form.image} onChange={setField("image")} disabled={submitting} />
               {errors.image && <div className="field-error">{errors.image}</div>}
             </label>
 
             <div className="image-preview">
               <img
-                src={form.image || PLACEHOLDER_IMG}
-                onError={(e) => (e.currentTarget.src = PLACEHOLDER_IMG)}
+                src={form.image.trim() || PLACEHOLDER_IMG}
                 alt=""
+                loading="lazy"
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = PLACEHOLDER_IMG;
+                }}
               />
             </div>
 
+            {/* Optional rating UI (if you want it in modal too) */}
+            <div className={`rating-input ${errors.rating ? "is-error" : ""}`}>
+              <label>Rating:</label>
+              <div className="stars" aria-label={`Rating ${form.rating} out of 5`}>
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <span
+                    key={star}
+                    className={star <= form.rating ? "star filled" : "star"}
+                    onClick={() => !submitting && setForm((p) => ({ ...p, rating: star }))}
+                    onKeyDown={onStarKeyDown(star)}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`${star} star`}
+                  >
+                    ★
+                  </span>
+                ))}
+              </div>
+              {errors.rating && <div className="field-error">{errors.rating}</div>}
+            </div>
+
             <div className="form-actions">
-              <button
-                type="button"
-                className="btn secondary"
-                onClick={safeClose}
-                disabled={submitting}
-              >
+              <button type="button" className="btn secondary" onClick={safeClose} disabled={submitting}>
                 Cancel
               </button>
-              <button
-                type="submit"
-                className="btn primary"
-                disabled={submitting || !token}
-              >
+              <button type="submit" className="btn primary" disabled={submitting || !tokenExists}>
                 {submitting ? "Saving..." : "Add Blog"}
               </button>
             </div>
@@ -300,6 +313,4 @@ const AddBlogModal = ({ isOpen, onClose }) => {
       </div>
     </div>
   );
-};
-
-export default AddBlogModal;
+}

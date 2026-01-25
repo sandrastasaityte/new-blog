@@ -1,11 +1,16 @@
+/* src/components/layout/topbar.css */
+
 .admin-topbar {
   height: 64px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 16px;
+  padding: 0 14px;
   background: #ffffff;
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
 .tb-left {
@@ -16,9 +21,11 @@
 }
 
 .tb-title {
-  font-weight: 900;
+  font-weight: 800;
   font-size: 1.05rem;
-  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .tb-right {
@@ -28,80 +35,66 @@
 }
 
 .tb-icon-btn {
-  width: 38px;
-  height: 38px;
-  border-radius: 10px;
-  border: 1px solid rgba(0, 0, 0, 0.12);
+  height: 40px;
+  width: 40px;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
   background: #fff;
   cursor: pointer;
+  display: grid;
+  place-items: center;
+  font-size: 18px;
 }
 
 .tb-icon-btn:hover {
-  background: rgba(0, 0, 0, 0.04);
+  background: rgba(0, 0, 0, 0.03);
 }
 
 .tb-pill {
   padding: 8px 12px;
   border-radius: 999px;
-  background: rgba(0, 0, 0, 0.05);
-  font-size: 0.9rem;
-  font-weight: 800;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: rgba(0, 0, 0, 0.02);
+  font-size: 0.92rem;
+  white-space: nowrap;
 }
 
 .tb-btn {
-  padding: 9px 12px;
+  height: 40px;
+  padding: 0 12px;
   border-radius: 12px;
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: #111;
+  color: #fff;
   cursor: pointer;
-  font-weight: 900;
+  font-weight: 700;
 }
 
 .tb-btn:hover {
-  background: rgba(0, 0, 0, 0.04);
+  opacity: 0.92;
 }
 
+/* Desktop/mobile visibility */
 .tb-mobile-only {
   display: none;
 }
 .tb-desktop-only {
-  display: inline-flex;
+  display: inline-grid;
 }
 
 @media (max-width: 980px) {
   .tb-mobile-only {
-    display: inline-flex;
+    display: inline-grid;
   }
   .tb-desktop-only {
     display: none;
   }
 }
-.tb-icon-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;         /* makes ☰ and «/» look consistent */
-  line-height: 1;
-  user-select: none;
-  -webkit-tap-highlight-color: transparent;
-}
+
+/* Nice keyboard focus */
 .tb-icon-btn:focus-visible,
 .tb-btn:focus-visible {
   outline: none;
   box-shadow: 0 0 0 3px rgba(0, 119, 255, 0.25);
   border-color: rgba(0, 119, 255, 0.35);
-}
-.tb-title {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-@media (max-width: 420px) {
-  .tb-pill {
-    display: none;
-  }
-}
-.tb-icon-btn:active,
-.tb-btn:active {
-  transform: translateY(1px);
 }

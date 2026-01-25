@@ -1,61 +1,63 @@
-/* =========================
-   SIGN UP PAGE WRAPPER
-========================= */
+/* SignUp.css */
+
+/* Page/Modal Wrapper */
 .signup-wrapper {
-  min-height: 80vh;
   display: flex;
   justify-content: center;
   align-items: center;
+  min-height: 80vh;
   padding: 24px 16px;
-  background: radial-gradient(circle at top, #fff 0%, #f7f7f7 50%, #f0f0f0 100%);
+  background: radial-gradient(circle at top, #fff 0%, #f5f5f5 45%, #f0f0f0 100%);
+  background-attachment: fixed;
 }
 
-/* =========================
-   FORM CARD
-========================= */
+/* Card */
 .signup-form {
   width: 100%;
   max-width: 420px;
   background: #fff;
   padding: 34px 28px;
   border-radius: 18px;
-  box-shadow: 0 18px 55px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(0, 0, 0, 0.05);
+  box-shadow: 0 18px 55px rgba(0, 0, 0, 0.10);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  text-align: center;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, Arial, sans-serif;
 }
 
-/* Title */
 .signup-form h2 {
-  text-align: center;
-  margin-bottom: 20px;
-  font-size: 1.9rem;
-  font-weight: 900;
+  margin: 0 0 18px;
   color: #ff6600;
+  font-size: 1.8rem;
+  font-weight: 900;
 }
 
-/* =========================
-   INPUTS
-========================= */
+/* Inputs */
 .signup-form input {
   width: 100%;
   padding: 12px 14px;
   margin-bottom: 14px;
+  border: 1px solid rgba(0, 0, 0, 0.14);
   border-radius: 12px;
-  border: 1px solid rgba(0,0,0,0.15);
   font-size: 15px;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+  background: #fff;
+  line-height: 1.2;
 }
 
 .signup-form input:focus {
   border-color: #ff6600;
-  outline: none;
-  box-shadow: 0 0 0 4px rgba(255, 102, 0, 0.12);
+  box-shadow: 0 0 0 4px rgba(255, 102, 0, 0.14);
 }
 
-/* =========================
-   ERROR MESSAGE
-========================= */
-.signup-form .error {
+.signup-form input:disabled {
+  background: rgba(0, 0, 0, 0.03);
+  cursor: not-allowed;
+  opacity: 0.85;
+}
+
+/* Error */
+.error {
   margin: 6px 0 12px;
   padding: 10px 12px;
   border-radius: 12px;
@@ -65,65 +67,98 @@
   font-size: 0.9rem;
 }
 
-/* =========================
-   BUTTON
-========================= */
-.signup-form button {
+/* Button */
+.signup-form button[type="submit"] {
   width: 100%;
-  padding: 12px;
-  border-radius: 14px;
-  border: none;
-  cursor: pointer;
+  padding: 12px 14px;
   background: linear-gradient(135deg, #ff6600, #ff8a3d);
   color: #fff;
-  font-weight: 900;
   font-size: 16px;
+  font-weight: 900;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: transform 0.12s ease, filter 0.12s ease, opacity 0.12s ease;
   margin-top: 6px;
-  transition: transform 0.15s ease, opacity 0.15s ease;
 }
 
-.signup-form button:hover {
+.signup-form button[type="submit"]:hover {
+  filter: brightness(1.03);
   transform: translateY(-1px);
-  opacity: 0.96;
 }
 
-.signup-form button:disabled {
+.signup-form button[type="submit"]:active {
+  transform: translateY(0);
+}
+
+.signup-form button[type="submit"]:disabled {
   opacity: 0.7;
   cursor: not-allowed;
   transform: none;
 }
 
-/* =========================
-   SWITCH LOGIN TEXT
-========================= */
+/* Switch line */
 .signup-switch {
-  text-align: center;
-  margin-top: 16px;
-  font-size: 0.95rem;
+  margin-top: 14px;
+  font-size: 14px;
   color: #666;
+  line-height: 1.5;
 }
 
-.signup-switch a,
-.signup-switch button {
-  color: #ff6600;
-  font-weight: 800;
-  background: none;
+/* Matches your Login toggle-link style */
+.toggle-link {
   border: none;
+  background: transparent;
+  color: #ff6600;
+  font-weight: 900;
   cursor: pointer;
+  padding: 0 2px;
   text-decoration: underline;
   text-underline-offset: 3px;
 }
 
-/* =========================
-   MOBILE RESPONSIVE
-========================= */
+.toggle-link:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* Focus-visible polish */
+.signup-form button:focus-visible,
+.toggle-link:focus-visible,
+.signup-form input:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(255, 102, 0, 0.18);
+  border-radius: 12px;
+}
+
+/* Global box sizing (safe) */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* Reduce motion */
+@media (prefers-reduced-motion: reduce) {
+  .signup-form button {
+    transition: none;
+  }
+  .signup-form button:hover,
+  .signup-form button:active {
+    transform: none;
+  }
+  .signup-form input {
+    transition: none;
+  }
+}
+
+/* Mobile */
 @media (max-width: 420px) {
   .signup-form {
     padding: 26px 18px;
     border-radius: 14px;
   }
-
   .signup-form h2 {
-    font-size: 1.6rem;
+    font-size: 1.55rem;
   }
 }

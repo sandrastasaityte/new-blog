@@ -21,23 +21,16 @@ const parseTags = (input) => {
 };
 
 const getId = (p) => p?.id ?? p?._id;
-
 const clamp = (n, min, max) => Math.min(max, Math.max(min, n));
 
-const BlogForm = ({
-  onSubmit,
-  editingPost,
-  onCancel,
-  submitLabel,
-  busy = false,
-}) => {
+const BlogForm = ({ onSubmit, editingPost, onCancel, submitLabel, busy = false }) => {
   const [form, setForm] = useState({
     title: "",
     content: "",
     tags: "",
     imageUrl: "",
-    imageFile: null,     // UI-only unless you implement upload
-    imagePreview: "",    // URL or blob
+    imageFile: null,  // UI-only unless you implement upload
+    imagePreview: "", // URL or blob
     author: "Admin",
     rating: 0,
   });
@@ -66,9 +59,7 @@ const BlogForm = ({
   useEffect(() => {
     // revoke any existing blob URL when switching modes/posts
     if (blobUrlRef.current) {
-      try {
-        URL.revokeObjectURL(blobUrlRef.current);
-      } catch {}
+      try { URL.revokeObjectURL(blobUrlRef.current); } catch {}
       blobUrlRef.current = "";
     }
 
@@ -77,13 +68,15 @@ const BlogForm = ({
       return;
     }
 
+    const image = editingPost.image || "";
+
     setForm({
       title: editingPost.title || "",
       content: editingPost.content || "",
       tags: Array.isArray(editingPost.tags) ? editingPost.tags.join(", ") : "",
-      imageUrl: editingPost.image || "",
+      imageUrl: image,
       imageFile: null,
-      imagePreview: editingPost.image || "",
+      imagePreview: image,
       author: editingPost.author || "Admin",
       rating: Number(editingPost.rating || 0),
     });
@@ -95,9 +88,7 @@ const BlogForm = ({
   useEffect(() => {
     return () => {
       if (blobUrlRef.current) {
-        try {
-          URL.revokeObjectURL(blobUrlRef.current);
-        } catch {}
+        try { URL.revokeObjectURL(blobUrlRef.current); } catch {}
       }
     };
   }, []);
@@ -108,12 +99,19 @@ const BlogForm = ({
     setForm((p) => {
       const next = { ...p, [key]: value };
 
-      // If user starts typing a URL, prefer URL preview over blob preview
       if (key === "imageUrl") {
-        next.imagePreview = value.trim() || p.imagePreview;
+        const url = value.trim();
+
+        // If user types a URL -> show it immediately
+        if (url) {
+          next.imagePreview = url;
+        } else {
+          // If URL cleared: keep file preview if exists, else fall back to editing image (or empty)
+          if (p.imageFile && blobUrlRef.current) next.imagePreview = blobUrlRef.current;
+          else next.imagePreview = editingPost?.image || "";
+        }
       }
 
-      // Keep rating numeric (and clamped)
       if (key === "rating") {
         const num = Number(value);
         next.rating = Number.isFinite(num) ? clamp(num, 0, 5) : 0;
@@ -129,11 +127,8 @@ const BlogForm = ({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // revoke previous blob url to avoid leaks
     if (blobUrlRef.current) {
-      try {
-        URL.revokeObjectURL(blobUrlRef.current);
-      } catch {}
+      try { URL.revokeObjectURL(blobUrlRef.current); } catch {}
       blobUrlRef.current = "";
     }
 
@@ -144,7 +139,7 @@ const BlogForm = ({
       ...prev,
       imageFile: file,
       imagePreview: blobUrl,
-      // optional: clear url when file is chosen
+      // Optional: clear URL when file is chosen:
       // imageUrl: "",
     }));
   };
@@ -193,7 +188,6 @@ const BlogForm = ({
       rating: clamp(Number(form.rating) || 0, 0, 5),
     };
 
-    // imageFile is UI-only unless you implement multipart upload
     onSubmit?.(payload, { imageFile: form.imageFile });
 
     // Clear only if adding
@@ -276,7 +270,10 @@ const BlogForm = ({
           src={form.imagePreview}
           alt="Preview"
           className="image-preview"
-          onError={(e) => (e.currentTarget.src = PLACEHOLDER_IMG)}
+          onError={(e) => {
+            e.currentTarget.onerror = null;
+            e.currentTarget.src = PLACEHOLDER_IMG;
+          }}
         />
       ) : null}
 

@@ -34,16 +34,24 @@ export default function Login() {
   }, [loc.state]);
 
   const canSubmit = username.trim() && password.trim() && !loading;
-
   const onSubmit = async (e) => {
     e.preventDefault();
-    if (!canSubmit) return;
+
+    const u = username.trim();
+    const p = password.trim();
+
+    if (!u || !p) {
+      setErr("Enter username and password.");
+      return;
+    }
+
+    if (loading) return;
 
     setErr("");
     setLoading(true);
 
     try {
-      const res = await login({ username, password });
+      const res = await login({ username: u, password: p });
       if (!res?.ok) {
         setErr(res?.message || "Login failed");
         return;

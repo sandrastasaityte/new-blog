@@ -11,6 +11,33 @@ const toNum = (v, fallback = 0) => {
 
 const clamp = (n, min, max) => Math.min(max, Math.max(min, n));
 
+const uniqStrings = (arr) => {
+  const out = [];
+  const seen = new Set();
+  (Array.isArray(arr) ? arr : []).forEach((x) => {
+    const s = String(x || "").trim();
+    if (!s) return;
+    const k = s.toLowerCase();
+    if (seen.has(k)) return;
+    seen.add(k);
+    out.push(s);
+  });
+  return out;
+};
+
+const getUserKey = (userKey) => {
+  // userKey can be passed in (preferred), otherwise read from localStorage user
+  if (userKey) return String(userKey).trim();
+  try {
+    const raw = localStorage.getItem("user");
+    if (!raw) return "";
+    const u = JSON.parse(raw);
+    return String(u?.id || u?._id || u?.email || "").trim();
+  } catch {
+    return "";
+  }
+};
+
 /* Normalize posts so UI never crashes */
 export function normalize(arr) {
   const iso = nowIso();
@@ -43,6 +70,9 @@ export function normalize(arr) {
           .filter(Boolean)
       : [];
 
+    // ✅ likedBy array (backward compatible)
+    const likedBy = uniqStrings(p?.likedBy || []);
+
     return {
       ...p,
       id,
@@ -51,7 +81,11 @@ export function normalize(arr) {
       tags,
       comments,
       views: toNum(p?.views, 0),
-      likes: toNum(p?.likes, 0),
+
+      // ✅ likes always consistent with likedBy length (fallback to numeric if no likedBy)
+      likedBy,
+      likes: likedBy.length ? likedBy.length : toNum(p?.likes, 0),
+
       rating: clamp(toNum(p?.rating, 0), 0, 5),
       author: String(p?.author || "Admin").trim(),
       date: p?.date || today(),
@@ -102,6 +136,7 @@ export function addPost(posts, post) {
       date: p.date ?? iso.slice(0, 10),
       views: p.views ?? 0,
       likes: p.likes ?? 0,
+      likedBy: p.likedBy ?? [],
       comments: p.comments ?? [],
     },
   ])[0];
@@ -135,7 +170,7 @@ export function incViews(posts, id) {
   );
 }
 
-/* Increment likes */
+/* Increment likes (legacy/simple) */
 export function incLikes(posts, id) {
   const list = Array.isArray(posts) ? posts : [];
   return normalize(
@@ -144,6 +179,32 @@ export function incLikes(posts, id) {
         ? { ...p, likes: toNum(p.likes, 0) + 1 }
         : p
     )
+  );
+}
+
+/* ✅ Toggle like (real like/unlike per user) */
+export function toggleLike(posts, id, userKey) {
+  const list = Array.isArray(posts) ? posts : [];
+  const who = getUserKey(userKey);
+  if (!who) return normalize(list); // no logged in user => do nothing
+
+  return normalize(
+    list.map((p) => {
+      if (String(p.id) !== String(id)) return p;
+
+      const likedBy = uniqStrings(p?.likedBy || []);
+      const exists = likedBy.some((x) => x.toLowerCase() === who.toLowerCase());
+
+      const nextLikedBy = exists
+        ? likedBy.filter((x) => x.toLowerCase() !== who.toLowerCase())
+        : [...likedBy, who];
+
+      return {
+        ...p,
+        likedBy: nextLikedBy,
+        likes: nextLikedBy.length,
+      };
+    })
   );
 }
 

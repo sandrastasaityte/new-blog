@@ -1,3 +1,5 @@
+/* Pagination.css */
+
 .pagination {
   display: flex;
   align-items: center;
@@ -19,12 +21,12 @@
   min-height: 40px;
 }
 
-.pagination button:hover {
+.pagination button:hover:not(:disabled) {
   filter: brightness(0.98);
   transform: translateY(-1px);
 }
 
-.pagination button:active {
+.pagination button:active:not(:disabled) {
   transform: translateY(0);
 }
 
@@ -34,175 +36,7 @@
   transform: none;
 }
 
-.pagination button.active {
-  border-color: rgba(0,0,0,0.2);
-  background: rgba(0,0,0,0.04);
-  box-shadow: 0 0 0 4px rgba(0,0,0,0.06);
-}
-
-.dots {
-  padding: 0.35rem 0.45rem;
-  opacity: 0.55;
-  user-select: none;
-}
-
-.pagination button:focus-visible {
-  outline: 2px solid rgba(0, 13, 255, 0.7);
-  outline-offset: 3px;
-}
-
-/* Screen-reader only */
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
-.pagination {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  justify-content: center;
-  margin: 18px 0 6px;
-  flex-wrap: wrap;
-}
-
-.pagination button {
-  padding: 0.55rem 0.75rem;
-  border-radius: 12px;
-  border: 1px solid rgba(0,0,0,0.12);
-  background: #fff;
-  cursor: pointer;
-  font-weight: 700;
-  transition: transform 0.12s ease, filter 0.12s ease, opacity 0.12s ease;
-  min-width: 40px;
-  min-height: 40px;
-}
-
-.pagination button:hover {
-  filter: brightness(0.98);
-  transform: translateY(-1px);
-}
-
-.pagination button:active {
-  transform: translateY(0);
-}
-
-.pagination button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.pagination button.active {
-  border-color: rgba(0,0,0,0.2);
-  background: rgba(0,0,0,0.04);
-  box-shadow: 0 0 0 4px rgba(0,0,0,0.06);
-}
-
-.dots {
-  padding: 0.35rem 0.45rem;
-  opacity: 0.55;
-  user-select: none;
-}
-
-.pagination button:focus-visible {
-  outline: 2px solid rgba(0, 13, 255, 0.7);
-  outline-offset: 3px;
-}
-
-/* Screen-reader only */
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
-.pagination {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  justify-content: center;
-  margin: 18px 0 6px;
-  flex-wrap: wrap;
-}
-
-.pagination button {
-  padding: 0.55rem 0.75rem;
-  border-radius: 12px;
-  border: 1px solid rgba(0,0,0,0.12);
-  background: #fff;
-  cursor: pointer;
-  font-weight: 700;
-  transition: transform 0.12s ease, filter 0.12s ease, opacity 0.12s ease;
-  min-width: 40px;
-  min-height: 40px;
-}
-
-.pagination button:hover {
-  filter: brightness(0.98);
-  transform: translateY(-1px);
-}
-
-.pagination button:active {
-  transform: translateY(0);
-}
-
-.pagination button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.pagination button.active {
-  border-color: rgba(0,0,0,0.2);
-  background: rgba(0,0,0,0.04);
-  box-shadow: 0 0 0 4px rgba(0,0,0,0.06);
-}
-
-.dots {
-  padding: 0.35rem 0.45rem;
-  opacity: 0.55;
-  user-select: none;
-}
-
-.pagination button:focus-visible {
-  outline: 2px solid rgba(0, 13, 255, 0.7);
-  outline-offset: 3px;
-}
-
-/* Screen-reader only */
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
-@media (max-width: 420px) {
-  .pagination {
-    gap: 6px;
-  }
-  .pagination button {
-    padding: 0.5rem 0.65rem;
-    min-width: 38px;
-    min-height: 38px;
-  }
-}
+/* Active page (orange theme) */
 .pagination button.active {
   border-color: rgba(255, 102, 0, 0.35);
   background: rgba(255, 102, 0, 0.10);
@@ -210,16 +44,32 @@
   font-weight: 900;
 }
 
+.dots {
+  padding: 0.35rem 0.45rem;
+  opacity: 0.55;
+  user-select: none;
+}
+
+/* Focus (orange theme) */
 .pagination button:focus-visible {
   outline: 2px solid rgba(255, 102, 0, 0.85);
   outline-offset: 3px;
 }
 
-.pagination button:disabled:hover {
-  filter: none;
-  transform: none;
+/* Screen-reader only */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
+/* Mobile */
 @media (max-width: 420px) {
   .pagination {
     gap: 6px;

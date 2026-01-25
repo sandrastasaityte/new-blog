@@ -4,6 +4,9 @@ import "./BlogModal.css";
 
 const PLACEHOLDER_IMG = "https://via.placeholder.com/600x300";
 
+const FOCUSABLE =
+  'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
 const safeDateLabel = (d) => {
   const t = new Date(d);
   return Number.isNaN(t.getTime()) ? "—" : t.toLocaleDateString();
@@ -14,52 +17,81 @@ const normalizeComments = (comments) => {
   return (comments || [])
     .map((c) => {
       if (typeof c === "string") return { name: "Anonymous", text: c };
-      if (c && typeof c === "object") {
-        return { name: c.name || "Anonymous", text: c.text || "" };
-      }
+      if (c && typeof c === "object") return { name: c.name || "Anonymous", text: c.text || "" };
       return null;
     })
     .filter((c) => c && String(c.text || "").trim());
 };
 
 const getId = (p) => p?.id ?? p?._id;
-
 const clamp = (n, min, max) => Math.min(max, Math.max(min, n));
 
-const BlogModal = ({ post, onClose, onAddComment, onLike }) => {
-  const contentRef = useRef(null);
+export default function BlogModal({ post, onClose, onAddComment, onLike }) {
+  const modalRef = useRef(null);
   const lastActiveRef = useRef(null);
+  const overlayRef = useRef(null);
 
-  const postId = useMemo(() => String(getId(post) ?? ""), [post?.id, post?._id]);
-  const comments = useMemo(
-    () => normalizeComments(post?.comments),
-    [post?.comments]
-  );
+  const postId = useMemo(() => String(getId(post) ?? ""), [post]);
+  const comments = useMemo(() => normalizeComments(post?.comments), [post?.comments]);
 
   const titleId = `blogmodal-title-${postId || "x"}`;
   const descId = `blogmodal-desc-${postId || "x"}`;
 
-  // Close on ESC + lock scroll + focus mgmt
   useEffect(() => {
     if (!post) return;
 
     lastActiveRef.current = document.activeElement;
 
     const t = setTimeout(() => {
-      contentRef.current?.focus?.();
+      // focus first focusable; fallback to modal container
+      const root = modalRef.current;
+      const first = root?.querySelector?.(FOCUSABLE);
+      (first || root)?.focus?.();
     }, 0);
-
-    const onEsc = (e) => {
-      if (e.key === "Escape") onClose?.();
-    };
-    document.addEventListener("keydown", onEsc);
 
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
+    const onKeyDown = (e) => {
+      if (e.key === "Escape") {
+        onClose?.();
+        return;
+      }
+
+      // basic focus trap
+      if (e.key !== "Tab") return;
+
+      const root = modalRef.current;
+      if (!root) return;
+
+      const focusables = Array.from(root.querySelectorAll(FOCUSABLE)).filter(
+        (el) => !el.hasAttribute("disabled") && el.getAttribute("aria-hidden") !== "true" && el.offsetParent !== null
+      );
+      if (!focusables.length) return;
+
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      const active = document.activeElement;
+      const inside = root.contains(active);
+
+      if (e.shiftKey) {
+        if (!inside || active === first) {
+          e.preventDefault();
+          last.focus();
+        }
+      } else {
+        if (!inside || active === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    };
+
+    document.addEventListener("keydown", onKeyDown);
+
     return () => {
       clearTimeout(t);
-      document.removeEventListener("keydown", onEsc);
+      document.removeEventListener("keydown", onKeyDown);
       document.body.style.overflow = prevOverflow;
       lastActiveRef.current?.focus?.();
     };
@@ -75,8 +107,8 @@ const BlogModal = ({ post, onClose, onAddComment, onLike }) => {
     });
   };
 
-  const handleOverlayClick = (e) => {
-    if (e.target === e.currentTarget) onClose?.();
+  const handleOverlayMouseDown = (e) => {
+    if (e.target === overlayRef.current) onClose?.();
   };
 
   if (!post) return null;
@@ -96,7 +128,8 @@ const BlogModal = ({ post, onClose, onAddComment, onLike }) => {
   return (
     <div
       className="blogmodal-overlay"
-      onClick={handleOverlayClick}
+      ref={overlayRef}
+      onMouseDown={handleOverlayMouseDown}
       role="presentation"
     >
       <div
@@ -105,9 +138,9 @@ const BlogModal = ({ post, onClose, onAddComment, onLike }) => {
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={descId}
-        onClick={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
         tabIndex={-1}
-        ref={contentRef}
+        ref={modalRef}
       >
         <button
           className="blogmodal-close"
@@ -124,6 +157,7 @@ const BlogModal = ({ post, onClose, onAddComment, onLike }) => {
           className="blogmodal-img"
           loading="lazy"
           onError={(e) => {
+            e.currentTarget.onerror = null;
             e.currentTarget.src = PLACEHOLDER_IMG;
           }}
         />
@@ -149,15 +183,11 @@ const BlogModal = ({ post, onClose, onAddComment, onLike }) => {
 
           <p className="blogmodal-rating">⭐ {rating.toFixed(1)}/5</p>
 
-          <p className="blogmodal-text">
-            {content || "No content available."}
-          </p>
+          <p className="blogmodal-text">{content || "No content available."}</p>
         </div>
 
         <CommentSection comments={comments} onAddComment={handleComment} />
       </div>
     </div>
   );
-};
-
-export default BlogModal;
+}

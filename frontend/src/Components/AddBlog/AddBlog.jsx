@@ -7,7 +7,7 @@ import { createBlog } from "../../lib/blogApi";
 const PLACEHOLDER_IMG = "https://via.placeholder.com/600x300";
 
 function parseTags(input) {
-  const raw = input
+  const raw = (input || "")
     .split(",")
     .map((t) => t.trim())
     .filter(Boolean);
@@ -24,25 +24,33 @@ function parseTags(input) {
   return out;
 }
 
+function isValidHttpUrl(value) {
+  if (!value) return true; // empty is allowed
+  try {
+    const u = new URL(value);
+    return u.protocol === "http:" || u.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
 function normalizeCreatedBlog(created, fallbackPayload) {
   // backend may return created directly or { blog: created }
   const b = created?.blog ?? created ?? fallbackPayload;
 
   // normalize id for frontend
-  const id = b.id ?? b._id ?? fallbackPayload.id;
+  const id = b?.id ?? b?._id ?? fallbackPayload?.id;
 
   return {
     ...fallbackPayload,
-    ...b,
+    ...(b && typeof b === "object" ? b : {}),
     id,
   };
 }
 
-const AddBlog = () => {
+export default function AddBlog() {
   const navigate = useNavigate();
   const { addPost } = usePosts();
-
-  const token = localStorage.getItem("token");
 
   const [form, setForm] = useState({
     title: "",
@@ -69,23 +77,23 @@ const AddBlog = () => {
   const validate = () => {
     const next = {};
 
-    if (!form.title.trim()) next.title = "Title is required.";
-    else if (form.title.trim().length < 4)
-      next.title = "Title must be at least 4 characters.";
-
-    if (!form.content.trim()) next.content = "Content is required.";
-    else if (form.content.trim().length < 20)
-      next.content = "Content must be at least 20 characters.";
-
+    const title = form.title.trim();
+    const content = form.content.trim();
     const ratingNum = Number(form.rating);
-    if (Number.isNaN(ratingNum) || ratingNum < 0 || ratingNum > 5) {
+    const image = form.image.trim();
+
+    if (!title) next.title = "Title is required.";
+    else if (title.length < 4) next.title = "Title must be at least 4 characters.";
+
+    if (!content) next.content = "Content is required.";
+    else if (content.length < 20) next.content = "Content must be at least 20 characters.";
+
+    if (!Number.isFinite(ratingNum) || ratingNum < 0 || ratingNum > 5) {
       next.rating = "Rating must be between 0 and 5.";
     }
 
-    if (form.image.trim()) {
-      const url = form.image.trim();
-      const ok = /^https?:\/\/.+/i.test(url);
-      if (!ok) next.image = "Image must be a valid URL starting with http/https.";
+    if (image && !isValidHttpUrl(image)) {
+      next.image = "Image must be a valid URL starting with http/https.";
     }
 
     setErrors(next);
@@ -94,11 +102,16 @@ const AddBlog = () => {
 
   const handleCancel = () => navigate("/blogs");
 
+  const setRating = (star) => {
+    setForm((p) => ({ ...p, rating: star }));
+    setErrors((prev) => ({ ...prev, rating: "" }));
+    setApiError("");
+  };
+
   const onStarKeyDown = (star) => (e) => {
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
-      setForm((p) => ({ ...p, rating: star }));
-      setErrors((prev) => ({ ...prev, rating: "" }));
+      if (!submitting) setRating(star);
     }
   };
 
@@ -108,6 +121,8 @@ const AddBlog = () => {
 
     setApiError("");
 
+    // ✅ read token at submit time (avoids stale token)
+    const token = localStorage.getItem("token");
     if (!token) {
       setApiError("You must be logged in to add a blog.");
       return;
@@ -117,7 +132,6 @@ const AddBlog = () => {
 
     setSubmitting(true);
 
-    // Send ISO date; backend stores Date nicely
     const nowIso = new Date().toISOString();
 
     const payload = {
@@ -135,10 +149,17 @@ const AddBlog = () => {
       const created = await createBlog(payload, token);
       const normalized = normalizeCreatedBlog(created, payload);
 
-      // keep your UI state in sync
       addPost?.(normalized);
 
-      setForm({ title: "", content: "", tags: "", image: "", author: "Admin", rating: 0 });
+      setForm({
+        title: "",
+        content: "",
+        tags: "",
+        image: "",
+        author: "Admin",
+        rating: 0,
+      });
+
       navigate("/blogs");
     } catch (err) {
       setApiError(err?.message || "Failed to create blog.");
@@ -146,6 +167,8 @@ const AddBlog = () => {
       setSubmitting(false);
     }
   };
+
+  const previewSrc = form.image.trim() || PLACEHOLDER_IMG;
 
   return (
     <form className="add-blog-form" onSubmit={handleSubmit}>
@@ -189,7 +212,7 @@ const AddBlog = () => {
           disabled={submitting}
         />
         {tagsArray.length ? (
-          <div className="tag-preview">
+          <div className="tag-preview" aria-label="Parsed tags">
             {tagsArray.map((t) => (
               <span key={t.toLowerCase()} className="tag-chip">
                 {t}
@@ -208,6 +231,20 @@ const AddBlog = () => {
           disabled={submitting}
         />
         {errors.image ? <div className="field-error">{errors.image}</div> : null}
+
+        {/* ✅ live preview */}
+        <div className="image-preview-wrap">
+          <img
+            className="image-preview"
+            src={previewSrc}
+            alt="Blog preview"
+            loading="lazy"
+            onError={(e) => {
+              e.currentTarget.onerror = null;
+              e.currentTarget.src = PLACEHOLDER_IMG;
+            }}
+          />
+        </div>
       </label>
 
       <label className="field">
@@ -227,7 +264,7 @@ const AddBlog = () => {
             <span
               key={star}
               className={star <= form.rating ? "star filled" : "star"}
-              onClick={() => !submitting && setForm((p) => ({ ...p, rating: star }))}
+              onClick={() => !submitting && setRating(star)}
               onKeyDown={onStarKeyDown(star)}
               role="button"
               tabIndex={0}
@@ -241,7 +278,12 @@ const AddBlog = () => {
       </div>
 
       <div className="form-actions">
-        <button type="button" className="btn secondary" onClick={handleCancel} disabled={submitting}>
+        <button
+          type="button"
+          className="btn secondary"
+          onClick={handleCancel}
+          disabled={submitting}
+        >
           Cancel
         </button>
         <button type="submit" className="btn primary" disabled={submitting}>
@@ -250,6 +292,4 @@ const AddBlog = () => {
       </div>
     </form>
   );
-};
-
-export default AddBlog;
+}

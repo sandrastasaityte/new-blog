@@ -6,27 +6,49 @@
   place-items: center;
   padding: 16px;
   z-index: 9999;
+  animation: overlayFade 0.2s ease-out;
 }
 
 .blogmodal-content {
   width: min(980px, 100%);
   max-height: 88vh;
   overflow: auto;
+  -webkit-overflow-scrolling: touch;
   background: #fff;
   border-radius: 18px;
   border: 1px solid rgba(0,0,0,0.08);
   box-shadow: 0 25px 70px rgba(0,0,0,0.28);
   position: relative;
+  animation: modalPop 0.22s ease-out;
+}
+
+@keyframes overlayFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalPop {
+  from { transform: scale(0.98) translateY(8px); opacity: 0; }
+  to { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+/* Focus outline on modal container */
+.blogmodal-content:focus-visible {
+  outline: 2px solid rgba(255, 102, 0, 0.85);
+  outline-offset: 4px;
 }
 
 /* Close button */
 .blogmodal-close {
-  position: absolute;
+  position: sticky; /* ✅ stays visible while scrolling */
   top: 12px;
-  right: 12px;
+  margin-left: auto;
+  margin-right: 12px;
+  margin-top: 12px;
+
   width: 40px;
   height: 40px;
-  border-radius: 12px;
+  border-radius: 999px;
   border: 1px solid rgba(0,0,0,0.12);
   background: rgba(255,255,255,0.92);
   cursor: pointer;
@@ -105,12 +127,12 @@
   transition: transform 0.12s ease, filter 0.12s ease, opacity 0.12s ease;
 }
 
-.blogmodal-like-btn:hover {
+.blogmodal-like-btn:hover:not(:disabled) {
   filter: brightness(1.03);
   transform: translateY(-1px);
 }
 
-.blogmodal-like-btn:active {
+.blogmodal-like-btn:active:not(:disabled) {
   transform: translateY(0);
 }
 
@@ -140,7 +162,7 @@
   white-space: pre-line;
 }
 
-/* CommentSection spacing (works with most layouts) */
+/* CommentSection spacing */
 .blogmodal-content .comment-section {
   border-top: 1px solid rgba(0,0,0,0.08);
   padding: 14px 16px 18px;
@@ -159,63 +181,6 @@
   .blogmodal-details h2 {
     font-size: 1.2rem;
   }
-}
-.blogmodal-overlay {
-  animation: overlayFade 0.2s ease-out;
-}
-
-.blogmodal-content {
-  animation: modalPop 0.22s ease-out;
-}
-
-@keyframes overlayFade {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes modalPop {
-  from { transform: scale(0.98) translateY(8px); opacity: 0; }
-  to { transform: scale(1) translateY(0); opacity: 1; }
-}
-.blogmodal-content:focus-visible {
-  outline: 2px solid rgba(255, 102, 0, 0.85);
-  outline-offset: 4px;
-}
-.blogmodal-close {
-  border-radius: 999px;
-}
-@media (max-height: 720px) {
-  .blogmodal-content {
-    max-height: 92vh;
-  }
-  .blogmodal-img {
-    height: 240px;
-  }
-}
-/* Smooth open animation */
-.blogmodal-overlay {
-  animation: overlayFade 0.2s ease-out;
-}
-
-.blogmodal-content {
-  animation: modalPop 0.22s ease-out;
-  -webkit-overflow-scrolling: touch;
-}
-
-@keyframes overlayFade {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes modalPop {
-  from { transform: scale(0.98) translateY(8px); opacity: 0; }
-  to { transform: scale(1) translateY(0); opacity: 1; }
-}
-
-/* Focus outline on modal container */
-.blogmodal-content:focus-visible {
-  outline: 2px solid rgba(255, 102, 0, 0.85);
-  outline-offset: 4px;
 }
 
 /* Short screen tweaks */

@@ -6,15 +6,21 @@ import "./AuthModal.css";
 const FOCUSABLE =
   'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
-const AuthModal = ({ isOpen, onClose, defaultMode = "login", setToken }) => {
+export default function AuthModal({ isOpen, onClose, defaultMode = "login", setToken }) {
   const [mode, setMode] = useState(defaultMode); // "login" | "signup"
   const [busy, setBusy] = useState(false);
 
   const modalRef = useRef(null);
   const lastActiveRef = useRef(null);
+  const busyRef = useRef(false);
 
   const titleId = useId();
   const descId = useId();
+
+  // keep ref synced (so listeners don't need busy in deps)
+  useEffect(() => {
+    busyRef.current = busy;
+  }, [busy]);
 
   // Reset mode each time modal opens
   useEffect(() => {
@@ -44,9 +50,20 @@ const AuthModal = ({ isOpen, onClose, defaultMode = "login", setToken }) => {
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
+    const getFocusables = () => {
+      const root = modalRef.current;
+      if (!root) return [];
+      return Array.from(root.querySelectorAll(FOCUSABLE)).filter(
+        (el) =>
+          !el.hasAttribute("disabled") &&
+          el.getAttribute("aria-hidden") !== "true" &&
+          el.offsetParent !== null
+      );
+    };
+
     const onKeyDown = (e) => {
       if (e.key === "Escape") {
-        if (!busy) onClose?.();
+        if (!busyRef.current) onClose?.();
         return;
       }
 
@@ -55,13 +72,7 @@ const AuthModal = ({ isOpen, onClose, defaultMode = "login", setToken }) => {
       const root = modalRef.current;
       if (!root) return;
 
-      const focusables = Array.from(root.querySelectorAll(FOCUSABLE)).filter(
-        (el) =>
-          !el.hasAttribute("disabled") &&
-          el.getAttribute("aria-hidden") !== "true" &&
-          el.offsetParent !== null // ignore elements not visible (simple check)
-      );
-
+      const focusables = getFocusables();
       if (!focusables.length) return;
 
       const first = focusables[0];
@@ -69,13 +80,16 @@ const AuthModal = ({ isOpen, onClose, defaultMode = "login", setToken }) => {
 
       const active = document.activeElement;
 
+      // If focus somehow left the dialog, bring it back in
+      const activeInside = root.contains(active);
+
       if (e.shiftKey) {
-        if (active === first || !root.contains(active)) {
+        if (!activeInside || active === first) {
           e.preventDefault();
           last.focus();
         }
       } else {
-        if (active === last) {
+        if (!activeInside || active === last) {
           e.preventDefault();
           first.focus();
         }
@@ -93,14 +107,15 @@ const AuthModal = ({ isOpen, onClose, defaultMode = "login", setToken }) => {
 
       // Reset busy state when closing
       setBusy(false);
+      busyRef.current = false;
     };
-  }, [isOpen, onClose, busy]);
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
   const isLogin = mode === "login";
 
-  const handleOverlayClick = (e) => {
+  const handleOverlayMouseDown = (e) => {
     // Only close when clicking overlay (not inside modal)
     if (e.target === e.currentTarget && !busy) onClose?.();
   };
@@ -110,7 +125,7 @@ const AuthModal = ({ isOpen, onClose, defaultMode = "login", setToken }) => {
   return (
     <div
       className="modal-overlay"
-      onClick={handleOverlayClick}
+      onMouseDown={handleOverlayMouseDown}
       role="presentation"
     >
       <div
@@ -120,7 +135,7 @@ const AuthModal = ({ isOpen, onClose, defaultMode = "login", setToken }) => {
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={descId}
-        onClick={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
       >
         <h2 id={titleId} className="sr-only">
           {isLogin ? "Login" : "Sign up"}
@@ -155,7 +170,7 @@ const AuthModal = ({ isOpen, onClose, defaultMode = "login", setToken }) => {
           />
         )}
 
-        <p className="switch-text">
+        <p className="switch-text" aria-live="polite">
           {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
           <button
             type="button"
@@ -169,6 +184,4 @@ const AuthModal = ({ isOpen, onClose, defaultMode = "login", setToken }) => {
       </div>
     </div>
   );
-};
-
-export default AuthModal;
+}

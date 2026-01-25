@@ -1,25 +1,30 @@
+/* Sidebar.css */
+
 .sidebar {
   flex: 1;
   min-width: 280px;
   position: sticky;
-  top: 20px; /* you can change to 96px if navbar overlaps */
+  top: 92px; /* adjust if your navbar height differs */
   align-self: flex-start;
   display: grid;
-  gap: 14px;
+  gap: 1.2rem;
 }
 
+/* Card */
 .sidebar-card {
   background: #fff;
-  border-radius: 16px;
-  padding: 14px;
   border: 1px solid rgba(0,0,0,0.06);
+  border-radius: 18px;
   box-shadow: 0 12px 30px rgba(0,0,0,0.06);
+  padding: 14px;
 }
 
 .sidebar-title {
   margin: 0 0 10px;
-  font-weight: 900;
-  font-size: 1rem;
+  font-size: 1.05rem;
+  font-weight: 950;
+  color: #111;
+  letter-spacing: -0.01em;
 }
 
 .sidebar-muted {
@@ -32,23 +37,25 @@
 .sidebar-tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 10px;
 }
 
 .sidebar-tag {
-  border: 1px solid rgba(0,0,0,0.12);
-  background: #fff;
+  border: 1px solid rgba(0,0,0,0.10);
+  background: rgba(0,0,0,0.03);
+  color: rgba(0,0,0,0.82);
+  padding: 8px 12px;
   border-radius: 999px;
-  padding: 6px 10px;
+  font-weight: 900;
+  font-size: 0.85rem;
   cursor: pointer;
-  font-weight: 800;
-  transition: transform 0.12s ease, box-shadow 0.2s ease, border-color 0.12s ease;
+  transition: transform 0.12s ease, box-shadow 0.2s ease, background 0.15s ease, border-color 0.15s ease;
 }
 
 .sidebar-tag:hover {
-  border-color: #ff6600;
   transform: translateY(-1px);
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.06);
+  background: rgba(0,0,0,0.04);
 }
 
 .sidebar-tag:active {
@@ -56,9 +63,16 @@
   box-shadow: none;
 }
 
+.sidebar-tag:focus-visible {
+  outline: 2px solid rgba(255, 102, 0, 0.85);
+  outline-offset: 3px;
+}
+
+/* Active tag */
 .sidebar-tag.active {
   border-color: rgba(255, 102, 0, 0.35);
-  background: rgba(255, 102, 0, 0.12);
+  background: rgba(255, 102, 0, 0.10);
+  box-shadow: 0 0 0 4px rgba(255, 102, 0, 0.10);
   color: #ff6600;
 }
 
@@ -72,16 +86,18 @@
   text-align: left;
   width: 100%;
   border: 1px solid rgba(0,0,0,0.06);
-  background: rgba(0,0,0,0.03);
+  background: rgba(0,0,0,0.02);
+  padding: 10px 12px;
   border-radius: 14px;
-  padding: 10px 10px;
   cursor: pointer;
-  transition: transform 0.12s ease, box-shadow 0.2s ease;
+  transition: transform 0.12s ease, box-shadow 0.2s ease, background 0.15s ease, border-color 0.15s ease;
 }
 
 .sidebar-post:hover {
   transform: translateY(-1px);
   box-shadow: 0 10px 20px rgba(0,0,0,0.06);
+  background: rgba(0,0,0,0.03);
+  border-color: rgba(0,0,0,0.10);
 }
 
 .sidebar-post:active {
@@ -89,39 +105,45 @@
   box-shadow: none;
 }
 
-.sidebar-post-title {
-  margin: 0;
-  font-weight: 900;
-  font-size: 0.95rem;
-  color: #111;
-}
-
-.sidebar-post-meta {
-  margin: 4px 0 0;
-  color: rgba(0,0,0,0.6);
-  font-size: 0.85rem;
-}
-
-/* ✅ Keyboard accessibility */
-.sidebar-tag:focus-visible,
 .sidebar-post:focus-visible {
-  outline: 2px solid #ff6600;
+  outline: 2px solid rgba(255, 102, 0, 0.85);
   outline-offset: 3px;
 }
 
-/* ✅ Reduce motion for accessibility */
-@media (prefers-reduced-motion: reduce) {
-  .sidebar-tag,
-  .sidebar-post {
-    transition: none;
-  }
+.sidebar-post-title {
+  margin: 0;
+  font-weight: 950;
+  color: #111;
+  line-height: 1.25;
+
+  /* clamp to 2 lines */
+  display: -webkit-box;
+
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
-/* Responsive */
+.sidebar-post-meta {
+  margin: 6px 0 0;
+  font-size: 0.88rem;
+  color: rgba(0,0,0,0.6);
+}
+
+/* Responsive: Sidebar becomes normal flow under content */
 @media (max-width: 900px) {
   .sidebar {
     position: static;
-    width: 100%;
+    top: auto;
     min-width: 0;
+  }
+}
+
+/* Tiny screens */
+@media (max-width: 520px) {
+  .sidebar-card {
+    border-radius: 14px;
+  }
+  .sidebar-tag {
+    padding: 7px 10px;
   }
 }

@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./AuthForm.css";
-import { login, register } from "../../lib/authApi"; // ✅ adjust path if needed
+import { login, register } from "../../lib/authApi"; // adjust path if needed
 
 const initialState = {
   email: "",
@@ -8,9 +8,21 @@ const initialState = {
   confirmPassword: "",
 };
 
-// simple but better than includes("@")
 function isValidEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function extractToken(data) {
+  // Support lots of common API shapes
+  return (
+    data?.token ||
+    data?.accessToken ||
+    data?.jwt ||
+    data?.data?.token ||
+    data?.data?.accessToken ||
+    data?.data?.jwt ||
+    null
+  );
 }
 
 const AuthForm = ({ setToken, onClose, isLogin, setIsLogin, setBusy }) => {
@@ -35,13 +47,11 @@ const AuthForm = ({ setToken, onClose, isLogin, setIsLogin, setBusy }) => {
   const validate = () => {
     if (!emailTrimmed || !formData.password) return "Please fill all fields.";
     if (!isValidEmail(emailTrimmed)) return "Please enter a valid email.";
-    if (formData.password.length < 6)
-      return "Password must be at least 6 characters.";
+    if (formData.password.length < 6) return "Password must be at least 6 characters.";
 
     if (!isLogin) {
       if (!formData.confirmPassword) return "Please confirm your password.";
-      if (formData.password !== formData.confirmPassword)
-        return "Passwords do not match.";
+      if (formData.password !== formData.confirmPassword) return "Passwords do not match.";
     }
 
     return "";
@@ -52,40 +62,38 @@ const AuthForm = ({ setToken, onClose, isLogin, setIsLogin, setBusy }) => {
     if (loading) return;
 
     const msg = validate();
-    if (msg) {
-      setError(msg);
-      return;
-    }
+    if (msg) return setError(msg);
 
     try {
       setLoading(true);
       setBusy?.(true);
       setError("");
 
-      // NOTE: your authApi expects (username, password)
-      // We're passing email as "username" (fine as long as backend accepts it).
+      // ✅ Your authApi currently expects (username, password)
+      // We pass email as "username" (works if backend accepts it).
+      // If your backend expects email specifically, update authApi to send { email }.
       const data = isLogin
         ? await login(emailTrimmed, formData.password)
         : await register(emailTrimmed, formData.password);
 
-      // token may come from response OR already stored by login() OR under other keys
-      const token =
-        data?.token ||
-        data?.accessToken ||
-        data?.jwt ||
-        localStorage.getItem("token");
+      const tokenFromResponse = extractToken(data);
+      const tokenFromStorage = localStorage.getItem("token");
+      const token = tokenFromResponse || tokenFromStorage;
 
       if (!token) {
-        setError(data?.message || "No token returned from server.");
+        setError(
+          (data && typeof data === "object" && (data.message || data.error)) ||
+            "No token returned from server."
+        );
         return;
       }
 
       // Ensure it is stored (safe even if login() already stored it)
       localStorage.setItem("token", token);
 
-      if (data?.user) {
-        localStorage.setItem("user", JSON.stringify(data.user));
-      }
+      // Optional: store user if backend returned it
+      const user = data?.user || data?.data?.user || null;
+      if (user) localStorage.setItem("user", JSON.stringify(user));
 
       setToken?.(token);
       setFormData(initialState);
@@ -146,13 +154,7 @@ const AuthForm = ({ setToken, onClose, isLogin, setIsLogin, setBusy }) => {
       ) : null}
 
       <button type="submit" disabled={loading}>
-        {loading
-          ? isLogin
-            ? "Logging in..."
-            : "Creating account..."
-          : isLogin
-          ? "Login"
-          : "Sign Up"}
+        {loading ? (isLogin ? "Logging in..." : "Creating account...") : isLogin ? "Login" : "Sign Up"}
       </button>
 
       <p className="toggle-text">

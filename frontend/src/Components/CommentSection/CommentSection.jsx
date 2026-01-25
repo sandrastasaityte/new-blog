@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useId, useMemo, useState } from "react";
 import "./CommentSection.css";
 
 export default function CommentSection({
@@ -7,6 +7,9 @@ export default function CommentSection({
   busy = false,
   maxLength = 500,
 }) {
+  const nameId = useId();
+  const textId = useId();
+
   const normalized = useMemo(() => {
     return (comments || [])
       .map((c) => ({
@@ -21,6 +24,8 @@ export default function CommentSection({
   const [text, setText] = useState("");
   const [error, setError] = useState("");
 
+  const remaining = maxLength - text.length;
+
   const submit = (e) => {
     e.preventDefault();
     if (busy) return;
@@ -28,6 +33,7 @@ export default function CommentSection({
     const payload = {
       name: name.trim() || "Anonymous",
       text: text.trim(),
+      date: new Date().toISOString(),
     };
 
     if (!payload.text) return;
@@ -64,19 +70,27 @@ export default function CommentSection({
               key={`${c.name}-${c.text.slice(0, 24)}-${idx}`}
               className="comment-item"
             >
-              <strong>{c.name}</strong>
-              <p>{c.text}</p>
+              <div className="comment-head">
+                <strong className="comment-name">{c.name}</strong>
+                {c.date ? (
+                  <span className="comment-date">
+                    {new Date(c.date).toLocaleDateString()}
+                  </span>
+                ) : null}
+              </div>
+
+              <p className="comment-text">{c.text}</p>
             </div>
           ))}
         </div>
       )}
 
       <form className="comment-form" onSubmit={submit}>
-        <label className="sr-only" htmlFor="comment-name">
+        <label className="sr-only" htmlFor={nameId}>
           Your name
         </label>
         <input
-          id="comment-name"
+          id={nameId}
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
@@ -85,19 +99,25 @@ export default function CommentSection({
           disabled={busy}
         />
 
-        <label className="sr-only" htmlFor="comment-text">
-          Write a comment
-        </label>
-        <textarea
-          id="comment-text"
-          value={text}
-          onChange={onTextChange}
-          placeholder="Write a comment…"
-          required
-          rows={3}
-          maxLength={maxLength}
-          disabled={busy}
-        />
+        <div className="comment-textarea-wrap">
+          <label className="sr-only" htmlFor={textId}>
+            Write a comment
+          </label>
+          <textarea
+            id={textId}
+            value={text}
+            onChange={onTextChange}
+            placeholder="Write a comment…"
+            required
+            rows={3}
+            maxLength={maxLength}
+            disabled={busy}
+          />
+
+          <div className="comment-counter" aria-live="polite">
+            {remaining} characters left
+          </div>
+        </div>
 
         {error ? (
           <p className="comment-error" role="alert">

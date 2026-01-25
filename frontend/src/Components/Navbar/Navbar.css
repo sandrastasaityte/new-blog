@@ -1,108 +1,143 @@
-/* =========================
-   NAVBAR BASE
-========================= */
+/* Navbar.css */
+
 .navbar {
   position: sticky;
   top: 0;
-  z-index: 2500;
+  z-index: 1200;
   background: #fff;
   border-bottom: 1px solid rgba(0,0,0,0.06);
-  box-shadow: 0 10px 25px rgba(0,0,0,0.04);
+  box-shadow: 0 10px 24px rgba(0,0,0,0.04);
+}
+
+.navbar > .logo,
+.navbar > .nav-links,
+.navbar > .nav-actions {
+  display: flex;
+  align-items: center;
+}
+
+.navbar {
   padding: 14px 18px;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 14px;
 }
 
 /* Logo */
 .logo a {
-  font-weight: 900;
-  font-size: 1.4rem;
-  color: #ff6600;
   text-decoration: none;
+  font-weight: 950;
+  letter-spacing: -0.02em;
+  font-size: 1.15rem;
+  color: #111;
 }
 
-/* =========================
-   DESKTOP LINKS
-========================= */
+.logo a:hover {
+  opacity: 0.92;
+}
+
+/* Desktop links */
 .nav-links {
-  display: flex;
-  gap: 16px;
   list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 14px;
   margin: 0;
   padding: 0;
 }
 
 .nav-links a {
   text-decoration: none;
-  color: #333;
+  color: rgba(0,0,0,0.78);
   font-weight: 800;
-  padding: 8px 12px;
-  border-radius: 10px;
-  transition: 0.15s ease;
+  padding: 8px 10px;
+  border-radius: 12px;
+  transition: background 0.15s ease, transform 0.12s ease, color 0.15s ease;
 }
 
 .nav-links a:hover {
-  background: rgba(0,0,0,0.05);
+  background: rgba(0,0,0,0.04);
+  transform: translateY(-1px);
 }
 
 .nav-links a.active {
-  background: rgba(255, 102, 0, 0.12);
   color: #ff6600;
+  background: rgba(255, 102, 0, 0.10);
+  box-shadow: 0 0 0 4px rgba(255, 102, 0, 0.10);
 }
 
-/* =========================
-   RIGHT ACTIONS
-========================= */
+/* Actions (right side) */
 .nav-actions {
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
-/* Login / Logout */
+/* Icon button */
+.icon-btn {
+  border: 1px solid rgba(0,0,0,0.10);
+  background: rgba(0,0,0,0.02);
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.2s ease, filter 0.12s ease;
+  color: rgba(0,0,0,0.75);
+}
+
+.icon-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.08);
+  filter: brightness(1.01);
+}
+
+.icon-btn:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+.icon-btn:focus-visible {
+  outline: 2px solid rgba(255, 102, 0, 0.85);
+  outline-offset: 3px;
+}
+
+/* Logout/Login button style */
 .auth-btn {
   border: none;
+  border-radius: 14px;
+  padding: 10px 14px;
   background: linear-gradient(135deg, #ff6600, #ff8a3d);
   color: #fff;
-  padding: 10px 14px;
-  border-radius: 12px;
+  font-weight: 950;
   cursor: pointer;
-  font-weight: 900;
-  transition: transform 0.12s ease, filter 0.12s ease;
+  transition: transform 0.12s ease, filter 0.12s ease, box-shadow 0.2s ease;
 }
 
 .auth-btn:hover {
   filter: brightness(1.03);
   transform: translateY(-1px);
+  box-shadow: 0 12px 26px rgba(0,0,0,0.10);
 }
 
 .auth-btn:active {
   transform: translateY(0);
+  box-shadow: none;
 }
 
-/* Icon button (user icon / burger) */
-.icon-btn {
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  display: grid;
-  place-items: center;
-  padding: 6px;
-  border-radius: 12px;
+.auth-btn:focus-visible {
+  outline: 2px solid rgba(255, 102, 0, 0.85);
+  outline-offset: 3px;
 }
 
-.icon-btn:hover {
-  background: rgba(0,0,0,0.06);
-}
-
-/* =========================
-   MOBILE MENU
-========================= */
+/* Hamburger only on mobile */
 .nav-toggle {
   display: none;
 }
 
+/* ===== Mobile overlay menu ===== */
 .nav-mobile-overlay {
   position: fixed;
   inset: 0;
@@ -110,49 +145,85 @@
   display: grid;
   place-items: start end;
   padding: 14px;
-  z-index: 3000;
+  animation: navFade 0.18s ease-out;
 }
 
 .nav-mobile {
   width: min(320px, 92vw);
   background: #fff;
-  border-radius: 16px;
+  border: 1px solid rgba(0,0,0,0.08);
+  box-shadow: 0 25px 70px rgba(0,0,0,0.28);
+  border-radius: 18px;
   padding: 14px;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.25);
   display: grid;
-  gap: 10px;
+  gap: 8px;
+  animation: navSlide 0.20s ease-out;
 }
 
 .nav-mobile a {
   text-decoration: none;
-  font-weight: 800;
-  color: #222;
-  padding: 10px 12px;
-  border-radius: 12px;
+  color: rgba(0,0,0,0.82);
+  font-weight: 900;
+  padding: 12px 12px;
+  border-radius: 14px;
+  background: rgba(0,0,0,0.02);
+  border: 1px solid rgba(0,0,0,0.06);
+  transition: transform 0.12s ease, background 0.12s ease, border-color 0.12s ease;
+}
+
+.nav-mobile a:hover {
+  transform: translateY(-1px);
+  background: rgba(0,0,0,0.04);
 }
 
 .nav-mobile a.active {
-  background: rgba(255, 102, 0, 0.12);
+  border-color: rgba(255, 102, 0, 0.35);
+  background: rgba(255, 102, 0, 0.10);
   color: #ff6600;
+  box-shadow: 0 0 0 4px rgba(255, 102, 0, 0.10);
 }
 
 .nav-mobile-actions {
   margin-top: 6px;
+  display: grid;
+  gap: 10px;
 }
 
-/* =========================
-   RESPONSIVE
-========================= */
-@media (max-width: 900px) {
+.nav-mobile-actions .auth-btn {
+  width: 100%;
+}
+
+/* Animations */
+@keyframes navFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes navSlide {
+  from { transform: translateX(10px) scale(0.98); opacity: 0; }
+  to { transform: translateX(0) scale(1); opacity: 1; }
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 820px) {
   .nav-links {
     display: none;
   }
-
   .nav-toggle {
-    display: inline-grid;
+    display: grid;
   }
+}
 
-  .logo a {
-    font-size: 1.2rem;
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .nav-mobile-overlay,
+  .nav-mobile {
+    animation: none;
+  }
+  .icon-btn,
+  .auth-btn,
+  .nav-links a,
+  .nav-mobile a {
+    transition: none;
   }
 }

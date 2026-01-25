@@ -1,5 +1,7 @@
+/* src/pages/Admin.css (or wherever you keep it) */
+
 /* Basic page */
-.admin-page { padding: 18px; }
+.admin-page { padding: 0; } /* ✅ avoid double padding (admin-content already has padding) */
 .admin-head { display:flex; align-items:flex-end; justify-content:space-between; gap:12px; margin-bottom:14px; }
 .admin-head h1 { margin:0; font-size:26px; font-weight:900; color:#0f172a; }
 .admin-muted { margin:6px 0 0; color: rgba(15,23,42,0.65); font-weight:600; }
@@ -14,20 +16,59 @@
 
 /* Form + buttons */
 .admin-form { display:grid; gap:14px; }
-.admin-form label { display:block; font-weight:800; font-size:13px; color:#0f172a; margin-bottom:10px; }
-.admin-form input, .admin-form textarea { display:block; width:100%; margin-top:6px; padding:12px; border-radius:12px; border:1px solid rgba(0,0,0,0.14); outline:none; background:#fff; font-size:14px; }
+.admin-form label { display:block; font-weight:800; font-size:13px; color:#0f172a; margin:0; }
+.admin-form input, .admin-form textarea {
+  display:block;
+  width:100%;
+  margin-top:6px;
+  padding:12px;
+  border-radius:12px;
+  border:1px solid rgba(0,0,0,0.14);
+  outline:none;
+  background:#fff;
+  font-size:14px;
+}
 .admin-form textarea { resize:vertical; min-height:120px; }
-.admin-form input:focus, .admin-form textarea:focus { border-color: rgba(0,119,255,0.5); box-shadow:0 0 0 4px rgba(0,119,255,0.12); }
+.admin-form input:focus, .admin-form textarea:focus {
+  border-color: rgba(0,119,255,0.5);
+  box-shadow:0 0 0 4px rgba(0,119,255,0.12);
+}
 
-.btn { padding:10px 12px; border-radius:12px; border:1px solid rgba(0,0,0,0.12); background:#fff; cursor:pointer; font-weight:900; font-size:14px; }
+.btn {
+  padding:10px 12px;
+  border-radius:12px;
+  border:1px solid rgba(0,0,0,0.12);
+  background:#fff;
+  cursor:pointer;
+  font-weight:900;
+  font-size:14px;
+}
 .btn.primary { background: rgba(0,119,255,0.92); border-color: rgba(0,119,255,0.25); color:#fff; }
 .btn.danger { background: rgba(176,0,32,0.92); border-color: rgba(176,0,32,0.25); color:#fff; }
 .btn:disabled { opacity:0.6; cursor:not-allowed; }
 
 .form-actions { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
 
-.form-ok { padding:10px 12px; border-radius:12px; background: rgba(0,180,90,0.12); border:1px solid rgba(0,180,90,0.22); color:#05603a; font-size:14px; font-weight:700; margin-bottom:10px; }
-.form-error { padding:10px 12px; border-radius:12px; background: rgba(176,0,32,0.08); border:1px solid rgba(176,0,32,0.2); color:#b00020; font-size:14px; font-weight:700; margin-bottom:10px; }
+.form-ok {
+  padding:10px 12px;
+  border-radius:12px;
+  background: rgba(0,180,90,0.12);
+  border:1px solid rgba(0,180,90,0.22);
+  color:#05603a;
+  font-size:14px;
+  font-weight:700;
+  margin-bottom:10px;
+}
+.form-error {
+  padding:10px 12px;
+  border-radius:12px;
+  background: rgba(176,0,32,0.08);
+  border:1px solid rgba(176,0,32,0.2);
+  color:#b00020;
+  font-size:14px;
+  font-weight:700;
+  margin-bottom:10px;
+}
 
 /* Tags */
 .tags-preview { display:flex; flex-wrap:wrap; gap:8px; }
@@ -51,7 +92,9 @@
   border: 1px solid rgba(0, 0, 0, 0.07);
   box-shadow: 0 18px 55px rgba(0, 0, 0, 0.08);
 }
-.btn:hover:not(:disabled) { background: rgba(0,0,0,0.04); }
+
+/* Hover styles */
+.btn:hover:not(:disabled):not(.primary):not(.danger) { background: rgba(0,0,0,0.04); }
 .btn.primary:hover:not(:disabled) { filter: brightness(0.98); }
 .btn.danger:hover:not(:disabled) { filter: brightness(0.98); }
 
@@ -60,19 +103,33 @@
   box-shadow: 0 0 0 3px rgba(0,119,255,0.22);
   border-color: rgba(0,119,255,0.35);
 }
+
+/* Mobile table */
 @media (max-width: 680px) {
-  .row {
-    grid-template-columns: 1fr;
-    gap: 6px;
-  }
-  .row.head {
-    display: none; /* optional: hide header row on mobile */
-  }
-  .actions {
-    justify-content: flex-start;
-  }
-  .right {
-    justify-self: start;
-  }
+  .row { grid-template-columns: 1fr; gap: 6px; }
+  .row.head { display: none; }
+  .actions { justify-content: flex-start; }
+  .right { justify-self: start; }
+}
+/* Login form */
+.auth-form input {
+  display: block;
+  width: 100%;
+  padding: 0.85rem 1rem;
+  margin-bottom: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.14);
+  outline: none;
+  font-size: 0.98rem;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  background: #fff;
 }
 
+.auth-form input:focus {
+  border-color: rgba(0, 119, 255, 0.7);
+  box-shadow: 0 0 0 4px rgba(0, 119, 255, 0.12);
+}
+
+.auth-form button {
+  width: 100%;
+}

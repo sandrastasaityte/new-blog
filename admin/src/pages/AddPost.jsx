@@ -2,7 +2,6 @@ import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./Admin.css";
 import { usePosts } from "../Context/PostsContext";
-import { useAuth } from "../Context/AuthContext";
 
 function normalizeTags(input) {
   const raw = input
@@ -10,7 +9,6 @@ function normalizeTags(input) {
     .map((t) => t.trim())
     .filter(Boolean);
 
-  // de-dupe (case-insensitive) but keep original casing from first appearance
   const seen = new Map();
   for (const t of raw) {
     const key = t.toLowerCase();
@@ -21,8 +19,7 @@ function normalizeTags(input) {
 
 export default function AddPost() {
   const nav = useNavigate();
-  const { addPost, error: ctxError } = usePosts();
-  const { token } = useAuth();
+  const { addPost } = usePosts();
 
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
@@ -34,7 +31,6 @@ export default function AddPost() {
   const [localError, setLocalError] = useState("");
 
   const tags = useMemo(() => normalizeTags(tagInput), [tagInput]);
-
   const canSubmit = title.trim().length > 0 && !saving;
 
   const onSubmit = async (e) => {
@@ -50,15 +46,17 @@ export default function AddPost() {
 
     setSaving(true);
     try {
-      await addPost(
-        {
-          title: cleanTitle,
-          content: content.trim(),
-          image: image.trim(),
-          tags,
-        },
-        token
-      );
+      // PostsContext(local) expects a single post object
+      addPost({
+        title: cleanTitle,
+        content: content.trim(),
+        image: image.trim(),
+        tags,
+        date: new Date().toISOString(),
+        views: 0,
+        likes: 0,
+        comments: [],
+      });
 
       setOk("Post created ✅");
       nav("/admin/posts", { replace: true });
@@ -81,7 +79,6 @@ export default function AddPost() {
 
       {ok ? <div className="form-ok">{ok}</div> : null}
       {localError ? <div className="form-error">{localError}</div> : null}
-      {ctxError && !localError ? <div className="form-error">{ctxError}</div> : null}
 
       <form className="admin-form" onSubmit={onSubmit}>
         <label>
@@ -139,7 +136,12 @@ export default function AddPost() {
             {saving ? "Saving..." : "Publish"}
           </button>
 
-          <button className="btn" type="button" onClick={() => nav("/admin/posts")} disabled={saving}>
+          <button
+            className="btn"
+            type="button"
+            onClick={() => nav("/admin/posts")}
+            disabled={saving}
+          >
             Cancel
           </button>
         </div>

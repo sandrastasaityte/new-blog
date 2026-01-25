@@ -3,15 +3,25 @@ import { Link } from "react-router-dom";
 import "./Login.css";
 import { login as loginAPI } from "../../lib/authApi";
 
-const Login = ({ setToken, closePopup, onSuccess, onSwitchToSignup, setBusy }) => {
-  const [formData, setFormData] = useState({ email: "", password: "" });
+const initial = { email: "", password: "" };
+
+const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
+const Login = ({
+  setToken,
+  closePopup,
+  onSuccess,
+  onSwitchToSignup,
+  setBusy,
+}) => {
+  const [formData, setFormData] = useState(initial);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const emailTrimmed = useMemo(() => formData.email.trim(), [formData.email]);
 
   const canSubmit = useMemo(() => {
-    return emailTrimmed.includes("@") && formData.password.length >= 6 && !loading;
+    return isValidEmail(emailTrimmed) && formData.password.length >= 6 && !loading;
   }, [emailTrimmed, formData.password, loading]);
 
   const handleChange = (e) => {
@@ -22,7 +32,7 @@ const Login = ({ setToken, closePopup, onSuccess, onSwitchToSignup, setBusy }) =
 
   const validate = () => {
     if (!emailTrimmed || !formData.password) return "Please fill all fields.";
-    if (!emailTrimmed.includes("@")) return "Please enter a valid email.";
+    if (!isValidEmail(emailTrimmed)) return "Please enter a valid email.";
     if (formData.password.length < 6) return "Password must be at least 6 characters.";
     return "";
   };
@@ -32,10 +42,7 @@ const Login = ({ setToken, closePopup, onSuccess, onSwitchToSignup, setBusy }) =
     if (!canSubmit) return;
 
     const msg = validate();
-    if (msg) {
-      setError(msg);
-      return;
-    }
+    if (msg) return setError(msg);
 
     try {
       setLoading(true);
@@ -44,13 +51,21 @@ const Login = ({ setToken, closePopup, onSuccess, onSwitchToSignup, setBusy }) =
 
       const data = await loginAPI(emailTrimmed, formData.password);
 
-      const token = data?.token;
+      // ✅ support multiple token keys + fallback to localStorage
+      const token =
+        data?.token ||
+        data?.accessToken ||
+        data?.jwt ||
+        localStorage.getItem("token");
+
       if (!token) {
         setError(data?.message || "Login failed (no token returned).");
         return;
       }
 
+      // keep storage consistent even if loginAPI already stored it
       localStorage.setItem("token", token);
+
       if (data?.user) {
         try {
           localStorage.setItem("user", JSON.stringify(data.user));
@@ -58,10 +73,10 @@ const Login = ({ setToken, closePopup, onSuccess, onSwitchToSignup, setBusy }) =
       }
 
       setToken?.(token);
-      onSuccess?.();
-      closePopup?.();
+      setFormData(initial);
 
-      setFormData({ email: "", password: "" });
+      onSuccess?.();      // modal: close from parent
+      closePopup?.();     // legacy prop (safe)
     } catch (err) {
       setError(err?.message || "An error occurred. Please try again.");
     } finally {
@@ -95,11 +110,12 @@ const Login = ({ setToken, closePopup, onSuccess, onSwitchToSignup, setBusy }) =
             onChange={handleChange}
             autoComplete="current-password"
             required
+            minLength={6}
             disabled={loading}
           />
 
           {error ? (
-            <p className="error" role="alert">
+            <p className="error" role="alert" aria-live="polite">
               {error}
             </p>
           ) : null}

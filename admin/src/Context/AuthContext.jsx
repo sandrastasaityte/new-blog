@@ -14,8 +14,8 @@ const LS_USER = "admin_user_v1";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
-// Toggle when your backend is ready
-const USE_BACKEND_AUTH = false;
+// ✅ control with .env (no code edits later)
+const USE_BACKEND_AUTH = import.meta.env.VITE_USE_BACKEND_AUTH === "true";
 
 export function AuthProvider({ children }) {
   const [token, setToken] = useState(() => localStorage.getItem(LS_TOKEN) || "");
@@ -52,6 +52,7 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
+  // Validate session on mount / token changes (backend mode)
   useEffect(() => {
     let cancelled = false;
 
@@ -97,29 +98,36 @@ export function AuthProvider({ children }) {
     };
   }, [token, safeJson]);
 
-  const login = useCallback(async ({ username, password }) => {
-    if (!USE_BACKEND_AUTH) {
-      if (username?.trim() && password?.trim()) {
-        setToken("demo-token");
-        setUser({ username: username.trim() });
-        return { ok: true };
+  const login = useCallback(
+    async ({ username, password }) => {
+      const u = username?.trim();
+      const p = password?.trim();
+
+      if (!USE_BACKEND_AUTH) {
+        if (u && p) {
+          // demo session
+          setToken("demo-token");
+          setUser({ username: u });
+          return { ok: true };
+        }
+        return { ok: false, message: "Enter username and password." };
       }
-      return { ok: false, message: "Enter username and password." };
-    }
 
-    const res = await fetch(`${API_URL}/auth/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password }),
-    });
+      const res = await fetch(`${API_URL}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: u, password: p }),
+      });
 
-    const data = await safeJson(res);
-    if (!res.ok) return { ok: false, message: data?.message || "Login failed" };
+      const data = await safeJson(res);
+      if (!res.ok) return { ok: false, message: data?.message || "Login failed" };
 
-    setToken(data?.token || "");
-    setUser(data?.user || { username: data?.username || username });
-    return { ok: true };
-  }, [safeJson]);
+      setToken(data?.token || "");
+      setUser(data?.user || { username: data?.username || u });
+      return { ok: true };
+    },
+    [safeJson]
+  );
 
   const logout = useCallback(() => {
     setToken("");
@@ -130,7 +138,8 @@ export function AuthProvider({ children }) {
     () => ({
       token,
       user,
-      isAuthed: !!token,
+      // ✅ demo mode: rely on user, backend mode: rely on token
+      isAuthed: USE_BACKEND_AUTH ? !!token : !!user,
       isLoading,
       login,
       logout,

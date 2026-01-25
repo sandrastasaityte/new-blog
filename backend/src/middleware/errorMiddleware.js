@@ -11,5 +11,8 @@ export function errorHandler(err, req, res, next) {
 
   res.status(statusCode).json({
     message: err.message || "Server error",
+
+    // Only show stack trace in development
+    ...(process.env.NODE_ENV !== "production" && { stack: err.stack }),
   });
 }

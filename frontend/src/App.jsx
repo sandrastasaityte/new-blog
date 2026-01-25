@@ -19,9 +19,9 @@ import AddBlog from "./Components/AddBlog/AddBlog";
 import AuthModal from "./Components/Auth/AuthModal";
 import ProtectedRoute from "./Components/ProtectedRoute";
 
-import PostsProvider from "./Context/PostsContext"; // ✅ default export in your PostsContext
+import PostsProvider from "./Context/PostsContext";
 
-// Helper component so we can use navigate inside Router
+// Helper component so we can use ProtectedRoute cleanly
 function AppRoutes({ token, onRequireAuth }) {
   return (
     <Routes>
@@ -51,10 +51,12 @@ export default function App() {
 
   const handleLogout = () => {
     localStorage.removeItem("token");
+    localStorage.removeItem("user");
     setToken("");
   };
 
   const handleRequireAuth = (location) => {
+    // remember where user wanted to go
     setRedirectTo(location?.pathname || "/");
     setAuthOpen(true);
   };
@@ -93,12 +95,14 @@ function AppShell({
   const handleSetToken = (t) => {
     setToken(t);
 
-    // after login, go back to where user wanted
+    // ✅ After login:
+    // - If user was redirected by ProtectedRoute -> go there
+    // - Otherwise just stay on the current page
     if (redirectTo) {
       navigate(redirectTo, { replace: true });
       setRedirectTo(null);
     } else {
-      // default: stay where they are
+      // stay where you are (no need to navigate if already there)
       navigate(location.pathname, { replace: true });
     }
 
@@ -113,7 +117,7 @@ function AppShell({
         onLogout={onLogout}
       />
 
-      {/* ✅ FIX: pass token down to AppRoutes */}
+      {/* ✅ token is passed */}
       <AppRoutes token={token} onRequireAuth={onRequireAuth} />
 
       <Footer />

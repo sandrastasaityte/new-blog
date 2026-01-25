@@ -10,15 +10,27 @@ const toNum = (v, fallback = 0) => {
 
 const clamp = (n, min, max) => Math.min(max, Math.max(min, n));
 
+const safeStr = (v, fallback = "") => String(v ?? fallback);
+
+const getStableId = (p, idx) => {
+  // ✅ Prefer MongoDB _id if exists
+  if (p?._id) return String(p._id);
+  if (p?.id) return String(p.id);
+
+  // ✅ Stable fallback (no title-based ids)
+  // NOTE: still stable per saved list because it’s saved to localStorage after first normalize
+  return `local-${Date.now()}-${idx}`;
+};
+
 /* Normalize posts so UI never crashes */
 export function normalize(arr) {
   const iso = nowIso();
 
   return (Array.isArray(arr) ? arr : []).map((p, idx) => {
-    const id = String(p?.id ?? `${idx}-${p?.title ?? "post"}`);
+    const id = getStableId(p, idx);
 
     const tags = Array.isArray(p?.tags)
-      ? p.tags.map((t) => String(t).trim()).filter(Boolean)
+      ? p.tags.map((t) => safeStr(t).trim()).filter(Boolean)
       : [];
 
     const comments = Array.isArray(p?.comments)
@@ -29,11 +41,13 @@ export function normalize(arr) {
               if (!text) return null;
               return { text, name: "Guest", date: iso };
             }
-            const text = String(c?.text || "").trim();
+
+            const text = safeStr(c?.text).trim();
             if (!text) return null;
+
             return {
               text,
-              name: String(c?.name || "Guest").trim(),
+              name: safeStr(c?.name, "Guest").trim() || "Guest",
               date: c?.date || iso,
             };
           })
@@ -42,15 +56,23 @@ export function normalize(arr) {
 
     return {
       ...p,
+
+      // ✅ Keep _id if backend has it (helpful if you send it back)
+      _id: p?._id,
+
+      // ✅ Single source of truth for UI
       id,
-      title: String(p?.title || "Untitled post").trim(),
-      content: String(p?.content || "").trim(),
+
+      title: safeStr(p?.title, "Untitled post").trim(),
+      content: safeStr(p?.content, "").trim(),
       tags,
       comments,
+
       views: toNum(p?.views, 0),
       likes: toNum(p?.likes, 0),
       rating: clamp(toNum(p?.rating, 0), 0, 5),
-      author: String(p?.author || "Admin").trim(),
+
+      author: safeStr(p?.author, "Admin").trim() || "Admin",
       date: p?.date || today(),
       image: p?.image || "https://via.placeholder.com/600x300",
     };
@@ -66,10 +88,10 @@ export function loadPosts(fallback = []) {
     const data = JSON.parse(raw);
     const norm = normalize(data);
 
-    // if empty storage but fallback exists
     if (norm.length === 0 && Array.isArray(fallback) && fallback.length) {
       return normalize(fallback);
     }
+
     return norm;
   } catch (e) {
     console.warn("Failed to load posts:", e);
@@ -94,7 +116,9 @@ export function addPost(posts, post) {
   const newPost = normalize([
     {
       ...p,
-      id: p.id ?? `p-${Date.now()}`,
+      // ✅ if backend returns _id/id it will be used automatically
+      id: p.id,
+      _id: p._id,
       date: p.date ?? iso.slice(0, 10),
       views: p.views ?? 0,
       likes: p.likes ?? 0,
@@ -108,7 +132,9 @@ export function addPost(posts, post) {
 /* Update post */
 export function updatePost(posts, id, patch) {
   const list = Array.isArray(posts) ? posts : [];
-  return normalize(list.map((p) => (String(p.id) === String(id) ? { ...p, ...patch } : p)));
+  return normalize(
+    list.map((p) => (String(p.id) === String(id) ? { ...p, ...patch } : p))
+  );
 }
 
 /* Delete post */
@@ -121,7 +147,9 @@ export function deletePost(posts, id) {
 export function incViews(posts, id) {
   const list = Array.isArray(posts) ? posts : [];
   return normalize(
-    list.map((p) => (String(p.id) === String(id) ? { ...p, views: toNum(p.views, 0) + 1 } : p))
+    list.map((p) =>
+      String(p.id) === String(id) ? { ...p, views: toNum(p.views, 0) + 1 } : p
+    )
   );
 }
 
@@ -129,7 +157,21 @@ export function incViews(posts, id) {
 export function incLikes(posts, id) {
   const list = Array.isArray(posts) ? posts : [];
   return normalize(
-    list.map((p) => (String(p.id) === String(id) ? { ...p, likes: toNum(p.likes, 0) + 1 } : p))
+    list.map((p) =>
+      String(p.id) === String(id) ? { ...p, likes: toNum(p.likes, 0) + 1 } : p
+    )
+  );
+}
+
+/* ✅ Optional: toggle like (like/unlike) */
+export function toggleLike(posts, id) {
+  const list = Array.isArray(posts) ? posts : [];
+  return normalize(
+    list.map((p) =>
+      String(p.id) === String(id)
+        ? { ...p, likes: Math.max(0, toNum(p.likes, 0) + 1) } // if you want true toggle, we’ll store a "liked" flag
+        : p
+    )
   );
 }
 
@@ -142,8 +184,8 @@ export function addComment(posts, id, comment) {
     typeof comment === "string"
       ? { text: comment.trim(), name: "Guest", date: iso }
       : {
-          text: String(comment?.text || "").trim(),
-          name: String(comment?.name || "Guest").trim(),
+          text: safeStr(comment?.text).trim(),
+          name: safeStr(comment?.name, "Guest").trim() || "Guest",
           date: comment?.date || iso,
         };
 

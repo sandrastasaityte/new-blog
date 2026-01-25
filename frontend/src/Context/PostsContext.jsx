@@ -1,5 +1,11 @@
 // src/Context/PostsContext.jsx
-import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import {
   loadPosts,
   savePosts,
@@ -47,18 +53,21 @@ const PostsProvider = ({ children, seed = DEFAULT_SEED }) => {
 
       addPost: (post) => setPosts((prev) => addPostFn(prev, post)),
 
-      updatePost: (id, patch) =>
-        setPosts((prev) => updatePostFn(prev, id, patch)),
+      updatePost: (id, patch) => setPosts((prev) => updatePostFn(prev, id, patch)),
 
       deletePost: (id) => setPosts((prev) => deletePostFn(prev, id)),
 
       incViews: (id) => setPosts((prev) => incViewsFn(prev, id)),
 
+      // ✅ existing like increment (simple)
       incLikes: (id) => setPosts((prev) => incLikesFn(prev, id)),
 
+      // ✅ add this so Blogs.jsx "toggleLike" works
+      // (for now it behaves like increment; later you can implement real toggle per-user)
+      toggleLike: (id) => setPosts((prev) => incLikesFn(prev, id)),
+
       // ✅ Supports comment string OR {name,text,date}
-      addComment: (id, comment) =>
-        setPosts((prev) => addCommentFn(prev, id, comment)),
+      addComment: (id, comment) => setPosts((prev) => addCommentFn(prev, id, comment)),
 
       // Seed helpers
       resetToSeed: () => setPosts(loadPosts(seed)),
@@ -70,11 +79,7 @@ const PostsProvider = ({ children, seed = DEFAULT_SEED }) => {
     };
   }, [posts, seed]);
 
-  return (
-    <PostsContext.Provider value={value}>
-      {children}
-    </PostsContext.Provider>
-  );
+  return <PostsContext.Provider value={value}>{children}</PostsContext.Provider>;
 };
 
 export const usePosts = () => {

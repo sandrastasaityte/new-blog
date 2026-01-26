@@ -1,149 +1,160 @@
-import React, { useEffect, useId, useRef, useState } from "react";
+import React, { useMemo, useState } from "react";
 import "./Contact.css";
 
-const initialForm = { name: "", email: "", message: "" };
-const initialStatus = { loading: false, success: false, error: "" };
+const initial = {
+  name: "",
+  email: "",
+  subject: "",
+  message: "",
+};
 
 const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
-const Contact = () => {
-  const nameId = useId();
-  const emailId = useId();
-  const msgId = useId();
+export default function Contact() {
+  const [form, setForm] = useState(initial);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
+  const [busy, setBusy] = useState(false);
 
-  const [formData, setFormData] = useState(initialForm);
-  const [status, setStatus] = useState(initialStatus);
+  const remaining = useMemo(() => 1000 - form.message.length, [form.message]);
 
-  const successTimerRef = useRef(null);
-
-  useEffect(() => {
-    return () => {
-      if (successTimerRef.current) clearTimeout(successTimerRef.current);
-    };
-  }, []);
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-
-    setFormData((p) => ({ ...p, [name]: value }));
-    if (status.error) setStatus((s) => ({ ...s, error: "" }));
+  const setField = (key) => (e) => {
+    const val = e.target.value;
+    setForm((p) => ({ ...p, [key]: val }));
+    setError("");
+    setSuccess(false);
   };
 
   const validate = () => {
-    const name = formData.name.trim();
-    const email = formData.email.trim();
-    const message = formData.message.trim();
+    const name = form.name.trim();
+    const email = form.email.trim();
+    const subject = form.subject.trim();
+    const message = form.message.trim();
 
-    if (!name) return "Please enter your name.";
-    if (!email) return "Please enter your email.";
-    if (!isValidEmail(email)) return "Please enter a valid email.";
+    if (!name || !email || !subject || !message) return "Please fill all fields.";
+    if (!isValidEmail(email)) return "Please enter a valid email address.";
+    if (subject.length < 3) return "Subject must be at least 3 characters.";
     if (message.length < 10) return "Message must be at least 10 characters.";
+    if (message.length > 1000) return "Message is too long (max 1000 characters).";
 
     return "";
   };
 
-  const handleSubmit = async (e) => {
+  const onSubmit = async (e) => {
     e.preventDefault();
-    if (status.loading) return;
+    if (busy) return;
 
     const msg = validate();
     if (msg) {
-      setStatus({ loading: false, success: false, error: msg });
+      setError(msg);
+      setSuccess(false);
       return;
     }
 
+    setBusy(true);
+    setError("");
+
     try {
-      setStatus({ loading: true, success: false, error: "" });
+      // ✅ If you have a backend route later, replace this block with:
+      // await fetch(`${import.meta.env.VITE_API_URL}/contact`, { ... })
+      await new Promise((r) => setTimeout(r, 600));
 
-      // 🔌 Later: connect backend here
-      console.log("Contact form submitted:", formData);
-
-      await new Promise((res) => setTimeout(res, 800));
-
-      setStatus({ loading: false, success: true, error: "" });
-      setFormData(initialForm);
-
-      if (successTimerRef.current) clearTimeout(successTimerRef.current);
-      successTimerRef.current = setTimeout(() => {
-        setStatus((s) => ({ ...s, success: false }));
-      }, 3000);
-    } catch {
-      setStatus({
-        loading: false,
-        success: false,
-        error: "Something went wrong. Please try again.",
-      });
+      setSuccess(true);
+      setForm(initial);
+    } catch (err) {
+      setSuccess(false);
+      setError(err?.message || "Failed to send message. Please try again.");
+    } finally {
+      setBusy(false);
     }
   };
 
   return (
-    <div className="contact-wrapper">
-      <h1>Contact Us</h1>
-      <p>Have questions or want to say hello? Send us a message!</p>
+    <section className="contact-wrapper">
+      <h1>Contact</h1>
+      <p>
+        Have a question or want to collaborate? Send a message and we’ll get back
+        to you.
+      </p>
 
-      <form className="contact-form" onSubmit={handleSubmit} noValidate>
-        <label className="sr-only" htmlFor={nameId}>
+      {error ? (
+        <p className="contact-error" role="alert" aria-live="polite">
+          {error}
+        </p>
+      ) : null}
+
+      <form className="contact-form" onSubmit={onSubmit}>
+        <label className="sr-only" htmlFor="contact-name">
           Your name
         </label>
         <input
-          id={nameId}
+          id="contact-name"
           type="text"
-          name="name"
-          placeholder="Your Name"
-          value={formData.name}
-          onChange={handleChange}
-          required
-          disabled={status.loading}
+          value={form.name}
+          onChange={setField("name")}
+          placeholder="Your name"
           autoComplete="name"
+          disabled={busy}
+          required
         />
 
-        <label className="sr-only" htmlFor={emailId}>
+        <label className="sr-only" htmlFor="contact-email">
           Your email
         </label>
         <input
-          id={emailId}
+          id="contact-email"
           type="email"
-          name="email"
-          placeholder="Your Email"
-          value={formData.email}
-          onChange={handleChange}
-          required
-          disabled={status.loading}
+          value={form.email}
+          onChange={setField("email")}
+          placeholder="Your email"
           autoComplete="email"
+          disabled={busy}
+          required
         />
 
-        <label className="sr-only" htmlFor={msgId}>
-          Your message
+        <label className="sr-only" htmlFor="contact-subject">
+          Subject
+        </label>
+        <input
+          id="contact-subject"
+          type="text"
+          value={form.subject}
+          onChange={setField("subject")}
+          placeholder="Subject"
+          disabled={busy}
+          required
+          minLength={3}
+        />
+
+        <label className="sr-only" htmlFor="contact-message">
+          Message
         </label>
         <textarea
-          id={msgId}
-          name="message"
-          placeholder="Your Message"
-          rows={5}
-          value={formData.message}
-          onChange={handleChange}
+          id="contact-message"
+          value={form.message}
+          onChange={setField("message")}
+          placeholder="Write your message…"
+          disabled={busy}
           required
-          disabled={status.loading}
+          minLength={10}
+          maxLength={1000}
+          rows={5}
         />
 
-        {status.error ? (
-          <p className="contact-error" role="alert" aria-live="polite">
-            {status.error}
-          </p>
-        ) : null}
+        <div className="contact-counter" aria-live="polite">
+          {remaining} characters left
+        </div>
 
-        <button type="submit" disabled={status.loading}>
-          {status.loading ? "Sending…" : "Send Message"}
+        <button type="submit" disabled={busy}>
+          {busy ? "Sending…" : "Send Message"}
         </button>
       </form>
 
-      {status.success ? (
-        <p className="success-message" role="status" aria-live="polite">
-          Thank you! Your message has been sent.
-        </p>
+      {success ? (
+        <div className="success-message" role="status" aria-live="polite">
+          ✅ Message sent successfully! Thank you.
+        </div>
       ) : null}
-    </div>
+    </section>
   );
-};
-
-export default Contact;
+}

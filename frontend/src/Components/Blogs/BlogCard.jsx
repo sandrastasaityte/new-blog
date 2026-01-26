@@ -10,7 +10,7 @@ const safeDate = (d) => {
 
 const clamp = (n, min, max) => Math.min(max, Math.max(min, n));
 
-const BlogCard = ({ post, onReadMore }) => {
+export default function BlogCard({ post, onReadMore }) {
   const img = post?.image || PLACEHOLDER_IMG;
   const title = post?.title?.trim() || "Untitled post";
 
@@ -29,7 +29,9 @@ const BlogCard = ({ post, onReadMore }) => {
     : "No description available.";
 
   const tags = Array.isArray(post?.tags) ? post.tags.filter(Boolean) : [];
-  const id = post?.id ?? post?._id ?? title; // for key fallback / handlers
+
+  // ✅ prefer Mongo id
+  const id = post?._id ?? post?.id ?? title;
 
   const handleReadMore = () => onReadMore?.(post);
 
@@ -41,7 +43,14 @@ const BlogCard = ({ post, onReadMore }) => {
   };
 
   return (
-    <article className="blog-card" tabIndex={0} onKeyDown={onCardKeyDown}>
+    <article
+      className="blog-card"
+      tabIndex={0}
+      onKeyDown={onCardKeyDown}
+      onClick={handleReadMore}
+      role="button"
+      aria-label={`Open post: ${title}`}
+    >
       <div className="blog-card__imgWrap">
         <img
           className="blog-card__img"
@@ -49,6 +58,7 @@ const BlogCard = ({ post, onReadMore }) => {
           alt={title}
           loading="lazy"
           onError={(e) => {
+            e.currentTarget.onerror = null;
             e.currentTarget.src = PLACEHOLDER_IMG;
           }}
         />
@@ -78,12 +88,15 @@ const BlogCard = ({ post, onReadMore }) => {
         {tags.length ? (
           <div className="blog-card__tags" aria-label="Tags">
             {tags.slice(0, 4).map((t) => (
-              <span key={`${id}-${t}`} className="tag-chip">
+              <span key={`${id}-${String(t).toLowerCase()}`} className="tag-chip">
                 {t}
               </span>
             ))}
             {tags.length > 4 ? (
-              <span className="tag-more" aria-label={`${tags.length - 4} more tags`}>
+              <span
+                className="tag-more"
+                aria-label={`${tags.length - 4} more tags`}
+              >
                 +{tags.length - 4}
               </span>
             ) : null}
@@ -93,7 +106,10 @@ const BlogCard = ({ post, onReadMore }) => {
         <p className="blog-card__excerpt">{excerpt}</p>
 
         <div className="blog-card__footer">
-          <div className="blog-card__rating" aria-label={`Rating ${rating} out of 5`}>
+          <div
+            className="blog-card__rating"
+            aria-label={`Rating ${rating} out of 5`}
+          >
             <span className="star" aria-hidden="true">
               ★
             </span>
@@ -103,7 +119,10 @@ const BlogCard = ({ post, onReadMore }) => {
           <button
             type="button"
             className="blog-card__btn"
-            onClick={handleReadMore}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleReadMore();
+            }}
             aria-label={`Read more: ${title}`}
           >
             Read More
@@ -112,6 +131,4 @@ const BlogCard = ({ post, onReadMore }) => {
       </div>
     </article>
   );
-};
-
-export default BlogCard;
+}

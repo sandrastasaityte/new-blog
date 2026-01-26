@@ -1,13 +1,16 @@
 // src/components/ProtectedRoute.jsx
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
 
 const ProtectedRoute = ({ token, onRequireAuth, children }) => {
   const location = useLocation();
   const authToken = token || localStorage.getItem("token");
 
+  const askedRef = useRef(false);
+
   useEffect(() => {
-    if (!authToken) {
+    if (!authToken && !askedRef.current) {
+      askedRef.current = true;
       onRequireAuth?.(location);
     }
   }, [authToken, location, onRequireAuth]);

@@ -86,10 +86,6 @@
   box-shadow: 0 8px 18px rgba(0, 0, 0, 0.06);
 }
 
-.filter-chip:focus-visible {
-  outline: 2px solid #ff6600;
-  outline-offset: 3px;
-}
 
 .clear-filters {
   border: none;
@@ -110,11 +106,12 @@
 .clear-filters:active {
   transform: translateY(0);
 }
-
+.filter-chip:focus-visible,
 .clear-filters:focus-visible {
-  outline: 2px solid #ff6600;
-  outline-offset: 3px;
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(0,0,0,0.12);
 }
+
 
 /* Desktop: consistent 3-column grid */
 @media (min-width: 1024px) {
@@ -157,4 +154,24 @@
   .clear-filters:hover {
     transform: none;
   }
+}
+/* --- Optional: make sidebar feel premium (desktop only) ---
+   Works if your Sidebar root has a wrapper class you can target.
+   If Sidebar has class .sidebar, this will apply. Otherwise rename selector.
+*/
+@media (min-width: 901px) {
+  .blogs-layout .sidebar {
+    position: sticky;
+    top: 18px;
+  }
+}
+
+/* --- Slightly nicer spacing when filters show up --- */
+.blogs-head {
+  padding-bottom: 2px;
+}
+
+/* --- Optional: reduce page jump when scrollbar appears/disappears (modern browsers) --- */
+html {
+  scrollbar-gutter: stable;
 }

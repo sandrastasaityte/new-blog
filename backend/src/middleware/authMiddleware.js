@@ -7,26 +7,24 @@ export async function protect(req, res, next) {
     const [type, token] = header.split(" ");
 
     if (type !== "Bearer" || !token) {
-      res.status(401);
-      throw new Error("Not authorized, no token");
+      return res.status(401).json({ message: "Not authorized, no token" });
     }
 
     if (!process.env.JWT_SECRET) {
-      throw new Error("JWT_SECRET is missing in .env");
+      console.error("JWT_SECRET missing in environment");
+      return res.status(500).json({ message: "Server misconfiguration" });
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    const user = await User.findById(decoded.id).select("_id username");
+    const user = await User.findById(decoded.id).select("_id username role");
     if (!user) {
-      res.status(401);
-      throw new Error("Not authorized");
+      return res.status(401).json({ message: "Not authorized" });
     }
 
-    req.user = user;
+    req.user = user; // { id, username, role }
     next();
   } catch (err) {
-    if (!res.statusCode || res.statusCode === 200) res.status(401);
-    next(err);
+    return res.status(401).json({ message: "Invalid or expired token" });
   }
 }

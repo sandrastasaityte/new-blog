@@ -43,7 +43,8 @@ export function normalize(arr) {
   const iso = nowIso();
 
   return (Array.isArray(arr) ? arr : []).map((p, idx) => {
-    const id = String(p?.id ?? `${idx}-${p?.title ?? "post"}`);
+    const id = String(p?.id ?? p?._id ?? `${idx}-${p?.title ?? "post"}`);
+
 
     const tags = Array.isArray(p?.tags)
       ? p.tags.map((t) => String(t).trim()).filter(Boolean)
@@ -132,7 +133,7 @@ export function addPost(posts, post) {
   const newPost = normalize([
     {
       ...p,
-      id: p.id ?? `p-${Date.now()}`,
+      id: p.id ?? p._id ?? `p-${Date.now()}`,
       date: p.date ?? iso.slice(0, 10),
       views: p.views ?? 0,
       likes: p.likes ?? 0,

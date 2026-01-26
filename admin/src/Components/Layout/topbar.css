@@ -1,16 +1,26 @@
-/* src/components/layout/topbar.css */
-
 .admin-topbar {
-  height: 64px;
+  position: sticky;
+  top: 0;
+  z-index: 30;
+
+  /* helps sticky behave inside flex/grid layouts */
+  width: 100%;
+
+  background: rgba(255, 255, 255, 0.92);
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+  box-shadow: 0 10px 24px rgba(0,0,0,0.04);
+
+  /* optional modern blur */
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+
+  padding: 10px 14px;
+  min-height: 62px;
+
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 14px;
-  background: #ffffff;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-  position: sticky;
-  top: 0;
-  z-index: 10;
+  gap: 12px;
 }
 
 .tb-left {
@@ -21,8 +31,11 @@
 }
 
 .tb-title {
-  font-weight: 800;
-  font-size: 1.05rem;
+  font-weight: 900;
+  color: rgba(0,0,0,0.85);
+  letter-spacing: -0.01em;
+
+  min-width: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -32,69 +45,117 @@
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-shrink: 0;
 }
 
 .tb-icon-btn {
-  height: 40px;
-  width: 40px;
+  width: 42px;
+  height: 42px;
   border-radius: 12px;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  background: #fff;
+  border: 1px solid rgba(0,0,0,0.10);
+  background: rgba(0,0,0,0.03);
   cursor: pointer;
+
   display: grid;
   place-items: center;
-  font-size: 18px;
+
+  font-size: 1.15rem;
+  line-height: 1;
+
+  transition: transform 0.12s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 
 .tb-icon-btn:hover {
-  background: rgba(0, 0, 0, 0.03);
+  transform: translateY(-1px);
+  box-shadow: 0 12px 22px rgba(0,0,0,0.08);
+  background: rgba(0,0,0,0.04);
+}
+
+.tb-icon-btn:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+/* Better focus (targets real controls) */
+.tb-icon-btn:focus-visible,
+.tb-btn:focus-visible,
+.tb-skip:focus-visible {
+  outline: 2px solid rgba(255, 102, 0, 0.85);
+  outline-offset: 3px;
+  border-radius: 12px;
 }
 
 .tb-pill {
   padding: 8px 12px;
   border-radius: 999px;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  background: rgba(0, 0, 0, 0.02);
+  background: rgba(0,0,0,0.04);
+  border: 1px solid rgba(0,0,0,0.06);
+  font-weight: 800;
+  color: rgba(0,0,0,0.72);
   font-size: 0.92rem;
+  max-width: 220px;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .tb-btn {
-  height: 40px;
-  padding: 0 12px;
+  border: none;
   border-radius: 12px;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  background: #111;
+  padding: 0.7rem 0.95rem;
+  background: linear-gradient(135deg, #ff6600, #ff8a3d);
   color: #fff;
+  font-weight: 900;
   cursor: pointer;
-  font-weight: 700;
+  transition: transform 0.12s ease, filter 0.12s ease, box-shadow 0.2s ease, opacity 0.12s ease;
 }
 
-.tb-btn:hover {
-  opacity: 0.92;
+.tb-btn:hover:not(:disabled) {
+  filter: brightness(1.03);
+  transform: translateY(-1px);
+  box-shadow: 0 12px 24px rgba(0,0,0,0.10);
 }
 
-/* Desktop/mobile visibility */
-.tb-mobile-only {
-  display: none;
-}
-.tb-desktop-only {
-  display: inline-grid;
+.tb-btn:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: none;
 }
 
-@media (max-width: 980px) {
-  .tb-mobile-only {
-    display: inline-grid;
-  }
-  .tb-desktop-only {
-    display: none;
-  }
+.tb-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
-/* Nice keyboard focus */
-.tb-icon-btn:focus-visible,
-.tb-btn:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(0, 119, 255, 0.25);
-  border-color: rgba(0, 119, 255, 0.35);
+/* Responsive controls */
+.tb-mobile-only { display: none; }
+.tb-desktop-only { display: inline-grid; }
+
+@media (max-width: 900px) {
+  .tb-mobile-only { display: inline-grid; }
+  .tb-desktop-only { display: none; }
+  .tb-pill { display: none; }
+
+  /* keep title from pushing right controls away */
+  .tb-title { max-width: 48vw; }
+}
+
+/* Skip link */
+.tb-skip {
+  position: absolute;
+  left: -9999px;
+  top: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #fff;
+  border: 1px solid rgba(0,0,0,0.14);
+  box-shadow: 0 10px 28px rgba(0,0,0,0.12);
+  z-index: 1000;
+  text-decoration: none;
+  color: inherit;
+}
+
+.tb-skip:focus {
+  left: 10px;
 }

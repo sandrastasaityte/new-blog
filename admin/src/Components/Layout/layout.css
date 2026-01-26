@@ -4,6 +4,7 @@
 .admin-shell {
   display: grid;
   grid-template-columns: 260px 1fr;
+
   min-height: 100vh;
   min-width: 0;
   background: #f6f7fb;
@@ -19,26 +20,39 @@
   position: sticky;
   top: 0;
   height: 100vh;
-  border-right: 1px solid rgba(0, 0, 0, 0.06);
+  align-self: start;
+
   background: #ffffff;
   overflow: hidden;
-  align-self: start;
-}
 
-/* NOTE: width is controlled by grid columns, not by this element.
-   Keeping this OUT avoids layout bugs. */
-/* .admin-shell.is-collapsed .admin-sidebar-desktop { width: 84px; } */
+  /* ✅ keep border here (remove it from .admin-sidebar in sidebar.css) */
+  border-right: 1px solid rgba(0, 0, 0, 0.06);
+}
 
 /* ---------- Main ---------- */
 .admin-main {
+  /* ✅ lock main column height so content scroll is stable */
+  height: 100vh;
+  min-width: 0;
+
   display: flex;
   flex-direction: column;
-  min-width: 0;
+
+  /* important: prevent body horizontal scroll from long content */
+  overflow: hidden;
 }
 
+/* Topbar is sticky itself; we just ensure content area scrolls */
 .admin-content {
   padding: 18px;
   min-width: 0;
+
+  /* ✅ internal scroll area */
+  overflow: auto;
+  flex: 1 1 auto;
+
+  /* nicer scrolling on iOS */
+  -webkit-overflow-scrolling: touch;
 }
 
 /* ---------- Mobile Drawer ---------- */
@@ -62,21 +76,29 @@
     display: none;
   }
 
+  /* ✅ main should still be full height */
+  .admin-main {
+    height: 100vh;
+  }
+
   .admin-sidebar-mobile {
     display: block;
     position: fixed;
     inset: 0;
     z-index: 999;
+
     pointer-events: none;
     opacity: 0;
-    will-change: opacity;
     transition: opacity 0.18s ease;
   }
 
   .admin-sidebar-mobile.open {
     pointer-events: auto;
     opacity: 1;
-    backdrop-filter: blur(2px); /* optional */
+
+    /* optional blur */
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
   }
 
   .admin-overlay {
@@ -97,12 +119,15 @@
     top: 0;
     height: 100%;
     width: min(86vw, 320px);
+
     background: #ffffff;
     border-right: 1px solid rgba(0, 0, 0, 0.08);
+
+    /* ✅ drawer scroll */
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
 
     transform: translateX(-100%);
-    will-change: transform;
     transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
   }
 

@@ -1,175 +1,163 @@
 /* Login.css */
 
-/* Global box sizing (safe) */
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
-
-/* Login Page Wrapper */
 .login-wrapper {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 50vh;
-  padding: 24px 16px;
-
-  background: radial-gradient(
-    circle at top,
-    #fff 0%,
-    #f5f5f5 45%,
-    #f0f0f0 100%
-  );
-
-  /* smoother on big screens */
-  background-attachment: fixed;
+  width: 100%;
+  display: grid;
+  place-items: center;
 }
 
-/* Login Form */
+/* Card */
 .login-form {
-  width: 100%;
-  max-width: 420px;
+  width: min(420px, 100%);
   background: #fff;
-  padding: 34px 28px;
+  border: 1px solid rgba(0, 0, 0, 0.07);
   border-radius: 18px;
-  box-shadow: 0 18px 55px rgba(0, 0, 0, 0.10);
-  border: 1px solid rgba(0, 0, 0, 0.06);
-  text-align: center;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+  padding: 2rem;
+  box-shadow: 0 18px 55px rgba(0, 0, 0, 0.08);
+  position: relative;
 }
 
 .login-form h2 {
-  margin: 0 0 18px;
-  color: #ff6600;
-  font-size: 1.8rem;
+  margin: 4px 0 14px;
+  font-size: 1.35rem;
   font-weight: 900;
+  letter-spacing: -0.01em;
+  color: #111;
+}
+
+/* Form layout */
+.login-form form {
+  display: grid;
+  gap: 0.85rem;
 }
 
 /* Inputs */
 .login-form input {
   width: 100%;
-  padding: 12px 14px;
-  margin-bottom: 14px;
-  border: 1px solid rgba(0, 0, 0, 0.14);
+  padding: 0.78rem 0.9rem;
+  border: 1px solid rgba(0, 0, 0, 0.12);
   border-radius: 12px;
-  font-size: 15px;
-  line-height: 1.2;
   outline: none;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease;
   background: #fff;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  font: inherit;
 }
 
 .login-form input:focus {
-  border-color: #ff6600;
-  box-shadow: 0 0 0 4px rgba(255, 102, 0, 0.14);
+  border-color: rgba(255, 102, 0, 0.6);
+  box-shadow: 0 0 0 4px rgba(255, 102, 0, 0.12);
 }
 
 .login-form input:disabled {
   background: rgba(0, 0, 0, 0.03);
+  color: rgba(0, 0, 0, 0.6);
   cursor: not-allowed;
-  opacity: 0.85;
+}
+
+/* Error */
+.login-form .error {
+  margin: 0;
+  padding: 0.75rem 0.85rem;
+  border-radius: 12px;
+  color: #b42318;
+  background: rgba(180, 35, 24, 0.08);
+  border: 1px solid rgba(180, 35, 24, 0.16);
+  font-size: 0.92rem;
+  line-height: 1.25;
 }
 
 /* Button */
-.login-form button {
+.login-form button[type="submit"] {
   width: 100%;
-  padding: 12px 14px;
+  padding: 0.82rem 0.95rem;
+  border-radius: 12px;
+  border: none;
   background: linear-gradient(135deg, #ff6600, #ff8a3d);
   color: #fff;
-  font-size: 16px;
   font-weight: 900;
-  border: none;
-  border-radius: 12px;
   cursor: pointer;
-  line-height: 1.2;
-  transition: transform 0.12s ease, filter 0.12s ease, opacity 0.12s ease;
-  margin-top: 6px;
+  transition: transform 0.12s ease, filter 0.12s ease, box-shadow 0.2s ease,
+    opacity 0.2s ease;
 }
 
-.login-form button:hover {
+.login-form button[type="submit"]:hover:not(:disabled) {
   filter: brightness(1.03);
   transform: translateY(-1px);
+  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.10);
 }
 
-.login-form button:active {
+.login-form button[type="submit"]:active:not(:disabled) {
   transform: translateY(0);
+  box-shadow: none;
 }
 
-.login-form button:disabled {
-  opacity: 0.7;
+.login-form button[type="submit"]:disabled {
+  opacity: 0.65;
   cursor: not-allowed;
   transform: none;
+  box-shadow: none;
+  filter: none;
 }
 
-/* Error message */
-.error {
-  margin: 6px 0 12px;
-  padding: 10px 12px;
-  border-radius: 12px;
-  background: rgba(176, 0, 32, 0.08);
-  border: 1px solid rgba(176, 0, 32, 0.2);
-  color: #b00020;
-  font-size: 0.9rem;
-}
-
-/* Note */
+/* Footer note */
 .login-note {
-  margin-top: 14px;
-  font-size: 14px;
-  color: #666;
-  line-height: 1.5;
+  margin: 12px 0 0;
+  text-align: center;
+  color: rgba(0, 0, 0, 0.7);
+  font-size: 0.95rem;
 }
 
-/* Link-like button */
-.toggle-link {
+/* Link styles */
+.login-note a {
+  font-weight: 900;
+  color: rgba(0, 0, 0, 0.9);
+  text-decoration: underline;
+}
+
+.login-note a:hover {
+  opacity: 0.85;
+}
+
+/* If you're using the "Sign Up" toggle button inside the modal */
+.login-note .toggle-link {
   border: none;
   background: transparent;
-  color: #ff6600;
-  font-weight: 900;
   cursor: pointer;
+  font-weight: 900;
   padding: 0 2px;
   text-decoration: underline;
-  text-underline-offset: 3px;
+  color: rgba(0, 0, 0, 0.9);
+  border-radius: 8px;
+  transition: opacity 0.2s ease, box-shadow 0.2s ease;
 }
 
-.toggle-link:disabled {
-  opacity: 0.7;
+.login-note .toggle-link:hover {
+  opacity: 0.85;
+}
+
+.login-note .toggle-link:disabled {
+  opacity: 0.55;
   cursor: not-allowed;
 }
 
-/* Focus rings */
-.login-form button:focus-visible,
-.toggle-link:focus-visible {
+.login-note .toggle-link:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 4px rgba(255, 102, 0, 0.18);
+  box-shadow: 0 0 0 4px rgba(255, 102, 0, 0.15);
 }
 
-.toggle-link:focus-visible {
-  border-radius: 6px;
+/* Accessibility: focus ring */
+.login-form :focus-visible {
+  outline: none;
 }
 
 /* Mobile */
-@media (max-width: 420px) {
+@media (max-width: 480px) {
   .login-form {
-    padding: 26px 18px;
+    padding: 1.5rem 1.2rem;
     border-radius: 14px;
   }
 
   .login-form h2 {
-    font-size: 1.55rem;
-  }
-}
-
-/* Reduced motion */
-@media (prefers-reduced-motion: reduce) {
-  .login-form button,
-  .login-form input {
-    transition: none;
-  }
-
-  .login-form button:hover,
-  .login-form button:active {
-    transform: none;
+    font-size: 1.25rem;
   }
 }

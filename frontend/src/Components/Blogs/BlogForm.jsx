@@ -20,16 +20,23 @@ const parseTags = (input) => {
   return out;
 };
 
-const getId = (p) => p?.id ?? p?._id;
+const getId = (p) => p?._id ?? p?.id;
+
 const clamp = (n, min, max) => Math.min(max, Math.max(min, n));
 
-const BlogForm = ({ onSubmit, editingPost, onCancel, submitLabel, busy = false }) => {
+const BlogForm = ({
+  onSubmit,
+  editingPost,
+  onCancel,
+  submitLabel,
+  busy = false,
+}) => {
   const [form, setForm] = useState({
     title: "",
     content: "",
     tags: "",
     imageUrl: "",
-    imageFile: null,  // UI-only unless you implement upload
+    imageFile: null, // UI-only unless you implement upload
     imagePreview: "", // URL or blob
     author: "Admin",
     rating: 0,
@@ -59,7 +66,9 @@ const BlogForm = ({ onSubmit, editingPost, onCancel, submitLabel, busy = false }
   useEffect(() => {
     // revoke any existing blob URL when switching modes/posts
     if (blobUrlRef.current) {
-      try { URL.revokeObjectURL(blobUrlRef.current); } catch {}
+      try {
+        URL.revokeObjectURL(blobUrlRef.current);
+      } catch {}
       blobUrlRef.current = "";
     }
 
@@ -88,7 +97,9 @@ const BlogForm = ({ onSubmit, editingPost, onCancel, submitLabel, busy = false }
   useEffect(() => {
     return () => {
       if (blobUrlRef.current) {
-        try { URL.revokeObjectURL(blobUrlRef.current); } catch {}
+        try {
+          URL.revokeObjectURL(blobUrlRef.current);
+        } catch {}
       }
     };
   }, []);
@@ -107,7 +118,8 @@ const BlogForm = ({ onSubmit, editingPost, onCancel, submitLabel, busy = false }
           next.imagePreview = url;
         } else {
           // If URL cleared: keep file preview if exists, else fall back to editing image (or empty)
-          if (p.imageFile && blobUrlRef.current) next.imagePreview = blobUrlRef.current;
+          if (p.imageFile && blobUrlRef.current)
+            next.imagePreview = blobUrlRef.current;
           else next.imagePreview = editingPost?.image || "";
         }
       }
@@ -128,7 +140,9 @@ const BlogForm = ({ onSubmit, editingPost, onCancel, submitLabel, busy = false }
     if (!file) return;
 
     if (blobUrlRef.current) {
-      try { URL.revokeObjectURL(blobUrlRef.current); } catch {}
+      try {
+        URL.revokeObjectURL(blobUrlRef.current);
+      } catch {}
       blobUrlRef.current = "";
     }
 
@@ -151,10 +165,12 @@ const BlogForm = ({ onSubmit, editingPost, onCancel, submitLabel, busy = false }
     const ratingNum = Number(form.rating);
 
     if (!title) next.title = "Title is required.";
-    else if (title.length < 4) next.title = "Title must be at least 4 characters.";
+    else if (title.length < 4)
+      next.title = "Title must be at least 4 characters.";
 
     if (!content) next.content = "Content is required.";
-    else if (content.length < 20) next.content = "Content must be at least 20 characters.";
+    else if (content.length < 20)
+      next.content = "Content must be at least 20 characters.";
 
     if (!Number.isFinite(ratingNum) || ratingNum < 0 || ratingNum > 5) {
       next.rating = "Rating must be between 0 and 5.";
@@ -163,7 +179,8 @@ const BlogForm = ({ onSubmit, editingPost, onCancel, submitLabel, busy = false }
     if (form.imageUrl.trim()) {
       try {
         const u = new URL(form.imageUrl.trim());
-        if (!/^https?:$/.test(u.protocol)) next.imageUrl = "Image URL must start with http/https.";
+        if (!/^https?:$/.test(u.protocol))
+          next.imageUrl = "Image URL must start with http/https.";
       } catch {
         next.imageUrl = "Image must be a valid URL (https://...)";
       }
@@ -178,19 +195,22 @@ const BlogForm = ({ onSubmit, editingPost, onCancel, submitLabel, busy = false }
     if (busy) return;
     if (!validate()) return;
 
+    const existingId = getId(editingPost);
+    const imageUrl = form.imageUrl.trim();
+
     const payload = {
-      id: getId(editingPost) || undefined,
+      ...(existingId ? { id: String(existingId) } : {}),
       title: form.title.trim(),
       content: form.content.trim(),
       tags: tagsArray,
-      image: form.imageUrl.trim() || form.imagePreview || PLACEHOLDER_IMG,
+      // ✅ never save blob: preview URL as final image
+      image: imageUrl || editingPost?.image || PLACEHOLDER_IMG,
       author: form.author.trim() || "Admin",
       rating: clamp(Number(form.rating) || 0, 0, 5),
     };
 
     onSubmit?.(payload, { imageFile: form.imageFile });
 
-    // Clear only if adding
     if (!editingPost) resetForm();
   };
 
@@ -211,7 +231,9 @@ const BlogForm = ({ onSubmit, editingPost, onCancel, submitLabel, busy = false }
           minLength={4}
           disabled={busy}
         />
-        {errors.title ? <div className="field-error">{errors.title}</div> : null}
+        {errors.title ? (
+          <div className="field-error">{errors.title}</div>
+        ) : null}
       </label>
 
       <label className={`field ${errors.content ? "is-error" : ""}`}>
@@ -225,7 +247,9 @@ const BlogForm = ({ onSubmit, editingPost, onCancel, submitLabel, busy = false }
           minLength={20}
           disabled={busy}
         />
-        {errors.content ? <div className="field-error">{errors.content}</div> : null}
+        {errors.content ? (
+          <div className="field-error">{errors.content}</div>
+        ) : null}
       </label>
 
       <label className="field">
@@ -257,12 +281,19 @@ const BlogForm = ({ onSubmit, editingPost, onCancel, submitLabel, busy = false }
           placeholder="https://…"
           disabled={busy}
         />
-        {errors.imageUrl ? <div className="field-error">{errors.imageUrl}</div> : null}
+        {errors.imageUrl ? (
+          <div className="field-error">{errors.imageUrl}</div>
+        ) : null}
       </label>
 
       <label className="field">
         <span>Or choose an image file (preview only)</span>
-        <input type="file" accept="image/*" onChange={handleImageFile} disabled={busy} />
+        <input
+          type="file"
+          accept="image/*"
+          onChange={handleImageFile}
+          disabled={busy}
+        />
       </label>
 
       {form.imagePreview ? (
@@ -299,19 +330,28 @@ const BlogForm = ({ onSubmit, editingPost, onCancel, submitLabel, busy = false }
             onChange={setField("rating")}
             disabled={busy}
           />
-          {errors.rating ? <div className="field-error">{errors.rating}</div> : null}
+          {errors.rating ? (
+            <div className="field-error">{errors.rating}</div>
+          ) : null}
         </label>
       </div>
 
       <div className="form-actions">
         {onCancel ? (
-          <button type="button" className="btn secondary" onClick={onCancel} disabled={busy}>
+          <button
+            type="button"
+            className="btn secondary"
+            onClick={onCancel}
+            disabled={busy}
+          >
             Cancel
           </button>
         ) : null}
 
         <button type="submit" className="btn primary" disabled={busy}>
-          {busy ? "Saving…" : submitLabel || (isEditing ? "Update Post" : "Add Post")}
+          {busy
+            ? "Saving…"
+            : submitLabel || (isEditing ? "Update Post" : "Add Post")}
         </button>
       </div>
     </form>

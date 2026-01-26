@@ -4,9 +4,14 @@ import SignUp from "../SignUp/SignUp";
 import "./AuthModal.css";
 
 const FOCUSABLE =
-  'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+  'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [contenteditable="true"], [tabindex]:not([tabindex="-1"])';
 
-export default function AuthModal({ isOpen, onClose, defaultMode = "login", setToken }) {
+export default function AuthModal({
+  isOpen,
+  onClose,
+  defaultMode = "login",
+  setToken,
+}) {
   const [mode, setMode] = useState(defaultMode); // "login" | "signup"
   const [busy, setBusy] = useState(false);
 
@@ -17,17 +22,16 @@ export default function AuthModal({ isOpen, onClose, defaultMode = "login", setT
   const titleId = useId();
   const descId = useId();
 
-  // keep ref synced (so listeners don't need busy in deps)
   useEffect(() => {
     busyRef.current = busy;
   }, [busy]);
 
-  // Reset mode each time modal opens
+  // Reset mode when opening (only when opening, not on every defaultMode change)
   useEffect(() => {
     if (isOpen) setMode(defaultMode);
-  }, [isOpen, defaultMode]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
 
-  // Focus first element on open
   useEffect(() => {
     if (!isOpen) return;
 
@@ -43,7 +47,6 @@ export default function AuthModal({ isOpen, onClose, defaultMode = "login", setT
     return () => clearTimeout(t);
   }, [isOpen]);
 
-  // ESC close + focus trap + body scroll lock
   useEffect(() => {
     if (!isOpen) return;
 
@@ -77,10 +80,8 @@ export default function AuthModal({ isOpen, onClose, defaultMode = "login", setT
 
       const first = focusables[0];
       const last = focusables[focusables.length - 1];
-
       const active = document.activeElement;
 
-      // If focus somehow left the dialog, bring it back in
       const activeInside = root.contains(active);
 
       if (e.shiftKey) {
@@ -102,10 +103,8 @@ export default function AuthModal({ isOpen, onClose, defaultMode = "login", setT
       document.removeEventListener("keydown", onKeyDown);
       document.body.style.overflow = prevOverflow;
 
-      // Restore focus to element that opened the modal
       lastActiveRef.current?.focus?.();
 
-      // Reset busy state when closing
       setBusy(false);
       busyRef.current = false;
     };
@@ -115,9 +114,8 @@ export default function AuthModal({ isOpen, onClose, defaultMode = "login", setT
 
   const isLogin = mode === "login";
 
-  const handleOverlayMouseDown = (e) => {
-    // Only close when clicking overlay (not inside modal)
-    if (e.target === e.currentTarget && !busy) onClose?.();
+  const handleOverlayPointerDown = (e) => {
+    if (e.target === e.currentTarget && !busyRef.current) onClose?.();
   };
 
   const handleSuccess = () => onClose?.();
@@ -125,7 +123,7 @@ export default function AuthModal({ isOpen, onClose, defaultMode = "login", setT
   return (
     <div
       className="modal-overlay"
-      onMouseDown={handleOverlayMouseDown}
+      onPointerDown={handleOverlayPointerDown}
       role="presentation"
     >
       <div
@@ -135,7 +133,7 @@ export default function AuthModal({ isOpen, onClose, defaultMode = "login", setT
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={descId}
-        onMouseDown={(e) => e.stopPropagation()}
+        onPointerDown={(e) => e.stopPropagation()}
       >
         <h2 id={titleId} className="sr-only">
           {isLogin ? "Login" : "Sign up"}
@@ -146,7 +144,7 @@ export default function AuthModal({ isOpen, onClose, defaultMode = "login", setT
 
         <button
           className="close-btn"
-          onClick={() => !busy && onClose?.()}
+          onClick={() => !busyRef.current && onClose?.()}
           aria-label="Close"
           type="button"
           disabled={busy}

@@ -1,4 +1,5 @@
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
+const RAW_API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
+const API_URL = RAW_API_URL.replace(/\/$/, ""); // ✅ remove trailing slash
 
 export const getToken = () => localStorage.getItem("token");
 
@@ -6,11 +7,9 @@ export const logout = () => {
   localStorage.removeItem("token");
 };
 
-function authHeaders(token, json = true) {
+function authHeaders(token) {
   const t = token ?? getToken();
-
   return {
-    ...(json && { "Content-Type": "application/json" }),
     ...(t && { Authorization: `Bearer ${t}` }),
   };
 }
@@ -29,12 +28,10 @@ async function handleResponse(res) {
     }
   }
 
-  // ✅ Optional: auto logout on expired/invalid token
   if (res.status === 401) {
     logout();
-    // if this is an admin app, you might prefer: window.location.href = "/login";
-    // keep "/" if that's your public home
-    window.location.href = "/";
+    // ✅ Prefer letting UI decide navigation:
+    // throw and handle it in your app (or keep redirect if you want)
     throw new Error("Session expired. Please log in again.");
   }
 
@@ -49,17 +46,24 @@ async function handleResponse(res) {
   return data;
 }
 
-async function apiFetch(path, { token, json = true, ...options } = {}) {
-  // ✅ If body is FormData, never set JSON headers
+export async function apiFetch(path, { token, ...options } = {}) {
   const isFormData =
     typeof FormData !== "undefined" && options.body instanceof FormData;
 
+  const headers = {
+    ...authHeaders(token),
+    ...(options.headers || {}),
+  };
+
+  // ✅ set JSON Content-Type only when sending a JSON body
+  const hasBody = options.body !== undefined && options.body !== null;
+  if (hasBody && !isFormData && !headers["Content-Type"]) {
+    headers["Content-Type"] = "application/json";
+  }
+
   const res = await fetch(`${API_URL}${path}`, {
     ...options,
-    headers: {
-      ...authHeaders(token, json && !isFormData),
-      ...(options.headers || {}),
-    },
+    headers,
   });
 
   return handleResponse(res);
@@ -67,8 +71,7 @@ async function apiFetch(path, { token, json = true, ...options } = {}) {
 
 // ===== Blogs API =====
 
-// GET typically returns JSON, no need to set json:false unless you want to avoid sending Content-Type
-export const getBlogs = () => apiFetch("/blogs", { json: false });
+export const getBlogs = () => apiFetch("/blogs");
 
 export const createBlog = (blog, token) =>
   apiFetch("/blogs", {
@@ -81,7 +84,6 @@ export const deleteBlog = (id, token) =>
   apiFetch(`/blogs/${id}`, {
     method: "DELETE",
     token,
-    json: false,
   });
 
 export const updateBlog = (id, blog, token) =>

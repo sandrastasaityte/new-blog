@@ -9,9 +9,7 @@ const clamp = (n, min, max) => Math.min(max, Math.max(min, n));
 
 const parseTags = (tags) => {
   if (Array.isArray(tags)) return tags.map((t) => String(t || "").trim()).filter(Boolean);
-  if (typeof tags === "string") {
-    return tags.split(",").map((t) => t.trim()).filter(Boolean);
-  }
+  if (typeof tags === "string") return tags.split(",").map((t) => t.trim()).filter(Boolean);
   return [];
 };
 
@@ -21,7 +19,7 @@ const safeDate = (d) => {
   return Number.isNaN(dt.getTime()) ? new Date() : dt;
 };
 
-// GET /posts
+// ✅ GET /blogs
 export async function getBlogs(req, res, next) {
   try {
     const blogs = await Blog.find().sort({ date: -1, createdAt: -1 });
@@ -31,7 +29,7 @@ export async function getBlogs(req, res, next) {
   }
 }
 
-// POST /posts (protected)
+// ✅ POST /blogs (protected)
 export async function createBlog(req, res, next) {
   try {
     const { title, content, image, tags, date, rating, author, authorImage } = req.body || {};
@@ -48,7 +46,6 @@ export async function createBlog(req, res, next) {
       tags: parseTags(tags),
       date: safeDate(date),
 
-      // ✅ don’t trust client for these
       views: 0,
       likes: 0,
       comments: [],
@@ -64,11 +61,10 @@ export async function createBlog(req, res, next) {
   }
 }
 
-// PUT /posts/:id (protected)
+// ✅ PUT /blogs/:id (protected)
 export async function updateBlog(req, res, next) {
   try {
     const blog = await Blog.findById(req.params.id);
-
     if (!blog) {
       res.status(404);
       throw new Error("Post not found");
@@ -95,19 +91,12 @@ export async function updateBlog(req, res, next) {
     }
 
     if (patch.image !== undefined) blog.image = String(patch.image || "").trim();
-
-    // ✅ only change tags if provided
     if (patch.tags !== undefined) blog.tags = parseTags(patch.tags);
-
     if (patch.date !== undefined) blog.date = safeDate(patch.date);
     if (patch.rating !== undefined) blog.rating = clamp(toNum(patch.rating, 0), 0, 5);
 
     if (patch.author !== undefined) blog.author = String(patch.author || "Admin").trim();
     if (patch.authorImage !== undefined) blog.authorImage = String(patch.authorImage || "").trim();
-
-    // ✅ protect counters from being edited directly unless you want it
-    // if (patch.views !== undefined) blog.views = toNum(patch.views, 0);
-    // if (patch.likes !== undefined) blog.likes = toNum(patch.likes, 0);
 
     const saved = await blog.save();
     res.json(saved);
@@ -116,11 +105,10 @@ export async function updateBlog(req, res, next) {
   }
 }
 
-// DELETE /posts/:id (protected)
+// ✅ DELETE /blogs/:id (protected)
 export async function deleteBlog(req, res, next) {
   try {
     const blog = await Blog.findById(req.params.id);
-
     if (!blog) {
       res.status(404);
       throw new Error("Post not found");
@@ -133,7 +121,8 @@ export async function deleteBlog(req, res, next) {
   }
 }
 
-// POST /posts/:id/like (protected or public — your choice)
+// ✅ POST /blogs/:id/like (public or protected — your choice)
+// ⭐ Recommended: return updated blog so frontend can update state easily
 export async function likeBlog(req, res, next) {
   try {
     const blog = await Blog.findById(req.params.id);
@@ -145,13 +134,15 @@ export async function likeBlog(req, res, next) {
     blog.likes = Number(blog.likes || 0) + 1;
     await blog.save();
 
-    res.json({ message: "Liked", likes: blog.likes });
+    // ✅ easiest for frontend:
+    res.json(blog);
   } catch (e) {
     next(e);
   }
 }
 
-// POST /posts/:id/comments (public or protected — your choice)
+// ✅ POST /blogs/:id/comments (public or protected — your choice)
+// ⭐ Recommended: return updated blog so frontend can update state easily
 export async function addComment(req, res, next) {
   try {
     const blog = await Blog.findById(req.params.id);
@@ -173,7 +164,8 @@ export async function addComment(req, res, next) {
 
     await blog.save();
 
-    res.status(201).json({ message: "Comment added", comments: blog.comments });
+    // ✅ easiest for frontend:
+    res.status(201).json(blog);
   } catch (e) {
     next(e);
   }

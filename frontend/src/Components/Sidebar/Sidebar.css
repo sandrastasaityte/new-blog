@@ -4,36 +4,39 @@
   flex: 1;
   min-width: 280px;
   position: sticky;
-  top: 92px; /* adjust if your navbar height differs */
+  top: 92px; /* keeps it below navbar (adjust if your navbar height differs) */
   align-self: flex-start;
   display: grid;
-  gap: 1.2rem;
+  gap: 16px;
 }
 
-/* Card */
+/* Card shell */
 .sidebar-card {
   background: #fff;
-  border: 1px solid rgba(0,0,0,0.06);
   border-radius: 18px;
+  border: 1px solid rgba(0,0,0,0.06);
   box-shadow: 0 12px 30px rgba(0,0,0,0.06);
   padding: 14px;
 }
 
+/* Titles */
 .sidebar-title {
   margin: 0 0 10px;
   font-size: 1.05rem;
-  font-weight: 950;
+  font-weight: 900;
   color: #111;
   letter-spacing: -0.01em;
 }
 
+/* Muted text */
 .sidebar-muted {
   margin: 0;
-  color: rgba(0,0,0,0.6);
+  color: rgba(0,0,0,0.65);
   font-size: 0.95rem;
+  line-height: 1.45;
 }
 
-/* Tags */
+/* Tags area */
 .sidebar-tags {
   display: flex;
   flex-wrap: wrap;
@@ -41,39 +44,27 @@
 }
 
 .sidebar-tag {
-  border: 1px solid rgba(0,0,0,0.10);
+  border: 1px solid rgba(0,0,0,0.12);
   background: rgba(0,0,0,0.03);
-  color: rgba(0,0,0,0.82);
-  padding: 8px 12px;
+  color: rgba(0,0,0,0.78);
   border-radius: 999px;
-  font-weight: 900;
-  font-size: 0.85rem;
+  padding: 0.48rem 0.75rem;
+  font-size: 0.9rem;
+  font-weight: 800;
   cursor: pointer;
-  transition: transform 0.12s ease, box-shadow 0.2s ease, background 0.15s ease, border-color 0.15s ease;
+  transition: transform 0.12s ease, box-shadow 0.2s ease, background 0.2s ease, border-color 0.2s ease;
 }
 
 .sidebar-tag:hover {
   transform: translateY(-1px);
+  background: rgba(0,0,0,0.05);
   box-shadow: 0 10px 20px rgba(0,0,0,0.06);
-  background: rgba(0,0,0,0.04);
 }
 
-.sidebar-tag:active {
-  transform: translateY(0);
-  box-shadow: none;
-}
-
-.sidebar-tag:focus-visible {
-  outline: 2px solid rgba(255, 102, 0, 0.85);
-  outline-offset: 3px;
-}
-
-/* Active tag */
 .sidebar-tag.active {
-  border-color: rgba(255, 102, 0, 0.35);
-  background: rgba(255, 102, 0, 0.10);
-  box-shadow: 0 0 0 4px rgba(255, 102, 0, 0.10);
-  color: #ff6600;
+  background: rgba(255, 102, 0, 0.12);
+  border-color: rgba(255, 102, 0, 0.25);
+  color: #111;
 }
 
 /* Recent list */
@@ -85,40 +76,30 @@
 .sidebar-post {
   text-align: left;
   width: 100%;
-  border: 1px solid rgba(0,0,0,0.06);
+  border: 1px solid rgba(0,0,0,0.08);
   background: rgba(0,0,0,0.02);
-  padding: 10px 12px;
   border-radius: 14px;
+  padding: 10px 12px;
   cursor: pointer;
-  transition: transform 0.12s ease, box-shadow 0.2s ease, background 0.15s ease, border-color 0.15s ease;
+  transition: transform 0.12s ease, box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease;
 }
 
 .sidebar-post:hover {
   transform: translateY(-1px);
-  box-shadow: 0 10px 20px rgba(0,0,0,0.06);
-  background: rgba(0,0,0,0.03);
-  border-color: rgba(0,0,0,0.10);
-}
-
-.sidebar-post:active {
-  transform: translateY(0);
-  box-shadow: none;
-}
-
-.sidebar-post:focus-visible {
-  outline: 2px solid rgba(255, 102, 0, 0.85);
-  outline-offset: 3px;
+  background: rgba(0,0,0,0.04);
+  border-color: rgba(0,0,0,0.12);
+  box-shadow: 0 10px 22px rgba(0,0,0,0.06);
 }
 
 .sidebar-post-title {
   margin: 0;
-  font-weight: 950;
+  font-weight: 900;
   color: #111;
+  font-size: 0.98rem;
   line-height: 1.25;
 
   /* clamp to 2 lines */
   display: -webkit-box;
-
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -126,24 +107,22 @@
 .sidebar-post-meta {
   margin: 6px 0 0;
   font-size: 0.88rem;
-  color: rgba(0,0,0,0.6);
+  color: rgba(0,0,0,0.62);
+  line-height: 1.3;
 }
 
-/* Responsive: Sidebar becomes normal flow under content */
+/* Focus accessibility */
+.sidebar :focus-visible {
+  outline: 2px solid rgba(255, 102, 0, 0.85);
+  outline-offset: 3px;
+  border-radius: 12px;
+}
+
+/* Responsive: sidebar becomes normal flow */
 @media (max-width: 900px) {
   .sidebar {
     position: static;
     top: auto;
     min-width: 0;
-  }
-}
-
-/* Tiny screens */
-@media (max-width: 520px) {
-  .sidebar-card {
-    border-radius: 14px;
-  }
-  .sidebar-tag {
-    padding: 7px 10px;
   }
 }

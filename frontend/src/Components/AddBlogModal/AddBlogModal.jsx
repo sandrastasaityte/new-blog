@@ -36,14 +36,16 @@ function parseTags(input) {
 function normalizeCreatedBlog(created, fallback) {
   const b = created?.blog ?? created?.data ?? created ?? fallback;
 
-  const id = String(
-    b?.id ??
-      b?._id ??
+  // ✅ always normalize to _id
+  const _id = String(
+    b?._id ??
+      b?.id ??
+      fallback?._id ??
       fallback?.id ??
       (globalThis.crypto?.randomUUID?.() || Date.now())
   );
 
-  return { ...fallback, ...(b && typeof b === "object" ? b : {}), id };
+  return { ...fallback, ...(b && typeof b === "object" ? b : {}), _id };
 }
 
 export default function AddBlogModal({ isOpen, onClose }) {
@@ -77,18 +79,22 @@ export default function AddBlogModal({ isOpen, onClose }) {
       document.body.style.overflow = prevOverflow;
       document.removeEventListener("keydown", onEsc);
 
-      // reset on close
       setApiError("");
       setErrors({});
       setForm(initialForm);
       setSubmitting(false);
     };
-    // ✅ do NOT include `submitting` here (prevents unwanted cleanup/resets)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, onClose]);
 
   const setField = (key) => (e) => {
     const value = e.target.value;
-    setForm((p) => ({ ...p, [key]: value }));
+
+    setForm((p) => ({
+      ...p,
+      [key]: key === "rating" ? Number(value) : value,
+    }));
+
     setErrors((p) => ({ ...p, [key]: "" }));
     setApiError("");
   };
@@ -146,7 +152,6 @@ export default function AddBlogModal({ isOpen, onClose }) {
 
     setApiError("");
 
-    // ✅ read token at submit time (no stale token)
     const token = localStorage.getItem("token");
     if (!token) {
       setApiError("Please log in first.");
@@ -173,6 +178,7 @@ export default function AddBlogModal({ isOpen, onClose }) {
     try {
       const created = await createBlog(payload, token);
       const blog = normalizeCreatedBlog(created, payload);
+
       addPost?.(blog);
       onClose?.();
     } catch (err) {
@@ -279,7 +285,6 @@ export default function AddBlogModal({ isOpen, onClose }) {
               />
             </div>
 
-            {/* Optional rating UI (if you want it in modal too) */}
             <div className={`rating-input ${errors.rating ? "is-error" : ""}`}>
               <label>Rating:</label>
               <div className="stars" aria-label={`Rating ${form.rating} out of 5`}>

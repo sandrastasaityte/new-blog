@@ -1,9 +1,11 @@
-export function notFound(req, res, next) {
+// backend/src/middleware/errorMiddleware.js
+
+export const notFound = (req, res, next) => {
   res.status(404);
   next(new Error(`Not found - ${req.originalUrl}`));
-}
+};
 
-export function errorHandler(err, req, res, next) {
+export const errorHandler = (err, req, res, next) => {
   if (res.headersSent) return next(err);
 
   const statusCode =
@@ -11,8 +13,6 @@ export function errorHandler(err, req, res, next) {
 
   res.status(statusCode).json({
     message: err.message || "Server error",
-
-    // Only show stack trace in development
     ...(process.env.NODE_ENV !== "production" && { stack: err.stack }),
   });
-}
+};

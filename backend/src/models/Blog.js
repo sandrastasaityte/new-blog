@@ -1,17 +1,20 @@
 import mongoose from "mongoose";
+import slugify from "slugify";
 
 const commentSchema = new mongoose.Schema(
   {
-    name: { type: String, trim: true, default: "Guest" },
-    text: { type: String, trim: true, required: true },
+    name: { type: String, trim: true, default: "Guest", maxlength: 60 },
+    text: { type: String, trim: true, required: true, maxlength: 1000 },
     date: { type: Date, default: Date.now },
   },
-  { _id: true } // ✅ keep ids for comments
+  { _id: true }
 );
 
 const blogSchema = new mongoose.Schema(
   {
     title: { type: String, required: true, trim: true },
+    slug: { type: String, unique: true },
+
     content: { type: String, required: true },
 
     image: { type: String, default: "" },
@@ -30,14 +33,18 @@ const blogSchema = new mongoose.Schema(
     },
 
     date: { type: Date, default: Date.now },
-    views: { type: Number, default: 0 },
 
-    likes: { type: Number, default: 0 },
+    views: { type: Number, default: 0, min: 0 },
+    likes: { type: Number, default: 0, min: 0 },
+
     comments: { type: [commentSchema], default: [] },
+
     rating: { type: Number, default: 0, min: 0, max: 5 },
 
     author: { type: String, default: "Admin", trim: true },
     authorImage: { type: String, default: "" },
+
+    published: { type: Boolean, default: true },
   },
   {
     timestamps: true,
@@ -52,5 +59,18 @@ const blogSchema = new mongoose.Schema(
     },
   }
 );
+
+// SEO slug
+blogSchema.pre("save", function (next) {
+  if (this.isModified("title")) {
+    this.slug = slugify(this.title, { lower: true, strict: true });
+  }
+  next();
+});
+
+// indexes
+blogSchema.index({ title: "text", content: "text" });
+blogSchema.index({ tags: 1 });
+blogSchema.index({ date: -1 });
 
 export default mongoose.model("Blog", blogSchema);

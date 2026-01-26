@@ -12,13 +12,21 @@ const AuthContext = createContext(null);
 const LS_TOKEN = "admin_token_v1";
 const LS_USER = "admin_user_v1";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
+const RAW_API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
+const API_URL = RAW_API_URL.replace(/\/$/, "");
 
-// ✅ control with .env (no code edits later)
+// ✅ control with .env
 const USE_BACKEND_AUTH = import.meta.env.VITE_USE_BACKEND_AUTH === "true";
 
 export function AuthProvider({ children }) {
-  const [token, setToken] = useState(() => localStorage.getItem(LS_TOKEN) || "");
+  const [token, setToken] = useState(() => {
+    try {
+      return localStorage.getItem(LS_TOKEN) || "";
+    } catch {
+      return "";
+    }
+  });
+
   const [user, setUser] = useState(() => {
     try {
       const raw = localStorage.getItem(LS_USER);
@@ -30,6 +38,12 @@ export function AuthProvider({ children }) {
 
   const [isLoading, setIsLoading] = useState(true);
 
+  const setSession = useCallback((nextToken, nextUser) => {
+    setToken(nextToken || "");
+    setUser(nextUser || null);
+  }, []);
+
+  // persist token
   useEffect(() => {
     try {
       if (token) localStorage.setItem(LS_TOKEN, token);
@@ -37,6 +51,7 @@ export function AuthProvider({ children }) {
     } catch {}
   }, [token]);
 
+  // persist user
   useEffect(() => {
     try {
       if (user) localStorage.setItem(LS_USER, JSON.stringify(user));
@@ -52,16 +67,26 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
-  // Validate session on mount / token changes (backend mode)
+  const authHeaders = useCallback(
+    (json = true) => ({
+      ...(json ? { "Content-Type": "application/json" } : null),
+      ...(token ? { Authorization: `Bearer ${token}` } : null),
+    }),
+    [token]
+  );
+
+  // ✅ Validate session on mount / token changes (backend mode)
   useEffect(() => {
     let cancelled = false;
 
     async function init() {
+      // demo mode → no backend check
       if (!USE_BACKEND_AUTH) {
         if (!cancelled) setIsLoading(false);
         return;
       }
 
+      // backend mode but no token → not authed
       if (!token) {
         if (!cancelled) setIsLoading(false);
         return;
@@ -69,24 +94,21 @@ export function AuthProvider({ children }) {
 
       try {
         const res = await fetch(`${API_URL}/auth/me`, {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: authHeaders(false),
         });
 
         const data = await safeJson(res);
 
         if (!res.ok) {
-          if (!cancelled) {
-            setToken("");
-            setUser(null);
-          }
+          if (!cancelled) setSession("", null);
         } else {
           if (!cancelled) {
-            if (data?.user) setUser(data.user);
-            else if (data?.username) setUser({ username: data.username });
+            const nextUser = data?.user || data || null;
+            setUser(nextUser);
           }
         }
       } catch {
-        // network error: keep existing token/user
+        // network error → keep existing token/user, just stop loading
       } finally {
         if (!cancelled) setIsLoading(false);
       }
@@ -96,55 +118,88 @@ export function AuthProvider({ children }) {
     return () => {
       cancelled = true;
     };
-  }, [token, safeJson]);
+  }, [token, safeJson, authHeaders, setSession]);
 
   const login = useCallback(
     async ({ username, password }) => {
-      const u = username?.trim();
-      const p = password?.trim();
+      const u = String(username || "").trim().toLowerCase();
+      const p = String(password || "");
 
+      if (!u || !p) return { ok: false, message: "Enter username and password." };
+
+      // demo mode
       if (!USE_BACKEND_AUTH) {
-        if (u && p) {
-          // demo session
-          setToken("demo-token");
-          setUser({ username: u });
-          return { ok: true };
-        }
-        return { ok: false, message: "Enter username and password." };
+        setSession("demo-token", { username: u });
+        setIsLoading(false);
+        return { ok: true };
       }
 
-      const res = await fetch(`${API_URL}/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: u, password: p }),
-      });
+      try {
+        const res = await fetch(`${API_URL}/auth/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username: u, password: p }),
+        });
 
-      const data = await safeJson(res);
-      if (!res.ok) return { ok: false, message: data?.message || "Login failed" };
+        const data = await safeJson(res);
+        if (!res.ok) return { ok: false, message: data?.message || "Login failed" };
 
-      setToken(data?.token || "");
-      setUser(data?.user || { username: data?.username || u });
-      return { ok: true };
+        const t = data?.token || "";
+        const nextUser = data?.user || { username: u };
+        setSession(t, nextUser);
+
+        return { ok: true };
+      } catch (e) {
+        return { ok: false, message: e?.message || "Network error" };
+      }
     },
-    [safeJson]
+    [safeJson, setSession]
   );
 
   const logout = useCallback(() => {
-    setToken("");
-    setUser(null);
-  }, []);
+    setSession("", null);
+  }, [setSession]);
+
+  // Optional helper for API calls (so you don’t repeat headers everywhere)
+  const authFetch = useCallback(
+    async (path, options = {}) => {
+      const url = path.startsWith("http") ? path : `${API_URL}${path}`;
+      const headers = {
+        ...(options.headers || {}),
+        ...authHeaders(!(options.body instanceof FormData)),
+      };
+
+      // if sending FormData, don't force content-type
+      if (options.body instanceof FormData) {
+        delete headers["Content-Type"];
+      }
+
+      const res = await fetch(url, { ...options, headers });
+      const data = await safeJson(res);
+
+      if (!res.ok) {
+        const msg = data?.message || "Request failed";
+        throw new Error(msg);
+      }
+
+      return data;
+    },
+    [authHeaders, safeJson]
+  );
 
   const value = useMemo(
     () => ({
       token,
       user,
-      // ✅ demo mode: rely on user, backend mode: rely on token
       isAuthed: USE_BACKEND_AUTH ? !!token : !!user,
       isLoading,
       login,
       logout,
+      authFetch, // ✅ optional: use in your api calls
+      API_URL,   // ✅ optional: expose for debugging
+      USE_BACKEND_AUTH,
     }),
-    [token, user, isLoading, login, logout]
+    [token, user, isLoading, login, logout, authFetch]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

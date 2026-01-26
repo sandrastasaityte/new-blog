@@ -277,3 +277,18 @@
     border-radius: 14px;
   }
 }
+@media (prefers-reduced-motion: reduce) {
+  .modal-overlay,
+  .modal.auth-modal,
+  .popup-overlay,
+  .popup-container {
+    animation: none !important;
+  }
+
+  .close-btn {
+    transition: none;
+  }
+}
+.modal-overlay {
+  overscroll-behavior: contain;
+}

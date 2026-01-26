@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import BlogCard from "./BlogCard";
 import BlogModal from "./BlogModal";
@@ -15,10 +15,11 @@ const safeDateNum = (d) => {
   return Number.isNaN(t) ? 0 : t;
 };
 
-const getId = (p) => p?.id ?? p?._id;
+// ✅ prefer Mongo id
+const getId = (p) => p?._id ?? p?.id;
 const norm = (s) => String(s || "").trim().toLowerCase();
 
-const Blogs = () => {
+export default function Blogs() {
   const { posts, incViews, addComment, toggleLike } = usePosts();
 
   const [selectedId, setSelectedId] = useState(null);
@@ -27,6 +28,9 @@ const Blogs = () => {
 
   const location = useLocation();
   const navigate = useNavigate();
+
+  // prevents double view increments when opening from URL + local clicks
+  const openedFromUrlRef = useRef(false);
 
   // ✅ Unique tags
   const uniqueTags = useMemo(() => {
@@ -72,6 +76,16 @@ const Blogs = () => {
 
   useEffect(() => {
     setPage(1);
+
+    // Optional UX: when filters change, close modal + remove open param
+    const sp = new URLSearchParams(location.search);
+    if (sp.has("open")) {
+      sp.delete("open");
+      const next = sp.toString();
+      navigate(`/blogs${next ? `?${next}` : ""}`, { replace: true });
+      setSelectedId(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filterKey]);
 
   // ✅ Clamp page
@@ -93,11 +107,18 @@ const Blogs = () => {
     );
   }, [selectedId, posts]);
 
-  const openPost = (post) => {
+  const openPost = (post, { fromUrl = false } = {}) => {
     const id = getId(post);
     if (!id) return;
 
-    incViews?.(id);
+    // ✅ update URL so refresh keeps modal open
+    const sp = new URLSearchParams(location.search);
+    sp.set("open", String(id));
+    navigate(`/blogs?${sp.toString()}`, { replace: true });
+
+    // ✅ prevent double incViews when opened via URL parsing
+    if (!fromUrl) incViews?.(id);
+
     setSelectedId(String(id));
   };
 
@@ -114,8 +135,6 @@ const Blogs = () => {
     if (payload && typeof payload === "object") {
       const text = String(payload.text || "").trim();
       if (!text) return;
-
-      // Keep your current string-only context expectation:
       addComment?.(postId, text);
     }
   };
@@ -128,32 +147,34 @@ const Blogs = () => {
   const removeTag = (t) => setFilterTags((prev) => prev.filter((x) => x !== t));
   const clearFilters = () => setFilterTags([]);
 
-  // ✅ NEW: read query params (?open= and ?tag=)
+  // ✅ Read query params (?open= and ?tag=) once per change
   useEffect(() => {
     const sp = new URLSearchParams(location.search);
     const openId = sp.get("open");
     const tag = sp.get("tag");
 
-    // apply tag filter (single tag)
-    if (tag) {
+    // apply single tag only if user doesn't already have filters selected
+    if (tag && filterTags.length === 0) {
       const decoded = decodeURIComponent(tag).trim();
       if (decoded) setFilterTags([decoded]);
     }
 
-    // open modal by id
     if (openId) {
       const id = decodeURIComponent(openId).trim();
       if (!id) return;
 
-      // find post
       const found = (posts || []).find((p) => String(getId(p)) === String(id));
-      if (found) openPost(found);
+      if (found) {
+        openedFromUrlRef.current = true;
+        openPost(found, { fromUrl: true });
+      }
+    } else {
+      openedFromUrlRef.current = false;
     }
-    // only re-run when search/posts changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.search, posts]);
 
-  // ✅ NEW: when modal closes, remove ?open= from URL (keep tag if exists)
+  // ✅ When modal closes, remove ?open=
   const closeModal = () => {
     setSelectedId(null);
 
@@ -229,7 +250,7 @@ const Blogs = () => {
           uniqueTags={uniqueTags}
           filterTags={filterTags}
           setFilterTags={setFilterTags}
-          onSelectPost={openPost}
+          onSelectPost={(p) => openPost(p)}
         />
       </div>
 
@@ -243,6 +264,4 @@ const Blogs = () => {
       )}
     </div>
   );
-};
-
-export default Blogs;
+}

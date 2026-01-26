@@ -1,3 +1,4 @@
+// src/Context/postStorage.js
 const KEY = "blog_posts_v1";
 
 const nowIso = () => new Date().toISOString();
@@ -12,14 +13,14 @@ const clamp = (n, min, max) => Math.min(max, Math.max(min, n));
 
 const safeStr = (v, fallback = "") => String(v ?? fallback);
 
-const getStableId = (p, idx) => {
-  // ✅ Prefer MongoDB _id if exists
+// ✅ stable local id generator (only used when creating a new local post)
+const makeLocalId = () => `local-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+// ✅ Get an id without ever using Date.now() during normalize()
+const pickId = (p) => {
   if (p?._id) return String(p._id);
   if (p?.id) return String(p.id);
-
-  // ✅ Stable fallback (no title-based ids)
-  // NOTE: still stable per saved list because it’s saved to localStorage after first normalize
-  return `local-${Date.now()}-${idx}`;
+  return ""; // if missing, we will create one ONCE below
 };
 
 /* Normalize posts so UI never crashes */
@@ -27,7 +28,13 @@ export function normalize(arr) {
   const iso = nowIso();
 
   return (Array.isArray(arr) ? arr : []).map((p, idx) => {
-    const id = getStableId(p, idx);
+    // ✅ never change ids during normalize
+    let id = pickId(p);
+    if (!id) {
+      // deterministic fallback for seeds that have no ids.
+      // (It will become stable after first save because we store it in localStorage.)
+      id = `seed-${idx}`;
+    }
 
     const tags = Array.isArray(p?.tags)
       ? p.tags.map((t) => safeStr(t).trim()).filter(Boolean)
@@ -57,10 +64,10 @@ export function normalize(arr) {
     return {
       ...p,
 
-      // ✅ Keep _id if backend has it (helpful if you send it back)
+      // keep backend id too
       _id: p?._id,
 
-      // ✅ Single source of truth for UI
+      // ✅ single source of truth for UI
       id,
 
       title: safeStr(p?.title, "Untitled post").trim(),
@@ -113,11 +120,13 @@ export function addPost(posts, post) {
   const iso = nowIso();
   const p = post || {};
 
+  // ✅ IMPORTANT: assign id ONCE when creating local posts
+  const id = p?._id ? String(p._id) : p?.id ? String(p.id) : makeLocalId();
+
   const newPost = normalize([
     {
       ...p,
-      // ✅ if backend returns _id/id it will be used automatically
-      id: p.id,
+      id,
       _id: p._id,
       date: p.date ?? iso.slice(0, 10),
       views: p.views ?? 0,
@@ -163,16 +172,9 @@ export function incLikes(posts, id) {
   );
 }
 
-/* ✅ Optional: toggle like (like/unlike) */
+/* Optional: "toggleLike" placeholder (currently increments) */
 export function toggleLike(posts, id) {
-  const list = Array.isArray(posts) ? posts : [];
-  return normalize(
-    list.map((p) =>
-      String(p.id) === String(id)
-        ? { ...p, likes: Math.max(0, toNum(p.likes, 0) + 1) } // if you want true toggle, we’ll store a "liked" flag
-        : p
-    )
-  );
+  return incLikes(posts, id);
 }
 
 /* Add comment */

@@ -7,6 +7,7 @@
   padding: 16px;
   z-index: 9999;
   animation: overlayFade 0.2s ease-out;
+  overscroll-behavior: contain;
 }
 
 .blogmodal-content {
@@ -22,6 +23,19 @@
   animation: modalPop 0.22s ease-out;
 }
 
+/* ✅ Sticky top bar so close button never jumps */
+.blogmodal-head {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  display: flex;
+  justify-content: flex-end;
+  padding: 12px;
+  background: rgba(255,255,255,0.92);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+}
+
 @keyframes overlayFade {
   from { opacity: 0; }
   to { opacity: 1; }
@@ -32,32 +46,25 @@
   to { transform: scale(1) translateY(0); opacity: 1; }
 }
 
-/* Focus outline on modal container */
+/* ✅ Neutral focus ring like the rest of your app */
 .blogmodal-content:focus-visible {
-  outline: 2px solid rgba(255, 102, 0, 0.85);
-  outline-offset: 4px;
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(0,0,0,0.12);
 }
 
 /* Close button */
 .blogmodal-close {
-  position: sticky; /* ✅ stays visible while scrolling */
-  top: 12px;
-  margin-left: auto;
-  margin-right: 12px;
-  margin-top: 12px;
-
   width: 40px;
   height: 40px;
-  border-radius: 999px;
+  border-radius: 12px;
   border: 1px solid rgba(0,0,0,0.12);
-  background: rgba(255,255,255,0.92);
+  background: #fff;
   cursor: pointer;
   font-size: 1.6rem;
   line-height: 1;
   display: grid;
   place-items: center;
   transition: transform 0.12s ease, box-shadow 0.2s ease, opacity 0.2s ease;
-  z-index: 2;
 }
 
 .blogmodal-close:hover {
@@ -71,8 +78,8 @@
 }
 
 .blogmodal-close:focus-visible {
-  outline: 2px solid #ff6600;
-  outline-offset: 3px;
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(0,0,0,0.12);
 }
 
 /* Top image */
@@ -143,8 +150,8 @@
 }
 
 .blogmodal-like-btn:focus-visible {
-  outline: 2px solid #ff6600;
-  outline-offset: 3px;
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(0,0,0,0.12);
 }
 
 .blogmodal-rating {
@@ -190,5 +197,17 @@
   }
   .blogmodal-img {
     height: 240px;
+  }
+}
+
+/* ✅ Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .blogmodal-overlay,
+  .blogmodal-content {
+    animation: none !important;
+  }
+  .blogmodal-close,
+  .blogmodal-like-btn {
+    transition: none;
   }
 }

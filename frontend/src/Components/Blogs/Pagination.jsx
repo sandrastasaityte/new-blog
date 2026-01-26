@@ -18,7 +18,7 @@ const getPages = (current, total) => {
   return out;
 };
 
-const Pagination = ({ currentPage = 1, totalPages = 1, setPage }) => {
+export default function Pagination({ currentPage = 1, totalPages = 1, setPage }) {
   const items = useMemo(
     () => getPages(currentPage, totalPages),
     [currentPage, totalPages]
@@ -37,68 +37,75 @@ const Pagination = ({ currentPage = 1, totalPages = 1, setPage }) => {
 
   return (
     <nav className="pagination" aria-label="Pagination">
-      {/* Optional First */}
-      <button
-        type="button"
-        onClick={() => go(1)}
-        disabled={isFirst}
-        aria-label="Go to first page"
-      >
-        First
-      </button>
-
-      <button
-        type="button"
-        onClick={() => go(currentPage - 1)}
-        disabled={isFirst}
-        aria-label="Go to previous page"
-      >
-        Prev
-      </button>
-
-      {items.map((it, idx) =>
-        it === "…" ? (
-          <span key={`dots-${idx}`} className="dots" aria-hidden="true">
-            …
-          </span>
-        ) : (
+      <ul className="pagination-list">
+        <li>
           <button
             type="button"
-            key={`page-${it}`}
-            className={currentPage === it ? "active" : ""}
-            onClick={() => go(it)}
-            aria-current={currentPage === it ? "page" : undefined}
-            aria-label={`Go to page ${it}`}
+            onClick={() => go(1)}
+            disabled={isFirst}
+            aria-label="Go to first page"
           >
-            {it}
+            First
           </button>
-        )
-      )}
+        </li>
 
-      <button
-        type="button"
-        onClick={() => go(currentPage + 1)}
-        disabled={isLast}
-        aria-label="Go to next page"
-      >
-        Next
-      </button>
+        <li>
+          <button
+            type="button"
+            onClick={() => go(currentPage - 1)}
+            disabled={isFirst}
+            aria-label="Go to previous page"
+          >
+            Prev
+          </button>
+        </li>
 
-      {/* Optional Last */}
-      <button
-        type="button"
-        onClick={() => go(totalPages)}
-        disabled={isLast}
-        aria-label="Go to last page"
-      >
-        Last
-      </button>
+        {items.map((it, idx) =>
+          it === "…" ? (
+            <li key={`dots-${idx}`} className="dots" aria-hidden="true">
+              …
+            </li>
+          ) : (
+            <li key={`page-${it}`}>
+              <button
+                type="button"
+                className={currentPage === it ? "active" : ""}
+                onClick={() => go(it)}
+                aria-current={currentPage === it ? "page" : undefined}
+                aria-label={`Go to page ${it}`}
+              >
+                {it}
+              </button>
+            </li>
+          )
+        )}
+
+        <li>
+          <button
+            type="button"
+            onClick={() => go(currentPage + 1)}
+            disabled={isLast}
+            aria-label="Go to next page"
+          >
+            Next
+          </button>
+        </li>
+
+        <li>
+          <button
+            type="button"
+            onClick={() => go(totalPages)}
+            disabled={isLast}
+            aria-label="Go to last page"
+          >
+            Last
+          </button>
+        </li>
+      </ul>
 
       <span className="sr-only" aria-live="polite">
         Page {currentPage} of {totalPages}
       </span>
     </nav>
   );
-};
-
-export default Pagination;
+}

@@ -56,7 +56,6 @@ export default function App() {
   };
 
   const handleRequireAuth = (location) => {
-    // remember where user wanted to go
     setRedirectTo(location?.pathname || "/");
     setAuthOpen(true);
   };
@@ -95,38 +94,31 @@ function AppShell({
   const handleSetToken = (t) => {
     setToken(t);
 
-    // ✅ After login:
-    // - If user was redirected by ProtectedRoute -> go there
-    // - Otherwise just stay on the current page
+    // ✅ After login: go to protected page (if any), else stay put
     if (redirectTo) {
       navigate(redirectTo, { replace: true });
       setRedirectTo(null);
     } else {
-      // stay where you are (no need to navigate if already there)
       navigate(location.pathname, { replace: true });
     }
 
     setAuthOpen(false);
   };
 
+  const closeAuth = () => {
+    setAuthOpen(false);
+    setRedirectTo(null); // ✅ prevents surprise redirect later
+  };
+
   return (
     <>
-      <Navbar
-        token={token}
-        onLogin={() => setAuthOpen(true)}
-        onLogout={onLogout}
-      />
+      <Navbar token={token} onLogin={() => setAuthOpen(true)} onLogout={onLogout} />
 
-      {/* ✅ token is passed */}
       <AppRoutes token={token} onRequireAuth={onRequireAuth} />
 
       <Footer />
 
-      <AuthModal
-        isOpen={authOpen}
-        onClose={() => setAuthOpen(false)}
-        setToken={handleSetToken}
-      />
+      <AuthModal isOpen={authOpen} onClose={closeAuth} setToken={handleSetToken} />
     </>
   );
 }

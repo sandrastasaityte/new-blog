@@ -25,7 +25,7 @@ function parseTags(input) {
 }
 
 function isValidHttpUrl(value) {
-  if (!value) return true; // empty is allowed
+  if (!value) return true;
   try {
     const u = new URL(value);
     return u.protocol === "http:" || u.protocol === "https:";
@@ -35,16 +35,16 @@ function isValidHttpUrl(value) {
 }
 
 function normalizeCreatedBlog(created, fallbackPayload) {
-  // backend may return created directly or { blog: created }
-  const b = created?.blog ?? created ?? fallbackPayload;
+  // backend may return created directly or { blog: created } or { data: created }
+  const b = created?.blog ?? created?.data ?? created ?? fallbackPayload;
 
-  // normalize id for frontend
-  const id = b?.id ?? b?._id ?? fallbackPayload?.id;
+  // normalize id -> always _id
+  const _id = b?._id ?? b?.id ?? fallbackPayload?._id ?? fallbackPayload?.id;
 
   return {
     ...fallbackPayload,
     ...(b && typeof b === "object" ? b : {}),
-    id,
+    _id,
   };
 }
 
@@ -69,7 +69,12 @@ export default function AddBlog() {
 
   const setField = (key) => (e) => {
     const value = e.target.value;
-    setForm((p) => ({ ...p, [key]: value }));
+
+    setForm((p) => ({
+      ...p,
+      [key]: key === "rating" ? Number(value) : value,
+    }));
+
     setErrors((prev) => ({ ...prev, [key]: "" }));
     setApiError("");
   };
@@ -121,7 +126,6 @@ export default function AddBlog() {
 
     setApiError("");
 
-    // ✅ read token at submit time (avoids stale token)
     const token = localStorage.getItem("token");
     if (!token) {
       setApiError("You must be logged in to add a blog.");
@@ -143,12 +147,15 @@ export default function AddBlog() {
       rating: Number(form.rating) || 0,
       date: nowIso,
       views: 0,
+      likes: 0,
+      comments: [],
     };
 
     try {
       const created = await createBlog(payload, token);
       const normalized = normalizeCreatedBlog(created, payload);
 
+      // ✅ only add locally if context exists
       addPost?.(normalized);
 
       setForm({
@@ -200,7 +207,9 @@ export default function AddBlog() {
           rows={7}
           disabled={submitting}
         />
-        {errors.content ? <div className="field-error">{errors.content}</div> : null}
+        {errors.content ? (
+          <div className="field-error">{errors.content}</div>
+        ) : null}
       </label>
 
       <label className="field">
@@ -232,7 +241,6 @@ export default function AddBlog() {
         />
         {errors.image ? <div className="field-error">{errors.image}</div> : null}
 
-        {/* ✅ live preview */}
         <div className="image-preview-wrap">
           <img
             className="image-preview"

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef } from "react";
+import React, { useEffect, useMemo, useRef, useId } from "react";
 import CommentSection from "../CommentSection/CommentSection";
 import "./BlogModal.css";
 
@@ -17,25 +17,32 @@ const normalizeComments = (comments) => {
   return (comments || [])
     .map((c) => {
       if (typeof c === "string") return { name: "Anonymous", text: c };
-      if (c && typeof c === "object") return { name: c.name || "Anonymous", text: c.text || "" };
+      if (c && typeof c === "object")
+        return { name: c.name || "Anonymous", text: c.text || "" };
       return null;
     })
     .filter((c) => c && String(c.text || "").trim());
 };
 
-const getId = (p) => p?.id ?? p?._id;
+// ✅ prefer Mongo id
+const getId = (p) => p?._id ?? p?.id;
+
 const clamp = (n, min, max) => Math.min(max, Math.max(min, n));
 
 export default function BlogModal({ post, onClose, onAddComment, onLike }) {
   const modalRef = useRef(null);
   const lastActiveRef = useRef(null);
-  const overlayRef = useRef(null);
+
+  const reactId = useId();
 
   const postId = useMemo(() => String(getId(post) ?? ""), [post]);
-  const comments = useMemo(() => normalizeComments(post?.comments), [post?.comments]);
+  const comments = useMemo(
+    () => normalizeComments(post?.comments),
+    [post?.comments],
+  );
 
-  const titleId = `blogmodal-title-${postId || "x"}`;
-  const descId = `blogmodal-desc-${postId || "x"}`;
+  const titleId = `blogmodal-title-${reactId}`;
+  const descId = `blogmodal-desc-${reactId}`;
 
   useEffect(() => {
     if (!post) return;
@@ -43,7 +50,6 @@ export default function BlogModal({ post, onClose, onAddComment, onLike }) {
     lastActiveRef.current = document.activeElement;
 
     const t = setTimeout(() => {
-      // focus first focusable; fallback to modal container
       const root = modalRef.current;
       const first = root?.querySelector?.(FOCUSABLE);
       (first || root)?.focus?.();
@@ -58,14 +64,16 @@ export default function BlogModal({ post, onClose, onAddComment, onLike }) {
         return;
       }
 
-      // basic focus trap
       if (e.key !== "Tab") return;
 
       const root = modalRef.current;
       if (!root) return;
 
       const focusables = Array.from(root.querySelectorAll(FOCUSABLE)).filter(
-        (el) => !el.hasAttribute("disabled") && el.getAttribute("aria-hidden") !== "true" && el.offsetParent !== null
+        (el) =>
+          !el.hasAttribute("disabled") &&
+          el.getAttribute("aria-hidden") !== "true" &&
+          el.offsetParent !== null,
       );
       if (!focusables.length) return;
 
@@ -101,14 +109,8 @@ export default function BlogModal({ post, onClose, onAddComment, onLike }) {
     const t = String(text || "").trim();
     if (!t || !postId) return;
 
-    onAddComment?.(postId, {
-      name: String(name || "").trim() || "Anonymous",
-      text: t,
-    });
-  };
-
-  const handleOverlayMouseDown = (e) => {
-    if (e.target === overlayRef.current) onClose?.();
+    // ✅ keep compatibility with your current context (string comments)
+    onAddComment?.(postId, t);
   };
 
   if (!post) return null;
@@ -128,8 +130,10 @@ export default function BlogModal({ post, onClose, onAddComment, onLike }) {
   return (
     <div
       className="blogmodal-overlay"
-      ref={overlayRef}
-      onMouseDown={handleOverlayMouseDown}
+      onPointerDown={(e) => {
+        // ✅ close only when clicking overlay, not inside modal
+        if (e.target === e.currentTarget) onClose?.();
+      }}
       role="presentation"
     >
       <div
@@ -138,7 +142,7 @@ export default function BlogModal({ post, onClose, onAddComment, onLike }) {
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={descId}
-        onMouseDown={(e) => e.stopPropagation()}
+        onPointerDown={(e) => e.stopPropagation()}
         tabIndex={-1}
         ref={modalRef}
       >
@@ -166,7 +170,8 @@ export default function BlogModal({ post, onClose, onAddComment, onLike }) {
           <h2 id={titleId}>{title}</h2>
 
           <p className="blogmodal-meta" id={descId}>
-            By <strong>{author}</strong> | {dateLabel} | {views} views | ❤️ {likes}
+            By <strong>{author}</strong> | {dateLabel} | {views} views | ❤️{" "}
+            {likes}
           </p>
 
           <div className="blogmodal-top-actions">
@@ -186,7 +191,10 @@ export default function BlogModal({ post, onClose, onAddComment, onLike }) {
           <p className="blogmodal-text">{content || "No content available."}</p>
         </div>
 
-        <CommentSection comments={comments} onAddComment={handleComment} />
+        <CommentSection
+          comments={comments}
+          onAddComment={(payload) => onAddComment?.(postId, payload)}
+        />
       </div>
     </div>
   );

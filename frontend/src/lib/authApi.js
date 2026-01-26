@@ -1,63 +1,68 @@
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
+const RAW_API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
+const API_URL = RAW_API_URL.replace(/\/$/, "");
 
 function getToken() {
   return localStorage.getItem("token");
 }
 
-function authHeaders(json = true) {
-  const token = getToken();
+function authHeaders({ json = true, token } = {}) {
+  const t = token ?? getToken();
   return {
     ...(json && { "Content-Type": "application/json" }),
-    ...(token && { Authorization: `Bearer ${token}` }),
+    ...(t && { Authorization: `Bearer ${t}` }),
   };
 }
 
 async function handleResponse(res) {
-  let data;
+  const contentType = res.headers.get("content-type") || "";
+  const hasJson = contentType.includes("application/json");
 
+  let data = null;
   try {
-    data = await res.json();
+    data = hasJson ? await res.json() : await res.text();
   } catch {
-    throw new Error("Server returned invalid JSON");
+    data = null;
   }
 
   if (!res.ok) {
-    throw new Error(data?.message || `Request failed (${res.status})`);
+    const msg =
+      (data && typeof data === "object" && (data.message || data.error)) ||
+      (typeof data === "string" && data) ||
+      `Request failed (${res.status})`;
+    throw new Error(msg);
   }
 
   return data;
 }
 
 // ------------------ AUTH ------------------
-
-export const register = async (username, password) => {
+// identifier can be email OR username
+export const register = async (identifier, password) => {
   const res = await fetch(`${API_URL}/auth/register`, {
     method: "POST",
-    headers: authHeaders(),
-    body: JSON.stringify({ username, password }),
+    headers: authHeaders({ json: true }),
+    body: JSON.stringify({ identifier, password }),
   });
 
   const data = await handleResponse(res);
 
-  if (data?.token) {
-    localStorage.setItem("token", data.token);
-  }
+  const token = data?.token || data?.accessToken || data?.jwt || data?.data?.token;
+  if (token) localStorage.setItem("token", token);
 
   return data;
 };
 
-export const login = async (username, password) => {
+export const login = async (identifier, password) => {
   const res = await fetch(`${API_URL}/auth/login`, {
     method: "POST",
-    headers: authHeaders(),
-    body: JSON.stringify({ username, password }),
+    headers: authHeaders({ json: true }),
+    body: JSON.stringify({ identifier, password }),
   });
 
   const data = await handleResponse(res);
 
-  if (data?.token) {
-    localStorage.setItem("token", data.token);
-  }
+  const token = data?.token || data?.accessToken || data?.jwt || data?.data?.token;
+  if (token) localStorage.setItem("token", token);
 
   return data;
 };
@@ -68,10 +73,9 @@ export const logout = () => {
 };
 
 // ------------------ USER ------------------
-
 export const getMe = async () => {
   const res = await fetch(`${API_URL}/auth/me`, {
-    headers: authHeaders(false),
+    headers: authHeaders({ json: false }),
   });
 
   return handleResponse(res);

@@ -4,7 +4,7 @@ import "./Admin.css";
 import { usePosts } from "../Context/PostsContext";
 
 function normalizeTags(input) {
-  const raw = input
+  const raw = String(input || "")
     .split(",")
     .map((t) => t.trim())
     .filter(Boolean);
@@ -31,31 +31,29 @@ export default function AddPost() {
   const [localError, setLocalError] = useState("");
 
   const tags = useMemo(() => normalizeTags(tagInput), [tagInput]);
-  const canSubmit = title.trim().length > 0 && !saving;
+
+  const cleanTitle = title.trim();
+  const cleanContent = content.trim();
+
+  const canSubmit = cleanTitle.length > 0 && cleanContent.length > 0 && !saving;
 
   const onSubmit = async (e) => {
     e.preventDefault();
     setOk("");
     setLocalError("");
 
-    const cleanTitle = title.trim();
-    if (!cleanTitle) {
-      setLocalError("Title is required.");
-      return;
-    }
+    if (!cleanTitle) return setLocalError("Title is required.");
+    if (!cleanContent) return setLocalError("Content is required.");
 
     setSaving(true);
     try {
-      // PostsContext(local) expects a single post object
-      addPost({
+      // ✅ IMPORTANT: await (backend mode is async)
+      await addPost({
         title: cleanTitle,
-        content: content.trim(),
+        content: cleanContent,
         image: image.trim(),
         tags,
         date: new Date().toISOString(),
-        views: 0,
-        likes: 0,
-        comments: [],
       });
 
       setOk("Post created ✅");
@@ -122,7 +120,7 @@ export default function AddPost() {
         </label>
 
         <label>
-          Content
+          Content <span style={{ opacity: 0.6 }}>(required)</span>
           <textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}

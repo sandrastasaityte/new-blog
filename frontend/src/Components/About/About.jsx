@@ -1,41 +1,14 @@
 import React from "react";
 import "./About.css";
 
-import aboutpic3 from "../../assets/about-pic3.png";
-import user02 from "../../assets/user-02.png";
-import user03 from "../../assets/user-03.png";
-
-const AUTHORS = [
-  {
-    id: 1,
-    name: "Sandra Stasaityte",
-    role: "Founder & Lead Writer",
-    image: aboutpic3,
-    bio: "Sandra is passionate about technology, economics, blogging, and sharing insights with readers worldwide.",
-  },
-  {
-    id: 2,
-    name: "Maria Mema",
-    role: "Tech Writer",
-    image: user02,
-    bio: "Maria writes about software development, coding tutorials, and emerging technology trends.",
-  },
-  {
-    id: 3,
-    name: "John Smith",
-    role: "Content Creator",
-    image: user03,
-    bio: "John focuses on lifestyle topics, productivity tips, and creative writing.",
-  },
-];
+import { AUTHORS } from "../../assets/authors"; // ✅ use external data
 
 function AuthorCard({ author }) {
   const { name, role, image, bio } = author;
 
   const handleImgError = (e) => {
-    // ✅ prevents infinite loop if placeholder is missing
     e.currentTarget.onerror = null;
-    e.currentTarget.src = "/placeholder-user.png"; // put this file in /public
+    e.currentTarget.src = "/placeholder-user.png";
   };
 
   return (

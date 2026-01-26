@@ -1,19 +1,14 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./AuthForm.css";
-import { login, register } from "../../lib/authApi"; // adjust path if needed
+import { login, register } from "../../lib/authApi";
 
-const initialState = {
-  email: "",
-  password: "",
-  confirmPassword: "",
-};
+const initialState = { email: "", password: "", confirmPassword: "" };
 
 function isValidEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
 function extractToken(data) {
-  // Support lots of common API shapes
   return (
     data?.token ||
     data?.accessToken ||
@@ -33,7 +28,6 @@ const AuthForm = ({ setToken, onClose, isLogin, setIsLogin, setBusy }) => {
   const emailTrimmed = useMemo(() => formData.email.trim(), [formData.email]);
 
   useEffect(() => {
-    // when switching between login/signup, clear confirm password + errors
     setFormData((p) => ({ ...p, confirmPassword: "" }));
     setError("");
   }, [isLogin]);
@@ -53,7 +47,6 @@ const AuthForm = ({ setToken, onClose, isLogin, setIsLogin, setBusy }) => {
       if (!formData.confirmPassword) return "Please confirm your password.";
       if (formData.password !== formData.confirmPassword) return "Passwords do not match.";
     }
-
     return "";
   };
 
@@ -69,16 +62,12 @@ const AuthForm = ({ setToken, onClose, isLogin, setIsLogin, setBusy }) => {
       setBusy?.(true);
       setError("");
 
-      // ✅ Your authApi currently expects (username, password)
-      // We pass email as "username" (works if backend accepts it).
-      // If your backend expects email specifically, update authApi to send { email }.
+      // authApi expects (username, password) — we use email as username
       const data = isLogin
         ? await login(emailTrimmed, formData.password)
         : await register(emailTrimmed, formData.password);
 
-      const tokenFromResponse = extractToken(data);
-      const tokenFromStorage = localStorage.getItem("token");
-      const token = tokenFromResponse || tokenFromStorage;
+      const token = extractToken(data) || localStorage.getItem("token");
 
       if (!token) {
         setError(
@@ -88,15 +77,14 @@ const AuthForm = ({ setToken, onClose, isLogin, setIsLogin, setBusy }) => {
         return;
       }
 
-      // Ensure it is stored (safe even if login() already stored it)
       localStorage.setItem("token", token);
 
-      // Optional: store user if backend returned it
       const user = data?.user || data?.data?.user || null;
       if (user) localStorage.setItem("user", JSON.stringify(user));
 
       setToken?.(token);
       setFormData(initialState);
+      setError("");
       onClose?.();
     } catch (err) {
       setError(err?.message || "Something went wrong. Please try again.");
@@ -154,7 +142,13 @@ const AuthForm = ({ setToken, onClose, isLogin, setIsLogin, setBusy }) => {
       ) : null}
 
       <button type="submit" disabled={loading}>
-        {loading ? (isLogin ? "Logging in..." : "Creating account...") : isLogin ? "Login" : "Sign Up"}
+        {loading
+          ? isLogin
+            ? "Logging in..."
+            : "Creating account..."
+          : isLogin
+          ? "Login"
+          : "Sign Up"}
       </button>
 
       <p className="toggle-text">

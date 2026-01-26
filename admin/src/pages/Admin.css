@@ -133,3 +133,25 @@
 .auth-form button {
   width: 100%;
 }
+/* Prevent long words/URLs breaking layout */
+.admin-card,
+.table,
+.row,
+.admin-form input,
+.admin-form textarea {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Better textarea font */
+.admin-form textarea {
+  font-family: inherit;
+  line-height: 1.4;
+}
+
+/* Buttons in tables look nicer */
+.actions .btn {
+  white-space: nowrap;
+}
+
+/* Make table scroll

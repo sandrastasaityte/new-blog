@@ -6,6 +6,8 @@ import React, {
   useMemo,
   useState,
 } from "react";
+import { USE_POSTS_BACKEND } from "../lib/env";
+
 import {
   loadPosts,
   savePosts,
@@ -17,69 +19,167 @@ import {
   addComment as addCommentFn,
   clearPostsStorage,
   normalize,
+  toggleLike as toggleLikeFn,
 } from "./postStorage";
 
-// Optional seed (you can import your JSON seed here instead)
-const DEFAULT_SEED = [];
+import * as blogsApi from "../lib/blogApi";
 
+const DEFAULT_SEED = [];
 const PostsContext = createContext(null);
 
-const getId = (p) => String(p?._id ?? p?.id ?? "");
+export const getId = (p) => String(p?._id ?? p?.id ?? "");
 
-const PostsProvider = ({ children, seed = DEFAULT_SEED }) => {
-  const [posts, setPosts] = useState(() => loadPosts(seed));
+export const PostsProvider = ({ children, seed = DEFAULT_SEED }) => {
+  const [posts, setPosts] = useState(() =>
+    USE_POSTS_BACKEND ? [] : loadPosts(seed),
+  );
+  const [loading, setLoading] = useState(USE_POSTS_BACKEND);
+  const [error, setError] = useState("");
 
-  // auto-save
+  // -------- BACKEND: initial load --------
   useEffect(() => {
+    if (!USE_POSTS_BACKEND) return;
+
+    let alive = true;
+    (async () => {
+      try {
+        setLoading(true);
+        setError("");
+        const data = await blogsApi.getBlogs();
+        // support array or {blogs:[...]} shapes
+        const list = Array.isArray(data)
+          ? data
+          : data?.blogs || data?.data || [];
+        if (alive) setPosts(normalize(list));
+      } catch (e) {
+        if (alive) setError(e?.message || "Failed to load blogs");
+      } finally {
+        if (alive) setLoading(false);
+      }
+    })();
+
+    return () => {
+      alive = false;
+    };
+  }, [seed, USE_POSTS_BACKEND]);
+
+  // -------- LOCALSTORAGE: auto-save --------
+  useEffect(() => {
+    if (USE_POSTS_BACKEND) return;
     savePosts(posts);
   }, [posts]);
 
   const value = useMemo(() => {
     return {
       posts,
-
-      // ✅ Helper: consistent id getter for UI
+      loading,
+      error,
       getId,
 
-      // ✅ Helper: lookup post by id/_id
+      // common helpers
       getPostById: (id) => {
         const target = String(id ?? "");
         if (!target) return null;
         return (posts || []).find((p) => getId(p) === target) || null;
       },
 
-      // Always normalize when setting directly
+      // ✅ setPosts
       setPosts: (next) => setPosts(normalize(next)),
 
-      addPost: (post) => setPosts((prev) => addPostFn(prev, post)),
+      // -------- add/update/delete --------
+      addPost: async (post) => {
+        if (!USE_POSTS_BACKEND) {
+          setPosts((prev) => addPostFn(prev, post));
+          return;
+        }
+        const token = localStorage.getItem("token");
+        const created = await blogsApi.createBlog(post, token);
+        // backend might return created post or {blog:...}
+        const p = created?.blog || created?.data || created;
+        setPosts((prev) => addPostFn(prev, p));
+      },
 
-      updatePost: (id, patch) => setPosts((prev) => updatePostFn(prev, id, patch)),
+      updatePost: async (id, patch) => {
+        if (!USE_POSTS_BACKEND) {
+          setPosts((prev) => updatePostFn(prev, id, patch));
+          return;
+        }
+        const token = localStorage.getItem("token");
+        const updated = await blogsApi.updateBlog(id, patch, token);
+        const p = updated?.blog || updated?.data || updated;
+        setPosts((prev) => updatePostFn(prev, id, p));
+      },
 
-      deletePost: (id) => setPosts((prev) => deletePostFn(prev, id)),
+      deletePost: async (id) => {
+        if (!USE_POSTS_BACKEND) {
+          setPosts((prev) => deletePostFn(prev, id));
+          return;
+        }
+        const token = localStorage.getItem("token");
+        await blogsApi.deleteBlog(id, token);
+        setPosts((prev) => deletePostFn(prev, id));
+      },
 
-      incViews: (id) => setPosts((prev) => incViewsFn(prev, id)),
+      // -------- views/likes/comments --------
+      incViews: (id) => {
+        // (optional) you can add backend route later; for now local-only UI
+        setPosts((prev) => incViewsFn(prev, id));
+      },
 
-      // ✅ existing like increment (simple)
       incLikes: (id) => setPosts((prev) => incLikesFn(prev, id)),
+      toggleLike: async (id, userKey) => {
+        if (!USE_POSTS_BACKEND) {
+          setPosts((prev) => toggleLikeFn(prev, id, userKey));
+          return;
+        }
 
-      // ✅ add this so Blogs.jsx "toggleLike" works
-      // (for now it behaves like increment; later you can implement real toggle per-user)
-      toggleLike: (id) => setPosts((prev) => incLikesFn(prev, id)),
+        const token = localStorage.getItem("token");
+        const res = await blogsApi.toggleLike(id, token);
 
-      // ✅ Supports comment string OR {name,text,date}
-      addComment: (id, comment) => setPosts((prev) => addCommentFn(prev, id, comment)),
+        // backend returns { likes }
+        if (typeof res?.likes === "number") {
+          setPosts((prev) => updatePostFn(prev, id, { likes: res.likes }));
+        } else {
+          // fallback
+          setPosts((prev) => incLikesFn(prev, id));
+        }
+      },
 
-      // Seed helpers
-      resetToSeed: () => setPosts(loadPosts(seed)),
+      addComment: async (id, comment) => {
+        if (!USE_POSTS_BACKEND) {
+          setPosts((prev) => addCommentFn(prev, id, comment));
+          return;
+        }
+
+        const token = localStorage.getItem("token");
+        const res = await blogsApi.addComment(id, comment, token);
+
+        if (Array.isArray(res?.comments)) {
+          setPosts((prev) =>
+            updatePostFn(prev, id, { comments: res.comments }),
+          );
+        } else {
+          setPosts((prev) => addCommentFn(prev, id, comment));
+        }
+      },
+
+      // seed/storage helpers (only relevant for localStorage mode)
+      resetToSeed: () => {
+        if (USE_POSTS_BACKEND) return;
+        setPosts(loadPosts(seed));
+      },
 
       clearStorage: () => {
+        if (USE_POSTS_BACKEND) return;
         clearPostsStorage();
         setPosts(loadPosts(seed));
       },
     };
-  }, [posts, seed]);
+  }, [posts, loading, error, seed]);
 
-  return <PostsContext.Provider value={value}>{children}</PostsContext.Provider>;
+  return (
+    <PostsContext.Provider value={value}>{children}</PostsContext.Provider>
+  );
 };
 
 export const usePosts = () => {

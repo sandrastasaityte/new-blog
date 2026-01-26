@@ -80,3 +80,20 @@
     min-height: 38px;
   }
 }
+.pagination-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.pagination-list li {
+  display: inline-flex;
+}
+
+.dots {
+  padding: 0 6px;
+  opacity: 0.65;
+}

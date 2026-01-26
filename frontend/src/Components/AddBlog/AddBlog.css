@@ -227,3 +227,35 @@
     height: 190px;
   }
 }
+/* --- Better star focus when using <span role="button"> --- */
+.star[role="button"]:focus-visible,
+.stars [role="button"].star:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(0,0,0,0.12);
+}
+
+/* Optional: show a subtle hover fill hint */
+.stars .star:hover {
+  opacity: 0.85;
+}
+
+/* --- Error styling fallback without :has() (works everywhere) ---
+   Add class "is-error" to the input itself OR to the field wrapper if you want.
+   (If you do nothing, your current :has() will still work in modern browsers.)
+*/
+.field .is-error {
+  border-color: rgba(180, 35, 24, 0.35) !important;
+  box-shadow: 0 0 0 4px rgba(180, 35, 24, 0.08) !important;
+}
+
+/* --- Respect reduced motion preferences --- */
+@media (prefers-reduced-motion: reduce) {
+  .author-card,
+  .add-blog-form,
+  .btn,
+  .star,
+  .field input,
+  .field textarea {
+    transition: none !important;
+  }
+}

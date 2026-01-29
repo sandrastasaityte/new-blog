@@ -1,4 +1,4 @@
-import React, { useId, useMemo, useState } from "react";
+import React, { useId, useMemo, useState, useRef, useEffect } from "react";
 import "./CommentSection.css";
 
 export default function CommentSection({
@@ -10,21 +10,32 @@ export default function CommentSection({
   const nameId = useId();
   const textId = useId();
 
-  const normalized = useMemo(() => {
-    return (comments || [])
-      .map((c) => ({
-        name: String(c?.name || "Anonymous").trim() || "Anonymous",
-        text: String(c?.text || "").trim(),
-        date: c?.date ? String(c.date) : "",
-      }))
-      .filter((c) => c.text);
-  }, [comments]);
+  const normalized = useMemo(
+    () =>
+      (comments || [])
+        .map((c) => ({
+          name: String(c?.name || "Anonymous").trim() || "Anonymous",
+          text: String(c?.text || "").trim(),
+          date: c?.date ? String(c.date) : "",
+        }))
+        .filter((c) => c.text),
+    [comments]
+  );
 
   const [name, setName] = useState("");
   const [text, setText] = useState("");
   const [error, setError] = useState("");
 
+  const listRef = useRef(null);
+
   const remaining = maxLength - text.length;
+
+  // Scroll to bottom on new comment
+  useEffect(() => {
+    if (listRef.current) {
+      listRef.current.scrollTop = listRef.current.scrollHeight;
+    }
+  }, [normalized.length]);
 
   const submit = (e) => {
     e.preventDefault();
@@ -46,7 +57,6 @@ export default function CommentSection({
     setError("");
     onAddComment?.(payload);
 
-    // keep name (nice for multiple comments), clear text
     setText("");
   };
 
@@ -54,6 +64,8 @@ export default function CommentSection({
     setText(e.target.value);
     if (error) setError("");
   };
+
+  const onNameBlur = () => setName((n) => n.trim());
 
   return (
     <section className="comment-section" aria-label="Comments">
@@ -64,21 +76,20 @@ export default function CommentSection({
           No comments yet. Be the first!
         </p>
       ) : (
-        <div className="comment-list" aria-live="polite">
+        <div className="comment-list" ref={listRef} aria-live="polite">
           {normalized.map((c, idx) => (
             <div
-              key={`${c.name}-${c.text.slice(0, 24)}-${idx}`}
+              key={`${c.date}-${idx}`}
               className="comment-item"
             >
               <div className="comment-head">
                 <strong className="comment-name">{c.name}</strong>
-                {c.date ? (
+                {c.date && (
                   <span className="comment-date">
                     {new Date(c.date).toLocaleDateString()}
                   </span>
-                ) : null}
+                )}
               </div>
-
               <p className="comment-text">{c.text}</p>
             </div>
           ))}
@@ -94,6 +105,7 @@ export default function CommentSection({
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
+          onBlur={onNameBlur}
           placeholder="Your name (optional)"
           autoComplete="name"
           disabled={busy}
@@ -113,17 +125,20 @@ export default function CommentSection({
             maxLength={maxLength}
             disabled={busy}
           />
-
-          <div className="comment-counter" aria-live="polite">
+          <div
+            className="comment-counter"
+            aria-live="polite"
+            style={{ color: remaining <= 10 ? "red" : "inherit" }}
+          >
             {remaining} characters left
           </div>
         </div>
 
-        {error ? (
+        {error && (
           <p className="comment-error" role="alert">
             {error}
           </p>
-        ) : null}
+        )}
 
         <button type="submit" disabled={busy || !text.trim()}>
           {busy ? "Posting…" : "Post"}

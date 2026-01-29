@@ -1,47 +1,43 @@
-import React, { useMemo } from "react";
+// src/Components/Sidebar.jsx
+import React, { useState, useMemo } from "react";
+import { usePosts } from "../../Context/PostsContext";
 import "./Sidebar.css";
 
-const getId = (p) => p?.id ?? p?._id;
+export default function Sidebar({ filterTags = [], setFilterTags, onSelectPost }) {
+  const { posts, uniqueTags, getId } = usePosts();
+  const [keyword, setKeyword] = useState("");
 
-const safeDateNum = (d) => {
-  const t = new Date(d).getTime();
-  return Number.isNaN(t) ? 0 : t;
-};
+  const filteredPosts = useMemo(() => {
+    return posts
+      .filter((p) => (p.title + " " + p.content).toLowerCase().includes(keyword.toLowerCase()))
+      .filter((p) => (filterTags.length ? p.tags?.some((t) => filterTags.includes(t)) : true))
+      .sort((a, b) => new Date(b.date) - new Date(a.date));
+  }, [posts, keyword, filterTags]);
 
-const safeDateLabel = (d) => {
-  const t = new Date(d);
-  return Number.isNaN(t.getTime()) ? "" : t.toLocaleDateString();
-};
-
-export default function Sidebar({
-  posts = [],
-  uniqueTags = [],
-  filterTags = [],
-  setFilterTags,
-  onSelectPost,
-}) {
   const toggleTag = (tag) => {
-    if (typeof setFilterTags !== "function") return;
-
+    if (!setFilterTags) return;
     setFilterTags((prev) =>
       prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
     );
   };
 
-  const recent = useMemo(() => {
-    return [...(posts || [])]
-      .sort((a, b) => safeDateNum(b?.date) - safeDateNum(a?.date))
-      .slice(0, 6);
-  }, [posts]);
-
   return (
     <aside className="sidebar">
+      {/* Search */}
+      <div className="sidebar-card">
+        <input
+          type="text"
+          placeholder="Search posts..."
+          value={keyword}
+          onChange={(e) => setKeyword(e.target.value)}
+          className="sidebar-search"
+        />
+      </div>
+
+      {/* Tags */}
       <div className="sidebar-card">
         <h3 className="sidebar-title">Tags</h3>
-
-        {uniqueTags.length === 0 ? (
-          <p className="sidebar-muted">No tags yet.</p>
-        ) : (
+        {uniqueTags.length ? (
           <div className="sidebar-tags" aria-label="Filter by tags">
             {uniqueTags.map((tag) => {
               const active = filterTags.includes(tag);
@@ -58,39 +54,33 @@ export default function Sidebar({
               );
             })}
           </div>
+        ) : (
+          <p className="sidebar-muted">No tags yet.</p>
         )}
       </div>
 
+      {/* Recent Posts */}
       <div className="sidebar-card">
         <h3 className="sidebar-title">Recent Posts</h3>
-
-        {recent.length === 0 ? (
-          <p className="sidebar-muted">No posts yet.</p>
-        ) : (
+        {filteredPosts.length ? (
           <div className="sidebar-list">
-            {recent.map((p, idx) => {
-              const id = getId(p);
-              const key = id ? String(id) : `recent-${idx}`;
-
-              const title = p?.title || "Untitled post";
-              const meta = `${p?.author || "Admin"}${
-                p?.date ? ` • ${safeDateLabel(p.date)}` : ""
-              }`;
-
-              return (
-                <button
-                  key={key}
-                  type="button"
-                  className="sidebar-post"
-                  onClick={() => onSelectPost?.(p)}
-                  aria-label={`Open post: ${title}`}
-                >
-                  <p className="sidebar-post-title">{title}</p>
-                  <p className="sidebar-post-meta">{meta}</p>
-                </button>
-              );
-            })}
+            {filteredPosts.slice(0, 6).map((p) => (
+              <button
+                key={getId(p)}
+                type="button"
+                className="sidebar-post"
+                onClick={() => onSelectPost?.(p)}
+                aria-label={`Open post: ${p.title}`}
+              >
+                <p className="sidebar-post-title">{p.title}</p>
+                <p className="sidebar-post-meta">
+                  {p.author} {p.date && `• ${new Date(p.date).toLocaleDateString()}`}
+                </p>
+              </button>
+            ))}
           </div>
+        ) : (
+          <p className="sidebar-muted">No matching posts.</p>
         )}
       </div>
     </aside>

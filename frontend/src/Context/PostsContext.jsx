@@ -1,191 +1,155 @@
 // src/Context/PostsContext.jsx
-import React, {
-  createContext,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
 import { USE_POSTS_BACKEND } from "../lib/env";
-
+import * as api from "../lib/blogApi";
 import {
   loadPosts,
   savePosts,
-  addPost as addPostFn,
-  updatePost as updatePostFn,
-  deletePost as deletePostFn,
-  incViews as incViewsFn,
-  incLikes as incLikesFn,
-  addComment as addCommentFn,
-  clearPostsStorage,
-  normalize,
-  toggleLike as toggleLikeFn,
+  addPost as addPostLS,
+  updatePost as updatePostLS,
+  deletePost as deletePostLS,
+  incViews as incViewsLS,
+  toggleLike as toggleLikeLS,
+  addComment as addCommentLS,
 } from "./postStorage";
 
-import * as blogsApi from "../lib/blogApi";
-
-const DEFAULT_SEED = [];
 const PostsContext = createContext(null);
 
-export const getId = (p) => String(p?._id ?? p?.id ?? "");
-
-export const PostsProvider = ({ children, seed = DEFAULT_SEED }) => {
-  const [posts, setPosts] = useState(() =>
-    USE_POSTS_BACKEND ? [] : loadPosts(seed),
-  );
+export function PostsProvider({ children }) {
+  const [posts, setPosts] = useState(() => (USE_POSTS_BACKEND ? [] : loadPosts()));
   const [loading, setLoading] = useState(USE_POSTS_BACKEND);
   const [error, setError] = useState("");
 
-  // -------- BACKEND: initial load --------
+  // Sync to localStorage when posts change (for local mode)
   useEffect(() => {
-    if (!USE_POSTS_BACKEND) return;
-
-    let alive = true;
-    (async () => {
-      try {
-        setLoading(true);
-        setError("");
-        const data = await blogsApi.getBlogs();
-        // support array or {blogs:[...]} shapes
-        const list = Array.isArray(data)
-          ? data
-          : data?.blogs || data?.data || [];
-        if (alive) setPosts(normalize(list));
-      } catch (e) {
-        if (alive) setError(e?.message || "Failed to load blogs");
-      } finally {
-        if (alive) setLoading(false);
-      }
-    })();
-
-    return () => {
-      alive = false;
-    };
-  }, [seed, USE_POSTS_BACKEND]);
-
-  // -------- LOCALSTORAGE: auto-save --------
-  useEffect(() => {
-    if (USE_POSTS_BACKEND) return;
-    savePosts(posts);
+    if (!USE_POSTS_BACKEND) savePosts(posts);
   }, [posts]);
 
-  const value = useMemo(() => {
-    return {
+  // Fetch posts from backend
+  const refetch = useCallback(async () => {
+    if (!USE_POSTS_BACKEND) return;
+    setLoading(true);
+    setError("");
+    try {
+      const data = await api.getBlogs();
+      const list = Array.isArray(data) ? data : data?.posts || [];
+      setPosts(list);
+    } catch (e) {
+      setError(e?.message || "Failed to fetch posts");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (USE_POSTS_BACKEND) refetch();
+  }, [refetch]);
+
+  // ---------------- CRUD FUNCTIONS ----------------
+  const addPost = useCallback(
+    async (post) => {
+      setError("");
+      try {
+        if (!USE_POSTS_BACKEND) {
+          let created;
+          setPosts((prev) => {
+            created = addPostLS(prev, post)[0];
+            return [created, ...prev];
+          });
+          return created;
+        }
+
+        const token = localStorage.getItem("token");
+        const created = await api.createBlog(post, token);
+        await refetch();
+        return created;
+      } catch (e) {
+        const msg = e?.message || "Failed to add post";
+        setError(msg);
+        throw e;
+      }
+    },
+    [refetch]
+  );
+
+  const updatePost = useCallback(
+    async (id, patch) => {
+      setError("");
+      try {
+        if (!USE_POSTS_BACKEND) {
+          setPosts((prev) => updatePostLS(prev, id, patch));
+          return;
+        }
+
+        const token = localStorage.getItem("token");
+        await api.updateBlog(id, patch, token);
+        await refetch();
+      } catch (e) {
+        const msg = e?.message || "Failed to update post";
+        setError(msg);
+        throw e;
+      }
+    },
+    [refetch]
+  );
+
+  const deletePost = useCallback(
+    async (id) => {
+      setError("");
+      try {
+        if (!USE_POSTS_BACKEND) {
+          setPosts((prev) => deletePostLS(prev, id));
+          return;
+        }
+
+        const token = localStorage.getItem("token");
+        await api.deleteBlog(id, token);
+        await refetch();
+      } catch (e) {
+        const msg = e?.message || "Failed to delete post";
+        setError(msg);
+        throw e;
+      }
+    },
+    [refetch]
+  );
+
+  const incViews = useCallback((id) => setPosts((prev) => incViewsLS(prev, id)), []);
+  const toggleLike = useCallback((id, userKey) => setPosts((prev) => toggleLikeLS(prev, id, userKey)), []);
+  const addComment = useCallback((id, comment) => setPosts((prev) => addCommentLS(prev, id, comment)), []);
+
+  // ---------------- HELPERS ----------------
+  const getId = useCallback((post) => String(post?.id ?? post?._id), []);
+  const findPostById = useCallback((id) => posts.find((p) => getId(p) === String(id)), [posts, getId]);
+
+  const uniqueTags = useMemo(() => [...new Set(posts.flatMap((p) => p.tags || []))], [posts]);
+
+  const value = useMemo(
+    () => ({
       posts,
       loading,
       error,
+      refetch,
+      addPost,
+      updatePost,
+      deletePost,
+      incViews,
+      toggleLike,
+      addComment,
       getId,
-
-      // common helpers
-      getPostById: (id) => {
-        const target = String(id ?? "");
-        if (!target) return null;
-        return (posts || []).find((p) => getId(p) === target) || null;
-      },
-
-      // ✅ setPosts
-      setPosts: (next) => setPosts(normalize(next)),
-
-      // -------- add/update/delete --------
-      addPost: async (post) => {
-        if (!USE_POSTS_BACKEND) {
-          setPosts((prev) => addPostFn(prev, post));
-          return;
-        }
-        const token = localStorage.getItem("token");
-        const created = await blogsApi.createBlog(post, token);
-        // backend might return created post or {blog:...}
-        const p = created?.blog || created?.data || created;
-        setPosts((prev) => addPostFn(prev, p));
-      },
-
-      updatePost: async (id, patch) => {
-        if (!USE_POSTS_BACKEND) {
-          setPosts((prev) => updatePostFn(prev, id, patch));
-          return;
-        }
-        const token = localStorage.getItem("token");
-        const updated = await blogsApi.updateBlog(id, patch, token);
-        const p = updated?.blog || updated?.data || updated;
-        setPosts((prev) => updatePostFn(prev, id, p));
-      },
-
-      deletePost: async (id) => {
-        if (!USE_POSTS_BACKEND) {
-          setPosts((prev) => deletePostFn(prev, id));
-          return;
-        }
-        const token = localStorage.getItem("token");
-        await blogsApi.deleteBlog(id, token);
-        setPosts((prev) => deletePostFn(prev, id));
-      },
-
-      // -------- views/likes/comments --------
-      incViews: (id) => {
-        // (optional) you can add backend route later; for now local-only UI
-        setPosts((prev) => incViewsFn(prev, id));
-      },
-
-      incLikes: (id) => setPosts((prev) => incLikesFn(prev, id)),
-      toggleLike: async (id, userKey) => {
-        if (!USE_POSTS_BACKEND) {
-          setPosts((prev) => toggleLikeFn(prev, id, userKey));
-          return;
-        }
-
-        const token = localStorage.getItem("token");
-        const res = await blogsApi.toggleLike(id, token);
-
-        // backend returns { likes }
-        if (typeof res?.likes === "number") {
-          setPosts((prev) => updatePostFn(prev, id, { likes: res.likes }));
-        } else {
-          // fallback
-          setPosts((prev) => incLikesFn(prev, id));
-        }
-      },
-
-      addComment: async (id, comment) => {
-        if (!USE_POSTS_BACKEND) {
-          setPosts((prev) => addCommentFn(prev, id, comment));
-          return;
-        }
-
-        const token = localStorage.getItem("token");
-        const res = await blogsApi.addComment(id, comment, token);
-
-        if (Array.isArray(res?.comments)) {
-          setPosts((prev) =>
-            updatePostFn(prev, id, { comments: res.comments }),
-          );
-        } else {
-          setPosts((prev) => addCommentFn(prev, id, comment));
-        }
-      },
-
-      // seed/storage helpers (only relevant for localStorage mode)
-      resetToSeed: () => {
-        if (USE_POSTS_BACKEND) return;
-        setPosts(loadPosts(seed));
-      },
-
-      clearStorage: () => {
-        if (USE_POSTS_BACKEND) return;
-        clearPostsStorage();
-        setPosts(loadPosts(seed));
-      },
-    };
-  }, [posts, loading, error, seed]);
-
-  return (
-    <PostsContext.Provider value={value}>{children}</PostsContext.Provider>
+      findPostById,
+      uniqueTags,
+      USE_POSTS_BACKEND,
+    }),
+    [posts, loading, error, refetch, addPost, updatePost, deletePost, incViews, toggleLike, addComment, getId, findPostById, uniqueTags]
   );
-};
 
-export const usePosts = () => {
+  return <PostsContext.Provider value={value}>{children}</PostsContext.Provider>;
+}
+
+// ---------------- HOOK ----------------
+export function usePosts() {
   const ctx = useContext(PostsContext);
   if (!ctx) throw new Error("usePosts must be used inside <PostsProvider>");
   return ctx;
-};
-
-export default PostsProvider;
+}

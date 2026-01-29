@@ -1,134 +1,58 @@
-import React, { useMemo } from "react";
+// src/Blogs/BlogCard.jsx
+import React from "react";
+import { FaHeart, FaRegHeart } from "react-icons/fa";
 import "./BlogCard.css";
-
-const PLACEHOLDER_IMG = "https://via.placeholder.com/400x200";
-
-const safeDate = (d) => {
-  const dt = new Date(d);
-  return Number.isNaN(dt.getTime()) ? "" : dt.toLocaleDateString();
-};
-
-const clamp = (n, min, max) => Math.min(max, Math.max(min, n));
+import { usePosts } from "../../Context/PostsContext";
 
 export default function BlogCard({ post, onReadMore }) {
-  const img = post?.image || PLACEHOLDER_IMG;
-  const title = post?.title?.trim() || "Untitled post";
+  const { toggleLike, getId } = usePosts();
 
-  const dateStr = useMemo(() => safeDate(post?.date), [post?.date]);
-  const views = Number.isFinite(Number(post?.views)) ? Number(post.views) : 0;
-  const author = post?.author?.trim() || "Admin";
-
-  const rawRating = Number(post?.rating);
-  const rating = Number.isFinite(rawRating) ? clamp(rawRating, 0, 5) : 0;
-
-  const content = String(post?.content || "").trim();
-  const excerpt = content
-    ? content.length > 140
-      ? `${content.slice(0, 140)}…`
-      : content
-    : "No description available.";
-
-  const tags = Array.isArray(post?.tags) ? post.tags.filter(Boolean) : [];
-
-  // ✅ prefer Mongo id
-  const id = post?._id ?? post?.id ?? title;
-
-  const handleReadMore = () => onReadMore?.(post);
-
-  const onCardKeyDown = (e) => {
-    if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      handleReadMore();
-    }
+  const handleLike = () => {
+    toggleLike(getId(post));
   };
 
+  const likedByUser = (() => {
+    try {
+      const user = JSON.parse(localStorage.getItem("user"));
+      const key = user?.id || user?.email || "";
+      if (!key) return false;
+      return post.likedBy.some((x) => x.toLowerCase() === key.toLowerCase());
+    } catch {
+      return false;
+    }
+  })();
+
   return (
-    <article
-      className="blog-card"
-      tabIndex={0}
-      onKeyDown={onCardKeyDown}
-      onClick={handleReadMore}
-      role="button"
-      aria-label={`Open post: ${title}`}
-    >
-      <div className="blog-card__imgWrap">
-        <img
-          className="blog-card__img"
-          src={img}
-          alt={title}
-          loading="lazy"
-          onError={(e) => {
-            e.currentTarget.onerror = null;
-            e.currentTarget.src = PLACEHOLDER_IMG;
-          }}
-        />
-      </div>
+    <div className="blog-card">
+      <img src={post.image} alt={post.title} className="blog-card-image" />
 
-      <div className="blog-card__body">
-        <h3 className="blog-card__title">{title}</h3>
+      <div className="blog-card-body">
+        <h3>{post.title}</h3>
+        <p className="blog-card-meta">
+          {post.author} • {new Date(post.date).toLocaleDateString()}
+        </p>
 
-        <div className="blog-card__meta">
-          <span className="meta-item">{author}</span>
+        <p className="blog-card-excerpt">
+          {post.content.slice(0, 120)}{post.content.length > 120 ? "..." : ""}
+        </p>
 
-          {dateStr ? (
-            <>
-              <span className="meta-dot" aria-hidden="true">
-                •
-              </span>
-              <span className="meta-item">{dateStr}</span>
-            </>
-          ) : null}
-
-          <span className="meta-dot" aria-hidden="true">
-            •
-          </span>
-          <span className="meta-item">{views} views</span>
-        </div>
-
-        {tags.length ? (
-          <div className="blog-card__tags" aria-label="Tags">
-            {tags.slice(0, 4).map((t) => (
-              <span key={`${id}-${String(t).toLowerCase()}`} className="tag-chip">
-                {t}
-              </span>
-            ))}
-            {tags.length > 4 ? (
-              <span
-                className="tag-more"
-                aria-label={`${tags.length - 4} more tags`}
-              >
-                +{tags.length - 4}
-              </span>
-            ) : null}
-          </div>
-        ) : null}
-
-        <p className="blog-card__excerpt">{excerpt}</p>
-
-        <div className="blog-card__footer">
-          <div
-            className="blog-card__rating"
-            aria-label={`Rating ${rating} out of 5`}
-          >
-            <span className="star" aria-hidden="true">
-              ★
-            </span>
-            <span className="rating-num">{rating.toFixed(1)}/5</span>
-          </div>
+        <div className="blog-card-actions">
+          <button type="button" className="read-more-btn" onClick={onReadMore}>
+            Read More
+          </button>
 
           <button
             type="button"
-            className="blog-card__btn"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleReadMore();
-            }}
-            aria-label={`Read more: ${title}`}
+            className={`like-btn ${likedByUser ? "liked" : ""}`}
+            onClick={handleLike}
+            aria-pressed={likedByUser}
+            title={likedByUser ? "Unlike" : "Like"}
           >
-            Read More
+            {likedByUser ? <FaHeart color="red" /> : <FaRegHeart />}
+            <span>{post.likes || 0}</span>
           </button>
         </div>
       </div>
-    </article>
+    </div>
   );
 }

@@ -1,70 +1,36 @@
-const RAW_API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
-const API_URL = RAW_API_URL.replace(/\/$/, ""); // remove trailing slash
-
-export const getToken = () => localStorage.getItem("token");
-
-export const logout = () => {
-  localStorage.removeItem("token");
-};
-
-async function handleResponse(res) {
-  let data = null;
-
-  try {
-    data = await res.json();
-  } catch {
-    if (!res.ok) throw new Error("Server returned invalid JSON");
-    return null;
-  }
-
-  if (res.status === 401) {
-    logout();
-    throw new Error("Session expired. Please log in again.");
-  }
-
-  if (!res.ok) {
-    throw new Error(data?.message || data?.error || "Request failed");
-  }
-
-  return data;
-}
-
 export const authFetch = async (url, options = {}) => {
   const token = getToken();
 
   const headers = {
-    ...(token && { Authorization: `Bearer ${token}` }),
     ...options.headers,
+    ...(token && { Authorization: `Bearer ${token}` }),
   };
 
-  // Only set JSON header if body is not FormData
-  if (!(options.body instanceof FormData)) {
-    headers["Content-Type"] = "application/json";
-  }
+  const isJson =
+    options.body &&
+    typeof options.body === "object" &&
+    !(options.body instanceof FormData);
 
-  const res = await fetch(`${API_URL}${url}`, {
+  const requestOptions = {
+    method: options.method || "GET",
     ...options,
     headers,
-  });
+    body: isJson ? JSON.stringify(options.body) : options.body,
+  };
 
-  return handleResponse(res);
-};
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15000);
+  requestOptions.signal = controller.signal;
 
-export const register = (username, password) =>
-  authFetch("/auth/register", {
-    method: "POST",
-    body: JSON.stringify({ username, password }),
-  });
-
-export const login = async (username, password) => {
-  const data = await authFetch("/auth/login", {
-    method: "POST",
-    body: JSON.stringify({ username, password }),
-  });
-
-  if (data?.token) {
-    localStorage.setItem("token", data.token);
+  try {
+    const res = await fetch(`${API_URL}${url}`, requestOptions);
+    return handleResponse(res);
+  } catch (err) {
+    if (err.name === "AbortError") {
+      throw new Error(`Request to ${url} timed out after 15s`);
+    }
+    throw new Error("Network error. Server unreachable.");
+  } finally {
+    clearTimeout(timeout);
   }
-
-  return data;
 };

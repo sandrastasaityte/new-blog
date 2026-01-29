@@ -1,5 +1,6 @@
 // src/Components/AddBlogModal/AddBlogModal.jsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { marked } from "marked";
 import "./AddBlogModal.css";
 import { createBlog } from "../../lib/blogApi";
 import { usePosts } from "../../Context/PostsContext";
@@ -20,7 +21,6 @@ function parseTags(input) {
     .split(",")
     .map((t) => t.trim())
     .filter(Boolean);
-
   const seen = new Set();
   const out = [];
   for (const t of raw) {
@@ -35,22 +35,14 @@ function parseTags(input) {
 
 function normalizeCreatedBlog(created, fallback) {
   const b = created?.blog ?? created?.data ?? created ?? fallback;
-
-  // ✅ always normalize to _id
   const _id = String(
-    b?._id ??
-      b?.id ??
-      fallback?._id ??
-      fallback?.id ??
-      (globalThis.crypto?.randomUUID?.() || Date.now())
+    b?._id ?? b?.id ?? fallback?._id ?? fallback?.id ?? (globalThis.crypto?.randomUUID?.() || Date.now())
   );
-
   return { ...fallback, ...(b && typeof b === "object" ? b : {}), _id };
 }
 
 export default function AddBlogModal({ isOpen, onClose }) {
   const { addPost } = usePosts();
-
   const overlayRef = useRef(null);
   const titleRef = useRef(null);
 
@@ -61,11 +53,15 @@ export default function AddBlogModal({ isOpen, onClose }) {
 
   const tagsArray = useMemo(() => parseTags(form.tags), [form.tags]);
 
+  const markdownPreview = useMemo(
+    () => ({ __html: marked.parse(form.content || "") }),
+    [form.content]
+  );
+
   useEffect(() => {
     if (!isOpen) return;
 
     const t = setTimeout(() => titleRef.current?.focus(), 0);
-
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
@@ -78,23 +74,16 @@ export default function AddBlogModal({ isOpen, onClose }) {
       clearTimeout(t);
       document.body.style.overflow = prevOverflow;
       document.removeEventListener("keydown", onEsc);
-
-      setApiError("");
-      setErrors({});
       setForm(initialForm);
+      setErrors({});
+      setApiError("");
       setSubmitting(false);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, submitting]);
 
   const setField = (key) => (e) => {
     const value = e.target.value;
-
-    setForm((p) => ({
-      ...p,
-      [key]: key === "rating" ? Number(value) : value,
-    }));
-
+    setForm((p) => ({ ...p, [key]: key === "rating" ? Number(value) : value }));
     setErrors((p) => ({ ...p, [key]: "" }));
     setApiError("");
   };
@@ -128,38 +117,28 @@ export default function AddBlogModal({ isOpen, onClose }) {
     return Object.keys(next).length === 0;
   };
 
-  const safeClose = () => {
-    if (!submitting) onClose?.();
-  };
-
-  const onOverlayClick = (e) => {
-    if (e.target === overlayRef.current) safeClose();
-  };
-
+  const safeClose = () => { if (!submitting) onClose?.(); };
+  const onOverlayClick = (e) => { if (e.target === overlayRef.current) safeClose(); };
   const onStarKeyDown = (star) => (e) => {
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
-      if (submitting) return;
-      setForm((p) => ({ ...p, rating: star }));
-      setErrors((prev) => ({ ...prev, rating: "" }));
-      setApiError("");
+      if (!submitting) {
+        setForm((p) => ({ ...p, rating: star }));
+        setErrors((prev) => ({ ...prev, rating: "" }));
+        setApiError("");
+      }
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (submitting) return;
-
     setApiError("");
 
     const token = localStorage.getItem("token");
-    if (!token) {
-      setApiError("Please log in first.");
-      return;
-    }
+    if (!token) { setApiError("Please log in first."); return; }
 
     if (!validate()) return;
-
     setSubmitting(true);
 
     const payload = {
@@ -178,7 +157,6 @@ export default function AddBlogModal({ isOpen, onClose }) {
     try {
       const created = await createBlog(payload, token);
       const blog = normalizeCreatedBlog(created, payload);
-
       addPost?.(blog);
       onClose?.();
     } catch (err) {
@@ -189,7 +167,6 @@ export default function AddBlogModal({ isOpen, onClose }) {
   };
 
   if (!isOpen) return null;
-
   const tokenExists = !!localStorage.getItem("token");
 
   return (
@@ -199,7 +176,7 @@ export default function AddBlogModal({ isOpen, onClose }) {
       onMouseDown={onOverlayClick}
     >
       <div
-        className="addblog-modal"
+        className="addblog-modal addblog-modal--editor"
         role="dialog"
         aria-modal="true"
         aria-labelledby="addblog-title"
@@ -207,7 +184,6 @@ export default function AddBlogModal({ isOpen, onClose }) {
       >
         <div className="addblog-modal-head">
           <h3 id="addblog-title">Add New Blog</h3>
-
           <button
             type="button"
             className="addblog-close"
@@ -220,98 +196,84 @@ export default function AddBlogModal({ isOpen, onClose }) {
         </div>
 
         <div className="addblog-body">
-          {!tokenExists ? (
-            <div className="form-error">Please log in to add a blog.</div>
-          ) : apiError ? (
-            <div className="form-error">{apiError}</div>
-          ) : null}
+          {!tokenExists && <div className="form-error">Please log in to add a blog.</div>}
+          {apiError && <div className="form-error">{apiError}</div>}
 
           <form className="add-blog-form add-blog-form--modal" onSubmit={handleSubmit}>
-            <label className={`field ${errors.title ? "is-error" : ""}`}>
-              <span>Title</span>
-              <input
-                ref={titleRef}
-                value={form.title}
-                onChange={setField("title")}
-                required
-                minLength={4}
-                disabled={submitting}
-              />
-              {errors.title && <div className="field-error">{errors.title}</div>}
-            </label>
+            <div className="addblog-grid">
+              <div className="addblog-left">
+                <label className={`field ${errors.title ? "is-error" : ""}`}>
+                  <span>Title</span>
+                  <input ref={titleRef} value={form.title} onChange={setField("title")} required minLength={4} disabled={submitting} />
+                  {errors.title && <div className="field-error">{errors.title}</div>}
+                </label>
 
-            <label className={`field ${errors.content ? "is-error" : ""}`}>
-              <span>Content</span>
-              <textarea
-                rows={6}
-                value={form.content}
-                onChange={setField("content")}
-                required
-                minLength={20}
-                disabled={submitting}
-              />
-              {errors.content && <div className="field-error">{errors.content}</div>}
-            </label>
+                <label className={`field ${errors.content ? "is-error" : ""}`}>
+                  <span>Content</span>
+                  <textarea rows={6} value={form.content} onChange={setField("content")} required minLength={20} disabled={submitting} />
+                  {errors.content && <div className="field-error">{errors.content}</div>}
+                </label>
 
-            <label className="field">
-              <span>Tags</span>
-              <input value={form.tags} onChange={setField("tags")} disabled={submitting} />
-              {tagsArray.length > 0 && (
-                <div className="tag-preview" aria-label="Parsed tags">
-                  {tagsArray.map((t) => (
-                    <span key={t.toLowerCase()} className="tag-chip">
-                      {t}
-                    </span>
-                  ))}
+                <label className="field">
+                  <span>Tags ({tagsArray.length})</span>
+                  <input value={form.tags} onChange={setField("tags")} disabled={submitting} />
+                  {tagsArray.length > 0 && (
+                    <div className="tag-preview" aria-label="Parsed tags">
+                      {tagsArray.map((t) => (
+                        <span key={t.toLowerCase()} className="tag-chip">{t}</span>
+                      ))}
+                    </div>
+                  )}
+                </label>
+
+                <label className={`field ${errors.image ? "is-error" : ""}`}>
+                  <span>Image URL</span>
+                  <input value={form.image} onChange={setField("image")} disabled={submitting} />
+                  {errors.image && <div className="field-error">{errors.image}</div>}
+                </label>
+
+                <div className="image-preview">
+                  <img
+                    src={form.image.trim() || PLACEHOLDER_IMG}
+                    alt=""
+                    loading="lazy"
+                    onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = PLACEHOLDER_IMG; }}
+                  />
                 </div>
-              )}
-            </label>
 
-            <label className={`field ${errors.image ? "is-error" : ""}`}>
-              <span>Image URL</span>
-              <input value={form.image} onChange={setField("image")} disabled={submitting} />
-              {errors.image && <div className="field-error">{errors.image}</div>}
-            </label>
+                <label className={`field`}>
+                  <span>Author</span>
+                  <input value={form.author} onChange={setField("author")} disabled={submitting} />
+                </label>
 
-            <div className="image-preview">
-              <img
-                src={form.image.trim() || PLACEHOLDER_IMG}
-                alt=""
-                loading="lazy"
-                onError={(e) => {
-                  e.currentTarget.onerror = null;
-                  e.currentTarget.src = PLACEHOLDER_IMG;
-                }}
-              />
-            </div>
+                <div className={`rating-input ${errors.rating ? "is-error" : ""}`}>
+                  <label>Rating:</label>
+                  <div className="stars" aria-label={`Rating ${form.rating} out of 5`}>
+                    {[1,2,3,4,5].map((star) => (
+                      <span
+                        key={star}
+                        className={star <= form.rating ? "star filled" : "star"}
+                        onClick={() => !submitting && setForm((p)=>({...p,rating: star}))}
+                        onKeyDown={onStarKeyDown(star)}
+                        role="button"
+                        tabIndex={0}
+                        aria-label={`${star} star`}
+                      >★</span>
+                    ))}
+                  </div>
+                  {errors.rating && <div className="field-error">{errors.rating}</div>}
+                </div>
 
-            <div className={`rating-input ${errors.rating ? "is-error" : ""}`}>
-              <label>Rating:</label>
-              <div className="stars" aria-label={`Rating ${form.rating} out of 5`}>
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <span
-                    key={star}
-                    className={star <= form.rating ? "star filled" : "star"}
-                    onClick={() => !submitting && setForm((p) => ({ ...p, rating: star }))}
-                    onKeyDown={onStarKeyDown(star)}
-                    role="button"
-                    tabIndex={0}
-                    aria-label={`${star} star`}
-                  >
-                    ★
-                  </span>
-                ))}
+                <div className="form-actions">
+                  <button type="button" className="btn secondary" onClick={safeClose} disabled={submitting}>Cancel</button>
+                  <button type="submit" className="btn primary" disabled={submitting || !tokenExists}>{submitting ? "Saving..." : "Add Blog"}</button>
+                </div>
               </div>
-              {errors.rating && <div className="field-error">{errors.rating}</div>}
-            </div>
 
-            <div className="form-actions">
-              <button type="button" className="btn secondary" onClick={safeClose} disabled={submitting}>
-                Cancel
-              </button>
-              <button type="submit" className="btn primary" disabled={submitting || !tokenExists}>
-                {submitting ? "Saving..." : "Add Blog"}
-              </button>
+              <div className="addblog-right">
+                <h4>Preview</h4>
+                <div className="markdown-preview" dangerouslySetInnerHTML={markdownPreview}></div>
+              </div>
             </div>
           </form>
         </div>

@@ -1,53 +1,54 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import "./AddBlog.css";
+import { marked } from "marked";
+import DOMPurify from "dompurify";
 import { usePosts } from "../../Context/PostsContext";
 import { createBlog } from "../../lib/blogApi";
+import "./AddBlog.css";
 
 const PLACEHOLDER_IMG = "https://via.placeholder.com/600x300";
 
+// ================= Helpers =================
 function parseTags(input) {
-  const raw = (input || "")
+  if (!input) return [];
+  return input
     .split(",")
     .map((t) => t.trim())
-    .filter(Boolean);
-
-  const seen = new Set();
-  const out = [];
-  for (const t of raw) {
-    const key = t.toLowerCase();
-    if (!seen.has(key)) {
-      seen.add(key);
-      out.push(t);
-    }
-  }
-  return out;
+    .filter(Boolean)
+    .filter((v, i, a) => a.indexOf(v) === i);
 }
 
 function isValidHttpUrl(value) {
-  if (!value) return true;
   try {
-    const u = new URL(value);
-    return u.protocol === "http:" || u.protocol === "https:";
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:";
   } catch {
     return false;
   }
 }
 
+function isImageUrl(url) {
+  return /\.(jpg|jpeg|png|webp|gif|svg)$/i.test(url);
+}
+
+function slugify(text) {
+  return text
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, "")
+    .replace(/\s+/g, "-");
+}
+
 function normalizeCreatedBlog(created, fallbackPayload) {
-  // backend may return created directly or { blog: created } or { data: created }
-  const b = created?.blog ?? created?.data ?? created ?? fallbackPayload;
-
-  // normalize id -> always _id
-  const _id = b?._id ?? b?.id ?? fallbackPayload?._id ?? fallbackPayload?.id;
-
+  if (!created) return fallbackPayload;
   return {
     ...fallbackPayload,
-    ...(b && typeof b === "object" ? b : {}),
-    _id,
+    ...created,
+    id: created.id || created._id || fallbackPayload.id,
   };
 }
 
+// ================= Component =================
 export default function AddBlog() {
   const navigate = useNavigate();
   const { addPost } = usePosts();
@@ -65,111 +66,87 @@ export default function AddBlog() {
   const [submitting, setSubmitting] = useState(false);
   const [apiError, setApiError] = useState("");
 
+  // ===== Autosave draft =====
+  useEffect(() => {
+    localStorage.setItem("blog_draft", JSON.stringify(form));
+  }, [form]);
+
+  useEffect(() => {
+    const draft = localStorage.getItem("blog_draft");
+    if (draft) setForm(JSON.parse(draft));
+  }, []);
+
   const tagsArray = useMemo(() => parseTags(form.tags), [form.tags]);
 
   const setField = (key) => (e) => {
     const value = e.target.value;
-
-    setForm((p) => ({
-      ...p,
-      [key]: key === "rating" ? Number(value) : value,
-    }));
-
+    setForm((p) => ({ ...p, [key]: key === "rating" ? Number(value) : value }));
     setErrors((prev) => ({ ...prev, [key]: "" }));
     setApiError("");
   };
 
+  // ===== Validation =====
   const validate = () => {
-    const next = {};
+    const errs = {};
 
-    const title = form.title.trim();
-    const content = form.content.trim();
-    const ratingNum = Number(form.rating);
-    const image = form.image.trim();
+    if (!form.title || form.title.trim().length < 4)
+      errs.title = "Title must be at least 4 characters";
 
-    if (!title) next.title = "Title is required.";
-    else if (title.length < 4) next.title = "Title must be at least 4 characters.";
+    if (!form.content || form.content.trim().length < 20)
+      errs.content = "Content must be at least 20 characters";
 
-    if (!content) next.content = "Content is required.";
-    else if (content.length < 20) next.content = "Content must be at least 20 characters.";
-
-    if (!Number.isFinite(ratingNum) || ratingNum < 0 || ratingNum > 5) {
-      next.rating = "Rating must be between 0 and 5.";
+    if (form.image) {
+      if (!isValidHttpUrl(form.image)) errs.image = "Invalid URL";
+      else if (!isImageUrl(form.image)) errs.image = "URL must be an image";
     }
 
-    if (image && !isValidHttpUrl(image)) {
-      next.image = "Image must be a valid URL starting with http/https.";
-    }
+    if (form.rating < 0 || form.rating > 5)
+      errs.rating = "Rating must be between 0 and 5";
 
-    setErrors(next);
-    return Object.keys(next).length === 0;
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
   };
 
   const handleCancel = () => navigate("/blogs");
 
   const setRating = (star) => {
     setForm((p) => ({ ...p, rating: star }));
-    setErrors((prev) => ({ ...prev, rating: "" }));
-    setApiError("");
   };
 
   const onStarKeyDown = (star) => (e) => {
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
-      if (!submitting) setRating(star);
+      setRating(star);
     }
   };
 
+  // ===== Submit =====
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (submitting) return;
-
-    setApiError("");
-
-    const token = localStorage.getItem("token");
-    if (!token) {
-      setApiError("You must be logged in to add a blog.");
-      return;
-    }
-
     if (!validate()) return;
 
     setSubmitting(true);
-
-    const nowIso = new Date().toISOString();
+    setApiError("");
 
     const payload = {
       title: form.title.trim(),
+      slug: slugify(form.title),
       content: form.content.trim(),
       tags: tagsArray,
-      image: form.image.trim() || PLACEHOLDER_IMG,
-      author: form.author.trim() || "Admin",
-      rating: Number(form.rating) || 0,
-      date: nowIso,
-      views: 0,
-      likes: 0,
-      comments: [],
+      image: form.image.trim() || null,
+      author: form.author.trim(),
+      rating: form.rating,
+      createdAt: new Date().toISOString(),
     };
 
     try {
-      const created = await createBlog(payload, token);
+      const created = await createBlog(payload);
       const normalized = normalizeCreatedBlog(created, payload);
-
-      // ✅ only add locally if context exists
-      addPost?.(normalized);
-
-      setForm({
-        title: "",
-        content: "",
-        tags: "",
-        image: "",
-        author: "Admin",
-        rating: 0,
-      });
-
+      addPost(normalized);
+      localStorage.removeItem("blog_draft");
       navigate("/blogs");
     } catch (err) {
-      setApiError(err?.message || "Failed to create blog.");
+      setApiError(err.message || "Failed to create blog");
     } finally {
       setSubmitting(false);
     }
@@ -177,12 +154,26 @@ export default function AddBlog() {
 
   const previewSrc = form.image.trim() || PLACEHOLDER_IMG;
 
+  // ===== Markdown Preview (Sanitized) =====
+  const markdownPreview = useMemo(() => {
+    const raw = marked.parse(form.content || "");
+    const clean = DOMPurify.sanitize(raw);
+    return { __html: clean };
+  }, [form.content]);
+
+  // ===== Reading time =====
+  const readingTime = useMemo(() => {
+    if (!form.content) return 0;
+    const words = form.content.trim().split(/\s+/).length;
+    return Math.max(1, Math.ceil(words / 200));
+  }, [form.content]);
+
   return (
     <form className="add-blog-form" onSubmit={handleSubmit}>
       <h3>Add New Blog</h3>
+      {apiError && <div className="form-error">{apiError}</div>}
 
-      {apiError ? <div className="form-error">{apiError}</div> : null}
-
+      {/* Title */}
       <label className="field">
         <span>Title</span>
         <input
@@ -193,11 +184,12 @@ export default function AddBlog() {
           minLength={4}
           disabled={submitting}
         />
-        {errors.title ? <div className="field-error">{errors.title}</div> : null}
+        {errors.title && <div className="field-error">{errors.title}</div>}
       </label>
 
+      {/* Content */}
       <label className="field">
-        <span>Content</span>
+        <span>Content (Markdown supported)</span>
         <textarea
           value={form.content}
           onChange={setField("content")}
@@ -207,11 +199,17 @@ export default function AddBlog() {
           rows={7}
           disabled={submitting}
         />
-        {errors.content ? (
-          <div className="field-error">{errors.content}</div>
-        ) : null}
+        {errors.content && <div className="field-error">{errors.content}</div>}
+
+        {form.content && (
+          <>
+            <div className="reading-time">⏱ {readingTime} min read</div>
+            <div className="markdown-preview" dangerouslySetInnerHTML={markdownPreview}></div>
+          </>
+        )}
       </label>
 
+      {/* Tags */}
       <label className="field">
         <span>Tags</span>
         <input
@@ -220,17 +218,16 @@ export default function AddBlog() {
           placeholder="Economics, Trade, AI"
           disabled={submitting}
         />
-        {tagsArray.length ? (
-          <div className="tag-preview" aria-label="Parsed tags">
+        {tagsArray.length > 0 && (
+          <div className="tag-preview">
             {tagsArray.map((t) => (
-              <span key={t.toLowerCase()} className="tag-chip">
-                {t}
-              </span>
+              <span key={t.toLowerCase()} className="tag-chip">{t}</span>
             ))}
           </div>
-        ) : null}
+        )}
       </label>
 
+      {/* Image */}
       <label className="field">
         <span>Image URL</span>
         <input
@@ -239,8 +236,7 @@ export default function AddBlog() {
           placeholder="https://…"
           disabled={submitting}
         />
-        {errors.image ? <div className="field-error">{errors.image}</div> : null}
-
+        {errors.image && <div className="field-error">{errors.image}</div>}
         <div className="image-preview-wrap">
           <img
             className="image-preview"
@@ -255,6 +251,7 @@ export default function AddBlog() {
         </div>
       </label>
 
+      {/* Author */}
       <label className="field">
         <span>Author</span>
         <input
@@ -265,9 +262,10 @@ export default function AddBlog() {
         />
       </label>
 
-      <div className="rating-input" aria-label="Rating">
+      {/* Rating */}
+      <div className="rating-input">
         <label>Rating:</label>
-        <div className="stars" aria-label={`Rating ${form.rating} out of 5`}>
+        <div className="stars">
           {[1, 2, 3, 4, 5].map((star) => (
             <span
               key={star}
@@ -282,16 +280,12 @@ export default function AddBlog() {
             </span>
           ))}
         </div>
-        {errors.rating ? <div className="field-error">{errors.rating}</div> : null}
+        {errors.rating && <div className="field-error">{errors.rating}</div>}
       </div>
 
+      {/* Actions */}
       <div className="form-actions">
-        <button
-          type="button"
-          className="btn secondary"
-          onClick={handleCancel}
-          disabled={submitting}
-        >
+        <button type="button" className="btn secondary" onClick={handleCancel} disabled={submitting}>
           Cancel
         </button>
         <button type="submit" className="btn primary" disabled={submitting}>

@@ -1,50 +1,147 @@
-/* ✅ Focus: keep inputs using their own focus styles */
-.blog-form button:focus-visible,
-.blog-form .btn:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 4px rgba(0,0,0,0.12);
+/* src/Blogs/BlogForm.css */
+
+.blog-form {
+  max-width: 600px;
+  margin: 0 auto;
+  background: #fff;
+  padding: 2rem;
+  border-radius: 1rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  font-family: inherit;
 }
 
-/* Optional: focus for inputs stays as you wrote (border + box-shadow) */
+.blog-form h2 {
+  margin: 0 0 1rem;
+  font-size: 1.75rem;
+  text-align: center;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.field span {
+  font-weight: 500;
+}
+
+.field input,
+.field textarea {
+  padding: 0.6rem 0.8rem;
+  border: 1px solid rgba(0, 0, 0, 0.16);
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  font-family: inherit;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
 .field input:focus,
 .field textarea:focus {
-  border-color: rgba(0,0,0,0.24);
-  box-shadow: 0 0 0 4px rgba(0,0,0,0.06);
+  outline: none;
+  border-color: #0077ff;
+  box-shadow: 0 0 0 4px rgba(0, 119, 255, 0.12);
 }
 
-/* ✅ Better image preview with wrapper (optional) */
-.image-preview-wrap {
+.field.is-error input,
+.field.is-error textarea {
+  border-color: #ff4d4f;
+}
+
+.field-error {
+  color: #ff4d4f;
+  font-size: 0.875rem;
+  margin-top: -0.25rem;
+}
+
+textarea {
+  resize: vertical;
+  min-height: 120px;
+}
+
+.tag-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
   margin-top: 0.25rem;
-  border-radius: 14px;
-  overflow: hidden;
-  border: 1px solid rgba(0,0,0,0.08);
-  background: rgba(0,0,0,0.03);
+}
+
+.tag-chip {
+  background: #e6f0ff;
+  color: #0077ff;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  cursor: default;
 }
 
 .image-preview {
   width: 100%;
-  height: 260px;
+  max-height: 300px;
   object-fit: cover;
-  display: block;
-  border: 0;
-  margin: 0;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(0, 0, 0, 0.12);
 }
 
-/* ✅ File input: clearer */
-.field input[type="file"] {
-  padding: 0.55rem 0.6rem;
-  border-style: dashed;
+.row {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
 }
 
-/* ✅ Reduced motion */
-@media (prefers-reduced-motion: reduce) {
-  .btn,
-  .field input,
-  .field textarea {
-    transition: none;
+.row .field {
+  flex: 1;
+  min-width: 120px;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+}
+
+.btn {
+  padding: 0.6rem 1.2rem;
+  font-size: 1rem;
+  border-radius: 0.5rem;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.2s;
+}
+
+.btn.primary {
+  background: #0077ff;
+  color: #fff;
+}
+
+.btn.primary:hover:not(:disabled) {
+  background: #005fcc;
+}
+
+.btn.secondary {
+  background: #f0f0f0;
+  color: #333;
+}
+
+.btn.secondary:hover:not(:disabled) {
+  background: #e0e0e0;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 520px) {
+  .blog-form {
+    padding: 1.5rem 1rem;
   }
-  .btn:hover:not(:disabled) {
-    transform: none;
-    box-shadow: none;
+
+  .row {
+    flex-direction: column;
   }
 }

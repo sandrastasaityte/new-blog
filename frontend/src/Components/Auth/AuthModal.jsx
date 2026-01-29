@@ -1,185 +1,157 @@
-import React, { useEffect, useId, useRef, useState } from "react";
-import Login from "../Login/Login";
-import SignUp from "../SignUp/SignUp";
+import React, { useEffect, useMemo, useState, useRef } from "react";
+import { login, register } from "../../lib/authApi";
 import "./AuthModal.css";
 
-const FOCUSABLE =
-  'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [contenteditable="true"], [tabindex]:not([tabindex="-1"])';
+const initialState = { email: "", password: "", confirmPassword: "" };
 
-export default function AuthModal({
-  isOpen,
-  onClose,
-  defaultMode = "login",
-  setToken,
-}) {
+function isValidEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+const AuthModal = ({ isOpen, onClose, defaultMode = "login", setToken }) => {
   const [mode, setMode] = useState(defaultMode); // "login" | "signup"
-  const [busy, setBusy] = useState(false);
+  const [formData, setFormData] = useState(initialState);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const errorRef = useRef(null);
 
-  const modalRef = useRef(null);
-  const lastActiveRef = useRef(null);
-  const busyRef = useRef(false);
-
-  const titleId = useId();
-  const descId = useId();
-
-  useEffect(() => {
-    busyRef.current = busy;
-  }, [busy]);
-
-  // Reset mode when opening (only when opening, not on every defaultMode change)
-  useEffect(() => {
-    if (isOpen) setMode(defaultMode);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen]);
+  const emailTrimmed = useMemo(() => formData.email.trim(), [formData.email]);
+  const passwordTrimmed = useMemo(() => formData.password.trim(), [formData.password]);
 
   useEffect(() => {
     if (!isOpen) return;
-
-    lastActiveRef.current = document.activeElement;
-
-    const t = setTimeout(() => {
-      const root = modalRef.current;
-      if (!root) return;
-      const first = root.querySelector(FOCUSABLE);
-      first?.focus?.();
-    }, 0);
-
-    return () => clearTimeout(t);
-  }, [isOpen]);
+    setMode(defaultMode);
+    setFormData(initialState);
+    setError("");
+  }, [isOpen, defaultMode]);
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (error && errorRef.current) errorRef.current.focus();
+  }, [error]);
 
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (error) setError("");
+  };
 
-    const getFocusables = () => {
-      const root = modalRef.current;
-      if (!root) return [];
-      return Array.from(root.querySelectorAll(FOCUSABLE)).filter(
-        (el) =>
-          !el.hasAttribute("disabled") &&
-          el.getAttribute("aria-hidden") !== "true" &&
-          el.offsetParent !== null
-      );
-    };
+  const validate = () => {
+    if (!emailTrimmed || !passwordTrimmed) return "Please fill all fields.";
+    if (!isValidEmail(emailTrimmed)) return "Enter a valid email.";
+    if (passwordTrimmed.length < 6) return "Password must be at least 6 characters.";
 
-    const onKeyDown = (e) => {
-      if (e.key === "Escape") {
-        if (!busyRef.current) onClose?.();
-        return;
-      }
+    if (mode === "signup") {
+      const confirmTrimmed = formData.confirmPassword.trim();
+      if (!confirmTrimmed) return "Please confirm your password.";
+      if (passwordTrimmed !== confirmTrimmed) return "Passwords do not match.";
+    }
 
-      if (e.key !== "Tab") return;
+    return "";
+  };
 
-      const root = modalRef.current;
-      if (!root) return;
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (loading) return;
 
-      const focusables = getFocusables();
-      if (!focusables.length) return;
+    const msg = validate();
+    if (msg) return setError(msg);
 
-      const first = focusables[0];
-      const last = focusables[focusables.length - 1];
-      const active = document.activeElement;
+    try {
+      setLoading(true);
+      setError("");
 
-      const activeInside = root.contains(active);
+      const data = mode === "login"
+        ? await login(emailTrimmed, passwordTrimmed)
+        : await register(emailTrimmed, passwordTrimmed);
 
-      if (e.shiftKey) {
-        if (!activeInside || active === first) {
-          e.preventDefault();
-          last.focus();
-        }
-      } else {
-        if (!activeInside || active === last) {
-          e.preventDefault();
-          first.focus();
-        }
-      }
-    };
+      const token = data?.token || data?.accessToken || null;
+      if (!token) return setError("No token returned from server.");
 
-    document.addEventListener("keydown", onKeyDown);
-
-    return () => {
-      document.removeEventListener("keydown", onKeyDown);
-      document.body.style.overflow = prevOverflow;
-
-      lastActiveRef.current?.focus?.();
-
-      setBusy(false);
-      busyRef.current = false;
-    };
-  }, [isOpen, onClose]);
+      localStorage.setItem("token", token);
+      setToken?.(token);
+      onClose?.();
+      setFormData(initialState);
+    } catch (err) {
+      setError(err?.message || "Something went wrong.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (!isOpen) return null;
 
-  const isLogin = mode === "login";
-
-  const handleOverlayPointerDown = (e) => {
-    if (e.target === e.currentTarget && !busyRef.current) onClose?.();
-  };
-
-  const handleSuccess = () => onClose?.();
-
   return (
-    <div
-      className="modal-overlay"
-      onPointerDown={handleOverlayPointerDown}
-      role="presentation"
-    >
-      <div
-        ref={modalRef}
-        className="modal auth-modal"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        aria-describedby={descId}
-        onPointerDown={(e) => e.stopPropagation()}
-      >
-        <h2 id={titleId} className="sr-only">
-          {isLogin ? "Login" : "Sign up"}
-        </h2>
-        <p id={descId} className="sr-only">
-          Authenticate to continue.
-        </p>
-
+    <div className="auth-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose?.()}>
+      <div className="auth-box" onMouseDown={(e) => e.stopPropagation()}>
         <button
           className="close-btn"
-          onClick={() => !busyRef.current && onClose?.()}
-          aria-label="Close"
+          onClick={onClose}
           type="button"
-          disabled={busy}
+          aria-label="Close"
         >
           ×
         </button>
 
-        {isLogin ? (
-          <Login
-            onSuccess={handleSuccess}
-            setBusy={setBusy}
-            setToken={setToken}
-            closePopup={onClose}
-          />
-        ) : (
-          <SignUp
-            onSuccess={handleSuccess}
-            setBusy={setBusy}
-            setToken={setToken}
-            closePopup={onClose}
-          />
-        )}
+        <h2>{mode === "login" ? "Login" : "Sign Up"}</h2>
 
-        <p className="switch-text" aria-live="polite">
-          {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
+        <form onSubmit={handleSubmit}>
+          <input
+            type="email"
+            name="email"
+            placeholder="Email"
+            value={formData.email}
+            onChange={handleChange}
+            required
+            disabled={loading}
+          />
+          <input
+            type="password"
+            name="password"
+            placeholder="Password"
+            value={formData.password}
+            onChange={handleChange}
+            required
+            minLength={6}
+            disabled={loading}
+          />
+          {mode === "signup" && (
+            <input
+              type="password"
+              name="confirmPassword"
+              placeholder="Confirm Password"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              required
+              minLength={6}
+              disabled={loading}
+            />
+          )}
+
+          {error && (
+            <p className="error" role="alert" ref={errorRef} tabIndex={-1}>
+              {error}
+            </p>
+          )}
+
+          <button type="submit" disabled={loading}>
+            {loading ? (mode === "login" ? "Logging in..." : "Creating account...") : mode === "login" ? "Login" : "Sign Up"}
+          </button>
+        </form>
+
+        <p className="toggle-text">
+          {mode === "login" ? "Don't have an account?" : "Already have an account?"}{" "}
           <button
             type="button"
-            className="switch-link"
-            onClick={() => setMode(isLogin ? "signup" : "login")}
-            disabled={busy}
+            className="toggle-link"
+            onClick={() => setMode(mode === "login" ? "signup" : "login")}
+            disabled={loading}
           >
-            {isLogin ? "Sign Up" : "Login"}
+            {mode === "login" ? "Sign Up" : "Login"}
           </button>
         </p>
       </div>
     </div>
   );
-}
+};
+
+export default AuthModal;

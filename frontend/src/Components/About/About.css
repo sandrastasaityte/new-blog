@@ -1,155 +1,154 @@
-/* About.css */
-
-.about-wrapper {
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 42px 18px 64px;
-}
-
-.about-hero {
+.authors-section {
+  padding: 4rem 2rem;
+  background: linear-gradient(180deg, #f9f9f9 0%, #f2f4f8 100%);
   text-align: center;
-  margin-bottom: 28px;
 }
 
-.about-title {
-  margin: 0;
-  font-size: clamp(1.8rem, 2.6vw, 2.4rem);
-  letter-spacing: -0.02em;
+.authors-section h2 {
+  font-size: 2.2rem;
+  margin-bottom: 2.5rem;
+  color: #1f2937;
+  font-weight: 700;
+  letter-spacing: -0.5px;
 }
 
-.about-subtitle {
-  margin: 10px auto 0;
-  max-width: 680px;
-  opacity: 0.82;
-  line-height: 1.6;
-}
-
-/* Responsive grid */
-.authors-grid {
+/* Grid */
+.authors-container {
   display: grid;
-  grid-template-columns: repeat(12, 1fr);
-  gap: 18px;
-  margin-top: 22px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 2rem;
+  justify-items: center;
 }
 
 /* Card */
 .author-card {
-  grid-column: span 12;
-  background: #fff;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: 18px;
-  padding: 18px 18px 16px;
-  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.06);
-  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
-  position: relative;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(6px);
+  padding: 1.8rem 1.5rem;
+  border-radius: 14px;
+  width: 100%;
+  max-width: 320px;
+  text-align: center;
+  box-shadow: 
+    0 4px 12px rgba(0, 0, 0, 0.06),
+    0 10px 30px rgba(0, 0, 0, 0.04);
+  transition: 
+    transform 0.25s ease,
+    box-shadow 0.25s ease,
+    border 0.25s ease;
+  border: 1px solid rgba(0,0,0,0.04);
 }
 
-/* hover */
 .author-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 18px 55px rgba(0, 0, 0, 0.09);
-  border-color: rgba(0, 0, 0, 0.12);
-}
-
-/* keyboard focus (if you later make card clickable) */
-.author-card:focus-within {
-  outline: 3px solid rgba(0, 119, 255, 0.25);
-  outline-offset: 3px;
-}
-
-@media (min-width: 640px) {
-  .author-card {
-    grid-column: span 6;
-  }
-}
-
-@media (min-width: 980px) {
-  .author-card {
-    grid-column: span 4;
-  }
+  transform: translateY(-8px) scale(1.01);
+  box-shadow: 
+    0 10px 30px rgba(0, 0, 0, 0.12),
+    0 20px 50px rgba(0, 0, 0, 0.08);
 }
 
 /* Avatar */
-.author-image-wrap {
-  width: 92px;
-  height: 92px;
-  border-radius: 999px;
-  overflow: hidden;
-  border: 2px solid rgba(0, 0, 0, 0.06);
-  background: rgba(0, 0, 0, 0.03);
-  margin-bottom: 12px;
-}
-
-/* slightly larger avatar on bigger screens */
-@media (min-width: 980px) {
-  .author-image-wrap {
-    width: 104px;
-    height: 104px;
-  }
-}
-
-.author-image {
-  width: 100%;
-  height: 100%;
+.author-card img {
+  width: 105px;
+  height: 105px;
   object-fit: cover;
-  display: block;
+  border-radius: 50%;
+  margin-bottom: 1rem;
+  border: 3px solid #fff;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
 }
 
-.author-name {
-  margin: 0;
-  font-size: 1.08rem;
-  letter-spacing: -0.01em;
+/* Name */
+.author-card h3 {
+  margin: 0.6rem 0 0.3rem;
+  font-size: 1.3rem;
+  color: #111827;
+  font-weight: 600;
 }
 
+/* Role */
 .author-role {
-  margin: 6px 0 10px;
-  font-size: 0.92rem;
-  opacity: 0.78;
+  font-size: 0.95rem;
+  color: #6b7280;
+  margin-bottom: 0.75rem;
+  font-weight: 500;
 }
 
-/* nice readable bio */
+/* Bio */
 .author-bio {
-  margin: 0;
-  line-height: 1.6;
-  opacity: 0.9;
+  font-size: 0.92rem;
+  color: #4b5563;
+  margin-bottom: 1.2rem;
+  line-height: 1.5;
 }
 
-/* Optional: subtle divider line inside card for structure */
-.author-card::after {
-  content: "";
-  display: block;
-  height: 1px;
-  width: 100%;
-  margin-top: 14px;
-  background: rgba(0, 0, 0, 0.06);
-  opacity: 0;
+/* Social */
+.author-social {
+  display: flex;
+  justify-content: center;
+  gap: 0.7rem;
 }
 
-.author-card:hover::after {
-  opacity: 1;
+.author-social a {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #f3f4f6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #4b5563;
+  font-size: 1.1rem;
+  transition: all 0.25s ease;
 }
 
-/* Optional: dark mode support if your site uses dark backgrounds */
-@media (prefers-color-scheme: dark) {
+.author-social a:hover {
+  background: #ff6600;
+  color: #fff;
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: 0 6px 16px rgba(255, 102, 0, 0.35);
+}
+
+/* Mobile */
+@media (max-width: 600px) {
+  .authors-container {
+    grid-template-columns: 1fr;
+  }
+
   .author-card {
-    background: rgba(255, 255, 255, 0.04);
-    border-color: rgba(255, 255, 255, 0.12);
-    box-shadow: none;
+    width: 90%;
+  }
+}
+
+/* 🌙 Dark Mode Ready */
+@media (prefers-color-scheme: dark) {
+  .authors-section {
+    background: linear-gradient(180deg, #0f172a 0%, #020617 100%);
   }
 
-  .author-card:hover {
-    border-color: rgba(255, 255, 255, 0.18);
-    box-shadow: 0 18px 55px rgba(0, 0, 0, 0.35);
+  .authors-section h2 {
+    color: #e5e7eb;
   }
 
-  .about-subtitle,
-  .author-role,
+  .author-card {
+    background: rgba(15, 23, 42, 0.8);
+    border: 1px solid rgba(255,255,255,0.05);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  }
+
+  .author-card h3 {
+    color: #f9fafb;
+  }
+
+  .author-role {
+    color: #9ca3af;
+  }
+
   .author-bio {
-    opacity: 0.85;
+    color: #d1d5db;
   }
 
-  .author-image-wrap {
-    border-color: rgba(255, 255, 255, 0.14);
-    background: rgba(255, 255, 255, 0.06);
+  .author-social a {
+    background: #020617;
+    color: #cbd5e1;
   }
 }

@@ -1,134 +1,90 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { FaUserCircle, FaBars, FaTimes } from "react-icons/fa";
+import AuthModal from "../Auth/AuthModal"; // ✅ fixed path
 import "./Navbar.css";
 
-const Navbar = ({ token, onLogin, onLogout }) => {
-  const [open, setOpen] = useState(false);
+const Navbar = ({ token, setToken }) => {
+  const [open, setOpen] = useState(false); // mobile menu
+  const [authOpen, setAuthOpen] = useState(false); // AuthModal visibility
+  const [authMode, setAuthMode] = useState("login"); // "login" or "signup"
+
   const location = useLocation();
 
-  useEffect(() => {
-    setOpen(false);
-  }, [location.pathname]);
-
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e) => e.key === "Escape" && setOpen(false);
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [open]);
+  // Close mobile menu on route change
+  React.useEffect(() => setOpen(false), [location.pathname]);
 
   const linkClass = ({ isActive }) => (isActive ? "active" : undefined);
 
-  const closeIfOverlay = (e) => {
-    if (e.target === e.currentTarget) setOpen(false);
-  };
-
   return (
-    <nav className="navbar" role="navigation" aria-label="Main">
-      <div className="logo">
-        <Link to="/">MyEconomics</Link>
-      </div>
+    <>
+      <nav className="navbar" role="navigation" aria-label="Main">
+        <div className="logo">
+          <Link to="/">MyEconomics</Link>
+        </div>
 
-      <ul className="nav-links">
-        <li>
-          <NavLink to="/" className={linkClass} end>
-            Home
-          </NavLink>
-        </li>
-        <li>
-          <NavLink to="/about" className={linkClass}>
-            About
-          </NavLink>
-        </li>
-        <li>
-          <NavLink to="/blogs" className={linkClass}>
-            Blogs
-          </NavLink>
-        </li>
-        <li>
-          <NavLink to="/contact" className={linkClass}>
-            Contact
-          </NavLink>
-        </li>
-        {token ? (
-          <li>
-            <NavLink to="/add-blog" className={linkClass}>
-              Add Blog
-            </NavLink>
-          </li>
-        ) : null}
-      </ul>
+        <ul className="nav-links">
+          <li><NavLink to="/" className={linkClass} end>Home</NavLink></li>
+          <li><NavLink to="/about" className={linkClass}>About</NavLink></li>
+          <li><NavLink to="/blogs" className={linkClass}>Blogs</NavLink></li>
+          <li><NavLink to="/contact" className={linkClass}>Contact</NavLink></li>
+          {token && <li><NavLink to="/add-blog" className={linkClass}>Add Blog</NavLink></li>}
+        </ul>
 
-      <div className="nav-actions">
-        {token ? (
-          <button className="auth-btn" onClick={onLogout} type="button">
-            Logout
-          </button>
-        ) : (
+        <div className="nav-actions">
           <button
             type="button"
             className="icon-btn"
-            onClick={onLogin}
-            aria-label="Login or sign up"
-            title="Login / Sign up"
+            onClick={() => token ? setToken(null) : setAuthOpen(true)}
+            aria-label={token ? "Logout" : "Login / Sign up"}
           >
-            <FaUserCircle size={28} />
+            {token ? "Logout" : <FaUserCircle size={28} />}
           </button>
-        )}
 
-        <button
-          type="button"
-          className="icon-btn nav-toggle"
-          onClick={() => setOpen((v) => !v)}
-          aria-label={open ? "Close menu" : "Open menu"}
-          aria-expanded={open}
-        >
-          {open ? <FaTimes size={20} /> : <FaBars size={20} />}
-        </button>
-      </div>
+          <button
+            type="button"
+            className="icon-btn nav-toggle"
+            onClick={() => setOpen((v) => !v)}
+            aria-label={open ? "Close menu" : "Open menu"}
+            aria-expanded={open}
+          >
+            {open ? <FaTimes size={20} /> : <FaBars size={20} />}
+          </button>
+        </div>
 
-      {open ? (
-        <div
-          className="nav-mobile-overlay"
-          onMouseDown={closeIfOverlay}
-          role="dialog"
-          aria-label="Menu"
-        >
-          <div className="nav-mobile" onMouseDown={(e) => e.stopPropagation()}>
-            <NavLink to="/" className={linkClass} end>
-              Home
-            </NavLink>
-            <NavLink to="/about" className={linkClass}>
-              About
-            </NavLink>
-            <NavLink to="/blogs" className={linkClass}>
-              Blogs
-            </NavLink>
-            <NavLink to="/contact" className={linkClass}>
-              Contact
-            </NavLink>
-            {token ? (
-              <NavLink to="/add-blog" className={linkClass}>
-                Add Blog
-              </NavLink>
-            ) : null}
+        {open && (
+          <div className="nav-mobile-overlay open">
+            <div className="nav-mobile">
+              <NavLink to="/" className={linkClass} end>Home</NavLink>
+              <NavLink to="/about" className={linkClass}>About</NavLink>
+              <NavLink to="/blogs" className={linkClass}>Blogs</NavLink>
+              <NavLink to="/contact" className={linkClass}>Contact</NavLink>
+              {token && <NavLink to="/add-blog" className={linkClass}>Add Blog</NavLink>}
 
-            <div className="nav-mobile-actions">
-              {token ? (
-                <button className="auth-btn" onClick={onLogout} type="button">
-                  Logout
+              <div className="nav-mobile-actions">
+                <button
+                  className="auth-btn"
+                  onClick={() => token ? setToken(null) : setAuthOpen(true)}
+                  type="button"
+                >
+                  {token ? "Logout" : "Login / Sign up"}
                 </button>
-              ) : (
-                <button className="auth-btn" onClick={onLogin} type="button">
-                  Login / Sign up
-                </button>
-              )}
+              </div>
             </div>
           </div>
-        </div>
-      ) : null}
-    </nav>
+        )}
+      </nav>
+
+      {/* Auth Modal */}
+      {authOpen && (
+        <AuthModal
+          isOpen={authOpen}
+          onClose={() => setAuthOpen(false)}
+          defaultMode={authMode}
+          setToken={setToken}
+        />
+      )}
+    </>
   );
 };
 

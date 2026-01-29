@@ -1,28 +1,29 @@
-import React, { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
-import "./Login.css";
-import { login as loginAPI } from "../../lib/authApi";
+import React, { useState, useMemo, useRef, useEffect } from "react";
+import "./Login.css"; // compact CSS
+import { login } from "../../lib/authApi";
 
-const initial = { email: "", password: "" };
+const initialState = { email: "", password: "" };
 
-const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+function isValidEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
 
-const Login = ({
-  setToken,
-  closePopup,
-  onSuccess,
-  onSwitchToSignup,
-  setBusy,
-}) => {
-  const [formData, setFormData] = useState(initial);
+const Login = ({ setToken, onSwitchToSignUp, setBusy }) => {
+  const [formData, setFormData] = useState(initialState);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const errorRef = useRef(null);
 
   const emailTrimmed = useMemo(() => formData.email.trim(), [formData.email]);
+  const passwordTrimmed = useMemo(
+    () => formData.password.trim(),
+    [formData.password]
+  );
 
-  const canSubmit = useMemo(() => {
-    return isValidEmail(emailTrimmed) && formData.password.length >= 6 && !loading;
-  }, [emailTrimmed, formData.password, loading]);
+  // Focus error when it appears
+  useEffect(() => {
+    if (error && errorRef.current) errorRef.current.focus();
+  }, [error]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -31,15 +32,16 @@ const Login = ({
   };
 
   const validate = () => {
-    if (!emailTrimmed || !formData.password) return "Please fill all fields.";
+    if (!emailTrimmed || !passwordTrimmed) return "Please fill all fields.";
     if (!isValidEmail(emailTrimmed)) return "Please enter a valid email.";
-    if (formData.password.length < 6) return "Password must be at least 6 characters.";
+    if (passwordTrimmed.length < 6)
+      return "Password must be at least 6 characters.";
     return "";
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!canSubmit) return;
+    if (loading) return;
 
     const msg = validate();
     if (msg) return setError(msg);
@@ -49,36 +51,22 @@ const Login = ({
       setBusy?.(true);
       setError("");
 
-      const data = await loginAPI(emailTrimmed, formData.password);
-
-      // ✅ support multiple token keys + fallback to localStorage
-      const token =
-        data?.token ||
-        data?.accessToken ||
-        data?.jwt ||
-        localStorage.getItem("token");
+      const data = await login(emailTrimmed, passwordTrimmed);
+      const token = data?.token || data?.accessToken || localStorage.getItem("token");
 
       if (!token) {
-        setError(data?.message || "Login failed (no token returned).");
+        setError(data?.message || "No token returned from server.");
         return;
       }
 
-      // keep storage consistent even if loginAPI already stored it
       localStorage.setItem("token", token);
-
-      if (data?.user) {
-        try {
-          localStorage.setItem("user", JSON.stringify(data.user));
-        } catch {}
-      }
-
+      const user = data?.user || data?.data?.user;
+      if (user) localStorage.setItem("user", JSON.stringify(user));
       setToken?.(token);
-      setFormData(initial);
 
-      onSuccess?.();      // modal: close from parent
-      closePopup?.();     // legacy prop (safe)
+      setFormData(initialState);
     } catch (err) {
-      setError(err?.message || "An error occurred. Please try again.");
+      setError(err?.message || "Login failed. Try again.");
     } finally {
       setLoading(false);
       setBusy?.(false);
@@ -86,62 +74,60 @@ const Login = ({
   };
 
   return (
-    <div className="login-wrapper">
-      <div className="login-form">
-        <h2>Login</h2>
+    <form className="auth-form" onSubmit={handleSubmit} aria-busy={loading}>
+      <h2>Login</h2>
 
-        <form onSubmit={handleSubmit} noValidate>
-          <input
-            type="email"
-            name="email"
-            placeholder="Email Address"
-            value={formData.email}
-            onChange={handleChange}
-            autoComplete="email"
-            required
-            disabled={loading}
-          />
+      <input
+        type="email"
+        name="email"
+        placeholder="Email"
+        value={formData.email}
+        onChange={handleChange}
+        required
+        autoComplete="email"
+        disabled={loading}
+      />
 
-          <input
-            type="password"
-            name="password"
-            placeholder="Password"
-            value={formData.password}
-            onChange={handleChange}
-            autoComplete="current-password"
-            required
-            minLength={6}
-            disabled={loading}
-          />
+      <input
+        type="password"
+        name="password"
+        placeholder="Password"
+        value={formData.password}
+        onChange={handleChange}
+        required
+        minLength={6}
+        autoComplete="current-password"
+        disabled={loading}
+      />
 
-          {error ? (
-            <p className="error" role="alert" aria-live="polite">
-              {error}
-            </p>
-          ) : null}
-
-          <button type="submit" disabled={!canSubmit}>
-            {loading ? "Logging in..." : "Login"}
-          </button>
-        </form>
-
-        <p className="login-note">
-          Don&apos;t have an account?{" "}
-          {onSwitchToSignup ? (
-            <button
-              type="button"
-              className="toggle-link"
-              onClick={onSwitchToSignup}
-              disabled={loading}
-            >
-              Sign Up
-            </button>
-          ) : (
-            <Link to="/signup">Sign Up</Link>
-          )}
+      {error && (
+        <p
+          className="error"
+          role="alert"
+          aria-live="assertive"
+          tabIndex={-1}
+          ref={errorRef}
+        >
+          {error}
         </p>
-      </div>
-    </div>
+      )}
+
+      <button type="submit" disabled={loading}>
+        {loading ? "Logging in..." : "Login"}
+      </button>
+
+      <p className="toggle-text">
+        Don't have an account?{" "}
+        <button
+          type="button"
+          className="toggle-link"
+          onClick={onSwitchToSignUp}
+          disabled={loading}
+        >
+          Sign Up
+        </button>
+      </p>
+    </form>
   );
 };
 

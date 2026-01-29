@@ -1,81 +1,92 @@
-import User from "../models/User.js";
+// src/controllers/authController.js
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import User from "../models/User.js";
 
-const JWT_SECRET = process.env.JWT_SECRET || "dev_secret_change_me";
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "7d";
+// Helper to generate JWT
+const generateToken = (id) => {
+  if (!process.env.JWT_SECRET) throw new Error("JWT_SECRET missing in .env");
+  return jwt.sign({ id }, process.env.JWT_SECRET, {
+    expiresIn: process.env.JWT_EXPIRES_IN || "7d",
+  });
+};
 
-/* ---------------- REGISTER ---------------- */
-export async function register(req, res) {
+// ---------------- REGISTER ----------------
+export async function register(req, res, next) {
   try {
     const { username, password, email } = req.body;
 
     if (!username || !password) {
-      return res.status(400).json({ message: "Username and password required" });
+      res.status(400);
+      throw new Error("Username and password are required");
     }
 
-    if (password.length < 6) {
-      return res.status(400).json({ message: "Password must be at least 6 characters" });
+    // Check if username exists
+    const existingUser = await User.findOne({ username: username.toLowerCase() });
+    if (existingUser) {
+      res.status(400);
+      throw new Error("Username already exists");
     }
 
-    const existing = await User.findOne({ username });
-    if (existing) {
-      return res.status(409).json({ message: "Username already taken" });
-    }
-
-    const passwordHash = await bcrypt.hash(password, 10);
+    // Hash password
+    const salt = await bcrypt.genSalt(10);
+    const passwordHash = await bcrypt.hash(password, salt);
 
     const user = await User.create({
       username,
-      email,
       passwordHash,
-      role: "user",
+      email: email || undefined,
     });
 
-    res.status(201).json({
-      user,
-    });
+    const token = generateToken(user._id);
+    res.status(201).json({ token, user });
   } catch (err) {
-    console.error("REGISTER ERROR:", err);
-    res.status(500).json({ message: "Server error" });
+    next(err);
   }
 }
 
-/* ---------------- LOGIN ---------------- */
-export async function login(req, res) {
+// ---------------- LOGIN ----------------
+export async function login(req, res, next) {
   try {
     const { username, password } = req.body;
 
     if (!username || !password) {
-      return res.status(400).json({ message: "Username and password required" });
+      res.status(400);
+      throw new Error("Username and password are required");
     }
 
-    const user = await User.findOne({ username });
-    if (!user || !user.isActive) {
-      return res.status(401).json({ message: "Invalid credentials" });
+    const user = await User.findOne({ username: username.toLowerCase() });
+    if (!user) {
+      res.status(401);
+      throw new Error("Invalid credentials");
     }
 
-    const ok = await bcrypt.compare(password, user.passwordHash);
-    if (!ok) {
-      return res.status(401).json({ message: "Invalid credentials" });
+    const isMatch = await bcrypt.compare(password, user.passwordHash);
+    if (!isMatch) {
+      res.status(401);
+      throw new Error("Invalid credentials");
     }
 
-    // update last login
+    // Optional: update last login
     user.lastLogin = new Date();
     await user.save();
 
-    const token = jwt.sign(
-      { id: user._id, role: user.role },
-      JWT_SECRET,
-      { expiresIn: JWT_EXPIRES_IN }
-    );
-
-    res.json({
-      token,
-      user: user.toJSON(),
-    });
+    const token = generateToken(user._id);
+    res.json({ token, user });
   } catch (err) {
-    console.error("LOGIN ERROR:", err);
-    res.status(500).json({ message: "Server error" });
+    next(err);
+  }
+}
+
+// ---------------- ME ----------------
+export async function me(req, res, next) {
+  try {
+    if (!req.user) {
+      res.status(401);
+      throw new Error("Not authorized");
+    }
+    res.json(req.user);
+  } catch (err) {
+    next(err);
   }
 }

@@ -1,8 +1,18 @@
+// src/lib/authApi.js
 const RAW_API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 const API_URL = RAW_API_URL.replace(/\/$/, "");
 
 function getToken() {
   return localStorage.getItem("token");
+}
+
+function getUser() {
+  const raw = localStorage.getItem("user");
+  try {
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
 }
 
 function authHeaders({ json = true, token } = {}) {
@@ -20,9 +30,7 @@ async function handleResponse(res) {
   let data = null;
   try {
     data = hasJson ? await res.json() : await res.text();
-  } catch {
-    data = null;
-  }
+  } catch {}
 
   if (!res.ok) {
     const msg =
@@ -36,7 +44,6 @@ async function handleResponse(res) {
 }
 
 // ------------------ AUTH ------------------
-// identifier can be email OR username
 export const register = async (identifier, password) => {
   const res = await fetch(`${API_URL}/auth/register`, {
     method: "POST",
@@ -47,9 +54,12 @@ export const register = async (identifier, password) => {
   const data = await handleResponse(res);
 
   const token = data?.token || data?.accessToken || data?.jwt || data?.data?.token;
-  if (token) localStorage.setItem("token", token);
+  const user = data?.user || data?.data?.user || null;
 
-  return data;
+  if (token) localStorage.setItem("token", token);
+  if (user) localStorage.setItem("user", JSON.stringify(user));
+
+  return { token, user, raw: data };
 };
 
 export const login = async (identifier, password) => {
@@ -62,9 +72,12 @@ export const login = async (identifier, password) => {
   const data = await handleResponse(res);
 
   const token = data?.token || data?.accessToken || data?.jwt || data?.data?.token;
-  if (token) localStorage.setItem("token", token);
+  const user = data?.user || data?.data?.user || null;
 
-  return data;
+  if (token) localStorage.setItem("token", token);
+  if (user) localStorage.setItem("user", JSON.stringify(user));
+
+  return { token, user, raw: data };
 };
 
 export const logout = () => {
@@ -75,8 +88,16 @@ export const logout = () => {
 // ------------------ USER ------------------
 export const getMe = async () => {
   const res = await fetch(`${API_URL}/auth/me`, {
-    headers: authHeaders({ json: false }),
+    headers: authHeaders({ json: true }),
   });
 
-  return handleResponse(res);
+  const data = await handleResponse(res);
+  if (data?.user) localStorage.setItem("user", JSON.stringify(data.user));
+  return data.user;
+};
+
+// ------------------ HELPERS ------------------
+export const authHelpers = {
+  getToken,
+  getUser,
 };

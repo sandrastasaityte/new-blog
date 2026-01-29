@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 import "./AuthForm.css";
 import { login, register } from "../../lib/authApi";
 
@@ -20,17 +20,27 @@ function extractToken(data) {
   );
 }
 
-const AuthForm = ({ setToken, onClose, isLogin, setIsLogin, setBusy }) => {
+const AuthForm = ({ setToken, onClose, setBusy }) => {
+  const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState(initialState);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const errorRef = useRef(null);
 
   const emailTrimmed = useMemo(() => formData.email.trim(), [formData.email]);
+  const passwordTrimmed = useMemo(
+    () => formData.password.trim(),
+    [formData.password]
+  );
 
   useEffect(() => {
-    setFormData((p) => ({ ...p, confirmPassword: "" }));
+    setFormData(initialState);
     setError("");
   }, [isLogin]);
+
+  useEffect(() => {
+    if (error && errorRef.current) errorRef.current.focus();
+  }, [error]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -39,13 +49,13 @@ const AuthForm = ({ setToken, onClose, isLogin, setIsLogin, setBusy }) => {
   };
 
   const validate = () => {
-    if (!emailTrimmed || !formData.password) return "Please fill all fields.";
+    if (!emailTrimmed || !passwordTrimmed) return "Please fill all fields.";
     if (!isValidEmail(emailTrimmed)) return "Please enter a valid email.";
-    if (formData.password.length < 6) return "Password must be at least 6 characters.";
-
+    if (passwordTrimmed.length < 6) return "Password must be at least 6 characters.";
     if (!isLogin) {
-      if (!formData.confirmPassword) return "Please confirm your password.";
-      if (formData.password !== formData.confirmPassword) return "Passwords do not match.";
+      const confirmTrimmed = formData.confirmPassword.trim();
+      if (!confirmTrimmed) return "Please confirm your password.";
+      if (passwordTrimmed !== confirmTrimmed) return "Passwords do not match.";
     }
     return "";
   };
@@ -62,24 +72,19 @@ const AuthForm = ({ setToken, onClose, isLogin, setIsLogin, setBusy }) => {
       setBusy?.(true);
       setError("");
 
-      // authApi expects (username, password) — we use email as username
       const data = isLogin
-        ? await login(emailTrimmed, formData.password)
-        : await register(emailTrimmed, formData.password);
+        ? await login(emailTrimmed, passwordTrimmed)
+        : await register(emailTrimmed, passwordTrimmed);
 
       const token = extractToken(data) || localStorage.getItem("token");
 
       if (!token) {
-        setError(
-          (data && typeof data === "object" && (data.message || data.error)) ||
-            "No token returned from server."
-        );
+        setError((data?.message || data?.error) ?? "No token returned from server.");
         return;
       }
 
       localStorage.setItem("token", token);
-
-      const user = data?.user || data?.data?.user || null;
+      const user = data?.user || data?.data?.user;
       if (user) localStorage.setItem("user", JSON.stringify(user));
 
       setToken?.(token);
@@ -95,7 +100,7 @@ const AuthForm = ({ setToken, onClose, isLogin, setIsLogin, setBusy }) => {
   };
 
   return (
-    <form className="auth-form" onSubmit={handleSubmit}>
+    <form className="auth-form" onSubmit={handleSubmit} aria-busy={loading}>
       <h2>{isLogin ? "Login" : "Sign Up"}</h2>
 
       <input
@@ -135,11 +140,11 @@ const AuthForm = ({ setToken, onClose, isLogin, setIsLogin, setBusy }) => {
         />
       )}
 
-      {error ? (
-        <p className="error" role="alert" aria-live="polite">
+      {error && (
+        <p className="error" role="alert" tabIndex={-1} ref={errorRef}>
           {error}
         </p>
-      ) : null}
+      )}
 
       <button type="submit" disabled={loading}>
         {loading

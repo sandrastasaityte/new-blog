@@ -259,3 +259,87 @@
     transition: none !important;
   }
 }
+.field-error,
+.form-error {
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-2px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.tag-chip {
+  background: rgba(0,0,0,0.05);
+  border: 1px solid rgba(0,0,0,0.12);
+  font-weight: 500;
+}
+.markdown-preview {
+  margin-top: 0.6rem;
+  padding: 0.8rem;
+  background: rgba(0,0,0,0.03);
+  border-radius: 12px;
+  border: 1px solid rgba(0,0,0,0.08);
+  line-height: 1.5;
+  font-size: 0.95rem;
+}
+
+.markdown-preview h1,
+.markdown-preview h2,
+.markdown-preview h3 {
+  margin: 0.6rem 0 0.3rem;
+}
+
+.markdown-preview p {
+  margin: 0.3rem 0;
+}
+
+.markdown-preview ul,
+.markdown-preview ol {
+  padding-left: 1.4rem;
+  margin: 0.3rem 0;
+}
+
+.markdown-preview code {
+  background: rgba(0,0,0,0.06);
+  padding: 0.15rem 0.3rem;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 0.9rem;
+}
+@media (prefers-color-scheme: dark) {
+  .add-blog-form {
+    background: #020617;
+    border: 1px solid rgba(255,255,255,0.06);
+    box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+  }
+
+  .field span,
+  .rating-input label {
+    color: #e5e7eb;
+  }
+
+  .field input,
+  .field textarea {
+    background: #020617;
+    color: #f9fafb;
+    border-color: rgba(255,255,255,0.12);
+  }
+
+  .markdown-preview {
+    background: rgba(255,255,255,0.04);
+    border-color: rgba(255,255,255,0.08);
+    color: #e5e7eb;
+  }
+
+  .tag-chip {
+    background: rgba(255,255,255,0.06);
+    border-color: rgba(255,255,255,0.12);
+    color: #e5e7eb;
+  }
+
+  .btn {
+    background: #020617;
+    color: #e5e7eb;
+    border-color: rgba(255,255,255,0.12);
+  }
+}

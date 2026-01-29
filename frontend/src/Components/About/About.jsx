@@ -1,48 +1,62 @@
 import React from "react";
+import { AUTHORS } from "../../assets/authors";
+import { FaTwitter, FaLinkedin, FaGithub } from "react-icons/fa";
 import "./About.css";
-
-import { AUTHORS } from "../../assets/authors"; // ✅ use external data
-
-function AuthorCard({ author }) {
-  const { name, role, image, bio } = author;
-
-  const handleImgError = (e) => {
-    e.currentTarget.onerror = null;
-    e.currentTarget.src = "/placeholder-user.png";
-  };
-
-  return (
-    <article className="author-card" aria-label={`${name} - ${role}`}>
-      <div className="author-image-wrap">
-        <img
-          src={image}
-          alt={name}
-          className="author-image"
-          loading="lazy"
-          onError={handleImgError}
-        />
-      </div>
-
-      <h3 className="author-name">{name}</h3>
-      <p className="author-role">{role}</p>
-      <p className="author-bio">{bio}</p>
-    </article>
-  );
-}
 
 export default function About() {
   return (
-    <section className="about-wrapper">
-      <header className="about-hero">
-        <h1 className="about-title">About Our Team</h1>
-        <p className="about-subtitle">
-          Meet the passionate authors behind our blog.
-        </p>
-      </header>
+    <section className="authors-section" aria-labelledby="authors-title">
+      <h2 id="authors-title">Meet Our Authors</h2>
 
-      <div className="authors-grid">
+      <div className="authors-container">
         {AUTHORS.map((author) => (
-          <AuthorCard key={author.id} author={author} />
+          <article key={author.id} className="author-card">
+            <img
+              src={author.image}
+              alt={`${author.name} profile`}
+              loading="lazy"
+              className="author-image"
+            />
+
+            <h3>{author.name}</h3>
+            <p className="author-role">{author.role}</p>
+            <p className="author-bio">{author.bio}</p>
+
+            <div className="author-social" aria-label={`${author.name} social links`}>
+              {author.social.twitter && (
+                <a
+                  href={author.social.twitter}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`${author.name} Twitter`}
+                >
+                  <FaTwitter />
+                </a>
+              )}
+
+              {author.social.linkedin && (
+                <a
+                  href={author.social.linkedin}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`${author.name} LinkedIn`}
+                >
+                  <FaLinkedin />
+                </a>
+              )}
+
+              {author.social.github && (
+                <a
+                  href={author.social.github}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`${author.name} GitHub`}
+                >
+                  <FaGithub />
+                </a>
+              )}
+            </div>
+          </article>
         ))}
       </div>
     </section>

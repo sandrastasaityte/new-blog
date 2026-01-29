@@ -1,6 +1,9 @@
-const RAW_API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
-const API_URL = RAW_API_URL.replace(/\/$/, ""); // ✅ remove trailing slash
+// frontend/src/api/blogs.js
 
+const RAW_API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
+const API_URL = RAW_API_URL.replace(/\/$/, ""); // remove trailing slash
+
+// ===== Token utilities =====
 export const getToken = () => localStorage.getItem("token");
 
 export const logout = () => {
@@ -14,6 +17,7 @@ function authHeaders(token) {
   };
 }
 
+// ===== Handle API responses =====
 async function handleResponse(res) {
   const contentType = res.headers.get("content-type") || "";
   const hasJson = contentType.includes("application/json");
@@ -29,9 +33,6 @@ async function handleResponse(res) {
   }
 
   if (res.status === 401) {
-    logout();
-    // ✅ Prefer letting UI decide navigation:
-    // throw and handle it in your app (or keep redirect if you want)
     throw new Error("Session expired. Please log in again.");
   }
 
@@ -46,49 +47,80 @@ async function handleResponse(res) {
   return data;
 }
 
-export async function apiFetch(path, { token, ...options } = {}) {
-  const isFormData =
-    typeof FormData !== "undefined" && options.body instanceof FormData;
+// ===== Refresh token =====
+async function refreshToken() {
+  try {
+    const res = await fetch(`${API_URL}/auth/refresh`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token: getToken() }),
+    });
+
+    const data = await res.json();
+    if (res.ok && data.token) {
+      localStorage.setItem("token", data.token);
+      return data.token;
+    }
+  } catch (err) {
+    console.warn("Token refresh failed", err);
+  }
+
+  logout();
+  return null;
+}
+
+// ===== Generic API fetch with auto-refresh =====
+export async function apiFetch(path, { token, retry = true, ...options } = {}) {
+  const t = token ?? getToken();
 
   const headers = {
-    ...authHeaders(token),
+    ...authHeaders(t),
     ...(options.headers || {}),
   };
 
-  // ✅ set JSON Content-Type only when sending a JSON body
   const hasBody = options.body !== undefined && options.body !== null;
-  if (hasBody && !isFormData && !headers["Content-Type"]) {
+  const isJson = hasBody && typeof options.body === "object" && !(options.body instanceof FormData);
+
+  if (isJson && !headers["Content-Type"]) {
     headers["Content-Type"] = "application/json";
+    options.body = JSON.stringify(options.body);
   }
 
-  const res = await fetch(`${API_URL}${path}`, {
-    ...options,
-    headers,
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15000);
+  options.signal = controller.signal;
 
-  return handleResponse(res);
+  try {
+    const res = await fetch(`${API_URL}${path}`, { ...options, headers });
+    try {
+      return await handleResponse(res);
+    } catch (err) {
+      if (err.message.includes("Session expired") && retry) {
+        const newToken = await refreshToken();
+        if (newToken) {
+          return apiFetch(path, { ...options, token: newToken, retry: false });
+        }
+      }
+      throw err;
+    }
+  } catch (err) {
+    if (err.name === "AbortError") {
+      throw new Error(`Request to ${path} timed out after 15s`);
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 // ===== Blogs API =====
-
 export const getBlogs = () => apiFetch("/blogs");
 
 export const createBlog = (blog, token) =>
-  apiFetch("/blogs", {
-    method: "POST",
-    token,
-    body: JSON.stringify(blog),
-  });
-
-export const deleteBlog = (id, token) =>
-  apiFetch(`/blogs/${id}`, {
-    method: "DELETE",
-    token,
-  });
+  apiFetch("/blogs", { method: "POST", body: blog, token });
 
 export const updateBlog = (id, blog, token) =>
-  apiFetch(`/blogs/${id}`, {
-    method: "PUT",
-    token,
-    body: JSON.stringify(blog),
-  });
+  apiFetch(`/blogs/${id}`, { method: "PUT", body: blog, token });
+
+export const deleteBlog = (id, token) =>
+  apiFetch(`/blogs/${id}`, { method: "DELETE", token });

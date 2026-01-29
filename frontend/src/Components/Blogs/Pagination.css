@@ -1,62 +1,72 @@
-/* Pagination.css */
+/* =========================
+   Pagination.css
+   ========================= */
 
+/* Container */
 .pagination {
   display: flex;
-  align-items: center;
-  gap: 8px;
   justify-content: center;
-  margin: 18px 0 6px;
-  flex-wrap: wrap;
+  align-items: center;
+  margin: 1rem 0;
+  font-family: sans-serif;
 }
 
-.pagination button {
-  padding: 0.55rem 0.75rem;
-  border-radius: 12px;
+/* List */
+.pagination-list {
+  list-style: none;
+  display: flex;
+  gap: 0.4rem;
+  padding: 0;
+  margin: 0;
+}
+
+/* Buttons */
+.pagination-list button {
+  min-width: 36px;
+  padding: 0.45rem 0.6rem;
+  border-radius: 8px;
   border: 1px solid rgba(0,0,0,0.12);
   background: #fff;
   cursor: pointer;
-  font-weight: 700;
-  transition: transform 0.12s ease, filter 0.12s ease, opacity 0.12s ease;
-  min-width: 40px;
-  min-height: 40px;
+  font-size: 0.88rem;
+  transition: transform 0.12s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 
-.pagination button:hover:not(:disabled) {
-  filter: brightness(0.98);
+.pagination-list button:hover:not(:disabled) {
   transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(0,0,0,0.06);
 }
 
-.pagination button:active:not(:disabled) {
+.pagination-list button:active:not(:disabled) {
   transform: translateY(0);
+  box-shadow: none;
 }
 
-.pagination button:disabled {
+.pagination-list button:disabled,
+.pagination-list .disabled-btn {
   opacity: 0.5;
   cursor: not-allowed;
-  transform: none;
 }
 
-/* Active page (orange theme) */
-.pagination button.active {
-  border-color: rgba(255, 102, 0, 0.35);
-  background: rgba(255, 102, 0, 0.10);
-  box-shadow: 0 0 0 4px rgba(255, 102, 0, 0.12);
-  font-weight: 900;
+/* Active page */
+.pagination-list button.active {
+  background: #0b5fff;
+  color: #fff;
+  border-color: #0b5fff;
+  font-weight: 600;
 }
 
-.dots {
-  padding: 0.35rem 0.45rem;
-  opacity: 0.55;
+/* Dots */
+.pagination-list .dots {
+  display: flex;
+  align-items: center;
+  padding: 0 0.3rem;
+  font-size: 0.95rem;
+  color: #555;
   user-select: none;
 }
 
-/* Focus (orange theme) */
-.pagination button:focus-visible {
-  outline: 2px solid rgba(255, 102, 0, 0.85);
-  outline-offset: 3px;
-}
-
-/* Screen-reader only */
+/* Screen reader only */
 .sr-only {
   position: absolute;
   width: 1px;
@@ -64,36 +74,40 @@
   padding: 0;
   margin: -1px;
   overflow: hidden;
-  clip: rect(0, 0, 0, 0);
+  clip: rect(0,0,0,0);
   white-space: nowrap;
   border: 0;
 }
 
-/* Mobile */
-@media (max-width: 420px) {
-  .pagination {
-    gap: 6px;
-  }
-  .pagination button {
-    padding: 0.5rem 0.65rem;
-    min-width: 38px;
-    min-height: 38px;
+/* Responsive: smaller buttons on mobile */
+@media (max-width: 480px) {
+  .pagination-list button {
+    min-width: 30px;
+    padding: 0.35rem 0.5rem;
+    font-size: 0.82rem;
   }
 }
-.pagination-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: inline-flex;
-  gap: 8px;
-  align-items: center;
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  .pagination-list button {
+    background: rgba(255,255,255,0.08);
+    border-color: rgba(255,255,255,0.18);
+    color: #fff;
+  }
+  .pagination-list button.active {
+    background: #3399ff;
+    border-color: #3399ff;
+    color: #fff;
+  }
+  .pagination-list .dots {
+    color: #ccc;
+  }
 }
 
-.pagination-list li {
-  display: inline-flex;
-}
-
-.dots {
-  padding: 0 6px;
-  opacity: 0.65;
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .pagination-list button {
+    transition: none !important;
+  }
 }

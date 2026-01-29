@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { getBlogs } from "../../lib/blogApi"; // make sure this points to your blog API
+import { getBlogs } from "../../lib/blogApi";
+import { Link } from "react-router-dom";
 import "./Home.css";
 
 export default function Home() {
@@ -18,7 +19,6 @@ export default function Home() {
         setBlogs(sorted);
         setFilteredBlogs(sorted);
 
-        // extract unique tags
         const allTags = Array.from(
           new Set(sorted.flatMap((b) => b.tags || []))
         );
@@ -89,6 +89,9 @@ export default function Home() {
                     </span>
                   ))}
                 </div>
+                <Link to={`/blog/${blog.id}`} className="read-more">
+                  Read More →
+                </Link>
               </div>
             </div>
           ))

@@ -10,7 +10,7 @@ import Contact from "./Components/Contact/Contact";
 
 import AuthModal from "./Components/Auth/AuthModal";
 import ProtectedRoute from "./Components/ProtectedRoute";
-
+import BlogDetails from "./Components/BlogDetails/BlogDetails"
 // ---------------- Routes wrapper ----------------
 function AppRoutes({ token, onRequireAuth }) {
   return (
@@ -19,6 +19,7 @@ function AppRoutes({ token, onRequireAuth }) {
       <Route path="/blogs" element={<Blogs />} />
       <Route path="/about" element={<About />} />
       <Route path="/contact" element={<Contact />} />
+      <Route path="/blog/:id" element={<BlogDetails />} />
 
       <Route
         path="/add-blog"

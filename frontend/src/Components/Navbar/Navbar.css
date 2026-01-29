@@ -113,3 +113,17 @@
     margin-top: 1rem;
   }
 }
+/* Remove bullets from all lists */
+ul {
+  list-style: none;   /* removes default bullets */
+  padding: 0;         /* remove default padding */
+  margin: 0;          /* remove default margin */
+}
+
+/* Optional: remove bullets only in navbar */
+.nav-links,
+.nav-mobile {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}

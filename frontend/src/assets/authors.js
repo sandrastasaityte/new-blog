@@ -1,4 +1,4 @@
-import user01 from "./user-01.png";
+import user01 from "./profile-pic2.png";
 import user02 from "./user-02.png";
 import user03 from "./user-03.png";
 
@@ -10,8 +10,8 @@ export const AUTHORS = [
     image: user01,
     bio: "Sandra is passionate about technology, economics, blogging, and sharing insights with readers worldwide.",
     social: {
-      twitter: "https://twitter.com/sandra",
-      linkedin: "https://linkedin.com/in/sandra",
+    
+      linkedin: "https://www.linkedin.com/in/sandrastasaityte/",
       github: "https://github.com/sandrastasaityte",
     },
   },

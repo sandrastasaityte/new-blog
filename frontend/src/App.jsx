@@ -1,5 +1,8 @@
+// src/App.jsx
 import React, { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
+
+// Components
 import Navbar from "./Components/Navbar/Navbar";
 import Footer from "./Components/Footer/Footer";
 import Home from "./Components/Home/Home";
@@ -7,10 +10,10 @@ import Blogs from "./Components/Blogs/Blogs";
 import AddBlog from "./Components/AddBlog/AddBlog";
 import About from "./Components/About/About";
 import Contact from "./Components/Contact/Contact";
-
+import BlogDetails from "./Components/BlogDetails/BlogDetails";
 import AuthModal from "./Components/Auth/AuthModal";
 import ProtectedRoute from "./Components/ProtectedRoute";
-import BlogDetails from "./Components/BlogDetails/BlogDetails"
+
 // ---------------- Routes wrapper ----------------
 function AppRoutes({ token, onRequireAuth }) {
   return (
@@ -34,7 +37,6 @@ function AppRoutes({ token, onRequireAuth }) {
     </Routes>
   );
 }
-
 
 // ---------------- Shell ----------------
 function Shell({ token, setToken }) {
@@ -79,7 +81,7 @@ function Shell({ token, setToken }) {
 export default function App() {
   const [token, setToken] = useState(() => localStorage.getItem("token") || "");
 
-  // keep token in sync if changed in another tab
+  // Keep token in sync if changed in another tab
   useEffect(() => {
     const onStorage = (e) => {
       if (e.key === "token") setToken(e.newValue || "");

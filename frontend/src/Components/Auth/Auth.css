@@ -1,14 +1,30 @@
+/* ===== Modal Overlay Improvements ===== */
 .modal-overlay {
-  overscroll-behavior: contain;
-  touch-action: pan-y; /* allow scrolling inside modal if content overflows, prevent page swipe */
+  overscroll-behavior: contain; /* prevent body scroll when modal is open */
+  touch-action: pan-y; /* allow vertical scroll inside modal, prevent horizontal page swipe */
+  background: rgba(0,0,0,0.4); /* semi-transparent dark backdrop */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  padding: 10px;
 }
-.auth-form input:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 4px rgba(0,0,0,0.12);
-}
+
+/* ===== Auth Modal Container ===== */
 .modal.auth-modal {
   width: min(420px, 100%);
-  padding: 2rem 1.5rem; /* horizontal padding slightly reduced on small screens */
+  padding: 2rem 1.5rem;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 90vh;
+  overflow-y: auto;
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
 }
 
 @media (max-width: 520px) {
@@ -16,6 +32,22 @@
     padding: 1.5rem 1rem;
   }
 }
+
+/* ===== Input Hover & Focus ===== */
 .auth-form input:hover:not(:disabled) {
   border-color: rgba(0,0,0,0.18);
+}
+
+.auth-form input:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(0,123,255,0.25);
+  border-color: #007bff;
+}
+
+/* Optional: Smooth reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .modal.auth-modal,
+  .auth-form input {
+    transition: none !important;
+  }
 }

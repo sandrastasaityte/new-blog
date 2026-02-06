@@ -1,10 +1,11 @@
+// src/pages/Login.jsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../Context/AuthContext";
 import "./Admin.css";
 
 export default function Login() {
-  const { login } = useAuth();
+  const { user, login } = useAuth();
   const nav = useNavigate();
   const loc = useLocation();
 
@@ -15,6 +16,13 @@ export default function Login() {
   const [err, setErr] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // Redirect logged-in users to /admin
+  useEffect(() => {
+    if (user) {
+      nav("/admin", { replace: true });
+    }
+  }, [user, nav]);
+
   useEffect(() => {
     userRef.current?.focus?.();
   }, []);
@@ -22,18 +30,17 @@ export default function Login() {
   const from = useMemo(() => {
     const s = loc.state?.from;
 
-    // if you ever pass { pathname, search } instead of a string
     if (s && typeof s === "object" && s.pathname) {
       return s.pathname + (s.search || "");
     }
 
-    // string path
     if (typeof s === "string" && s.trim()) return s;
 
     return "/admin";
   }, [loc.state]);
 
   const canSubmit = username.trim() && password.trim() && !loading;
+
   const onSubmit = async (e) => {
     e.preventDefault();
 

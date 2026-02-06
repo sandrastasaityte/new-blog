@@ -1,0 +1,191 @@
+/* ============================= */
+/* Admin Panel AddPost Form CSS   */
+/* ============================= */
+
+.add-blog-form {
+  max-width: 720px;
+  margin: 2rem auto;
+  padding: 1.5rem;
+  background: #fff;
+  border: 1px solid rgba(0,0,0,0.06);
+  border-radius: 16px;
+  box-shadow: 0 12px 28px rgba(0,0,0,0.05);
+}
+
+.add-blog-form h3 {
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+/* --- Fields --- */
+.field {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0.9rem 0;
+}
+
+.field span {
+  font-weight: 600;
+  font-size: 0.92rem;
+  color: #0f172a;
+}
+
+.field input,
+.field textarea {
+  padding: 0.8rem 1rem;
+  border-radius: 10px;
+  border: 1px solid rgba(0,0,0,0.14);
+  font-size: 0.95rem;
+  outline: none;
+  width: 100%;
+  background: #fff;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.field textarea {
+  min-height: 140px;
+  resize: vertical;
+}
+
+.field input:focus,
+.field textarea:focus {
+  border-color: rgba(0,119,255,0.5);
+  box-shadow: 0 0 0 4px rgba(0,119,255,0.12);
+}
+
+/* --- Errors --- */
+.field-error,
+.form-error {
+  font-size: 0.9rem;
+  color: #b42318;
+  line-height: 1.3;
+}
+
+.form-error {
+  padding: 0.7rem 0.9rem;
+  background: rgba(180,35,24,0.08);
+  border: 1px solid rgba(180,35,24,0.16);
+  border-radius: 10px;
+  margin: 0.7rem 0 1rem;
+}
+
+/* --- Tags --- */
+.tag-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.4rem;
+}
+
+.tag-chip {
+  font-size: 0.82rem;
+  font-weight: 500;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  background: rgba(0,0,0,0.05);
+  border: 1px solid rgba(0,0,0,0.12);
+}
+
+.tag-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.3rem;
+}
+
+.tag-suggestion-btn {
+  padding: 0.25rem 0.5rem;
+  border-radius: 999px;
+  background: rgba(0,119,255,0.1);
+  border: 1px solid rgba(0,119,255,0.25);
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tag-suggestion-btn:hover {
+  background: rgba(0,119,255,0.92);
+  color: #fff;
+  border-color: rgba(0,119,255,0.92);
+}
+
+/* --- Image preview --- */
+.image-preview-wrap {
+  margin-top: 0.7rem;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(0,0,0,0.08);
+  background: rgba(0,0,0,0.03);
+}
+
+.image-preview {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  display: block;
+}
+
+/* --- Markdown preview --- */
+.markdown-preview {
+  margin-top: 0.6rem;
+  padding: 0.8rem;
+  background: rgba(0,0,0,0.03);
+  border-radius: 12px;
+  border: 1px solid rgba(0,0,0,0.08);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  overflow: auto;
+}
+
+/* --- Actions --- */
+.form-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+}
+
+.btn {
+  padding: 0.7rem 1rem;
+  border-radius: 10px;
+  border: 1px solid rgba(0,0,0,0.12);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn.primary {
+  background: rgba(0,119,255,0.92);
+  color: #fff;
+  border-color: rgba(0,119,255,0.25);
+}
+
+.btn.secondary {
+  background: #f3f4f6;
+  color: #0f172a;
+}
+
+.btn:hover:not(:disabled) {
+  filter: brightness(0.95);
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* --- Responsive --- */
+@media (max-width: 520px) {
+  .image-preview {
+    height: 160px;
+  }
+  .form-actions {
+    flex-direction: column;
+  }
+  .btn {
+    width: 100%;
+  }
+}

@@ -1,74 +1,115 @@
+/* ===== Overlay ===== */
 .auth-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.4);
+  background: rgba(0, 0, 0, 0.45);
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 9999;
-  padding: 10px;
+  padding: clamp(0.5rem, 3vw, 1rem);
+  backdrop-filter: blur(3px);
 }
 
+/* ===== Modal Box ===== */
 .auth-box {
   background: #fff;
-  padding: 25px 20px;
-  border-radius: 12px;
-  max-width: 360px;
+  padding: clamp(1.2rem, 2vw, 1.6rem);
+  border-radius: 14px;
+  max-width: 380px;
   width: 100%;
   text-align: center;
   position: relative;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.25);
+  animation: fadeIn 0.2s ease-out;
 }
 
+/* ===== Header ===== */
 .auth-box h2 {
-  margin-bottom: 20px;
-  font-size: 24px;
-  color: #333;
+  margin-bottom: 1.2rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #222;
 }
 
+/* ===== Inputs ===== */
 .auth-box input {
   width: 100%;
-  padding: 10px 12px;
-  margin-bottom: 12px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-  font-size: 15px;
+  padding: 0.75rem 0.9rem;
+  margin-bottom: 0.8rem;
+  border-radius: 8px;
+  border: 1px solid rgba(0,0,0,0.2);
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
+.auth-box input:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.2);
+}
+
+/* ===== Submit Button ===== */
 .auth-box button[type="submit"] {
   width: 100%;
-  padding: 10px;
+  padding: 0.7rem;
   background: #007bff;
   color: #fff;
-  font-size: 16px;
+  font-size: 1rem;
+  font-weight: 600;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
-  margin-top: 5px;
+  transition: transform 0.12s ease, box-shadow 0.2s ease, background 0.2s ease;
+  margin-top: 0.6rem;
 }
 
 .auth-box button[type="submit"]:hover:not(:disabled) {
   background: #0056b3;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 16px rgba(0,0,0,0.12);
 }
 
+.auth-box button[type="submit"]:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* ===== Close Button ===== */
 .close-btn {
   position: absolute;
   top: 10px;
   right: 12px;
   border: none;
-  background: none;
-  font-size: 22px;
+  background: rgba(0,0,0,0.05);
+  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+  font-size: 20px;
   cursor: pointer;
+  transition: background 0.2s ease, transform 0.12s ease;
 }
 
+.close-btn:hover {
+  background: rgba(0,0,0,0.1);
+  transform: translateY(-1px);
+}
+
+/* ===== Error Messages ===== */
 .error {
   color: #e74c3c;
-  font-size: 13px;
-  margin-bottom: 8px;
+  font-size: 0.85rem;
+  margin-bottom: 0.7rem;
+  text-align: left;
+  animation: fadeIn 0.2s ease;
 }
 
+/* ===== Toggle Text ===== */
 .toggle-text {
-  font-size: 14px;
-  margin-top: 12px;
+  font-size: 0.875rem;
+  margin-top: 1rem;
 }
 
 .toggle-link {
@@ -78,4 +119,83 @@
   cursor: pointer;
   font-weight: 600;
   text-decoration: underline;
+  padding: 0;
+  margin-left: 0.25rem;
+}
+
+/* ===== Animations ===== */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-2px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== Mobile ===== */
+@media (max-width: 480px) {
+  .auth-box {
+    padding: 1rem;
+    max-width: 90%;
+  }
+
+  .auth-box h2 {
+    font-size: 1.25rem;
+  }
+
+  .auth-box input, .auth-box button[type="submit"] {
+    font-size: 0.9rem;
+    padding: 0.65rem 0.8rem;
+  }
+}
+/* ===== Dark Mode ===== */
+@media (prefers-color-scheme: dark) {
+  .auth-overlay {
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+  }
+
+  .auth-box {
+    background: #111827; /* dark background */
+    color: #f3f4f6; /* light text */
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+  }
+
+  .auth-box h2 {
+    color: #f3f4f6;
+  }
+
+  .auth-box input {
+    background: #1f2937;
+    color: #f3f4f6;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+  }
+
+  .auth-box input:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+  }
+
+  .auth-box button[type="submit"] {
+    background: #3b82f6;
+    color: #fff;
+  }
+
+  .auth-box button[type="submit"]:hover:not(:disabled) {
+    background: #2563eb;
+  }
+
+  .close-btn {
+    background: rgba(255, 255, 255, 0.1);
+    color: #f3f4f6;
+  }
+
+  .close-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+  }
+
+  .error {
+    color: #f87171; /* softer red for dark mode */
+  }
+
+  .toggle-link {
+    color: #3b82f6;
+  }
 }

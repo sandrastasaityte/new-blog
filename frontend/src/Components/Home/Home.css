@@ -1,151 +1,121 @@
-/* Home.css */
-
-/* ---------------- Hero Section ---------------- */
-.home-container .hero {
-  background: linear-gradient(to right, #6a11cb, #2575fc);
-  color: #fff;
-  padding: 80px 20px;
-  text-align: center;
-  border-radius: 8px;
-  margin-bottom: 40px;
-}
-
-.home-container .hero h1 {
-  font-size: 3rem;
-  margin-bottom: 10px;
-}
-
-.home-container .hero p {
-  font-size: 1.2rem;
-  max-width: 600px;
-  margin: 0 auto;
-}
-
-/* ---------------- Tags Filter ---------------- */
-.tags-filter {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  justify-content: center;
-  margin-bottom: 30px;
-}
-
-.tags-filter button {
-  padding: 6px 14px;
-  border: 1px solid #2575fc;
-  background: transparent;
-  color: #2575fc;
-  border-radius: 20px;
-  cursor: pointer;
-  transition: all 0.2s;
-  font-size: 0.9rem;
-}
-
-.tags-filter button:hover {
-  background-color: #2575fc;
-  color: #fff;
-}
-
-.tags-filter button.active {
-  background-color: #2575fc;
-  color: #fff;
-}
-
-/* ---------------- Blogs Grid ---------------- */
-.blogs-grid {
-  display: grid;
-  gap: 20px;
-  padding: 0 20px;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-}
-
-.blog-card {
-  background: #fff;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+/* ---------------- Home Container ---------------- */
+.home-container {
+  max-width: 1200px;
+  margin: 2rem auto;
+  padding: 0 1rem;
   display: flex;
   flex-direction: column;
-  transition: transform 0.2s, box-shadow 0.2s;
+  gap: 1.5rem;
 }
 
-.blog-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 6px 16px rgba(0,0,0,0.15);
-}
-
-.blog-card img {
+/* ---------------- Search Input ---------------- */
+.home-search {
   width: 100%;
-  height: 180px;
-  object-fit: cover;
+  margin-bottom: 1rem;
 }
 
-.blog-content {
-  padding: 16px;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
+.home-search input {
+  width: 100%;
+  padding: 0.6rem 1rem;
+  font-size: 1rem;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  outline: none;
+  transition: border 0.2s ease, box-shadow 0.2s ease;
 }
 
-.blog-content h3 {
-  font-size: 1.2rem;
-  margin-bottom: 8px;
-  color: #333;
+.home-search input:focus {
+  border-color: #0b5fff;
+  box-shadow: 0 0 5px rgba(11, 95, 255, 0.3);
 }
 
-.blog-content p {
-  font-size: 0.95rem;
-  color: #555;
-  margin-bottom: 12px;
-  flex-grow: 1;
-}
-
-.blog-tags {
+/* ---------------- Tags ---------------- */
+.home-tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 12px;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
 }
 
-.blog-tags .tag {
-  background-color: #f0f0f0;
-  color: #555;
-  font-size: 0.8rem;
-  padding: 2px 8px;
-  border-radius: 12px;
+.home-tag {
+  padding: 0.4rem 0.8rem;
+  font-size: 0.9rem;
+  border-radius: 16px;
+  border: 1px solid #ccc;
+  background-color: #f5f5f5;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease, transform 0.1s ease;
 }
 
-.read-more {
-  align-self: flex-start;
-  text-decoration: none;
-  color: #2575fc;
-  font-weight: 500;
-  transition: color 0.2s;
+.home-tag:hover {
+  background-color: #e0e0e0;
+  transform: scale(1.03);
 }
 
-.read-more:hover {
-  color: #6a11cb;
+.home-tag.active {
+  background-color: #0b5fff;
+  color: #fff;
+  border-color: #0b5fff;
+}
+
+/* ---------------- Blog Cards Container ---------------- */
+.home-container > .blog-card {
+  margin-bottom: 1.5rem;
 }
 
 /* ---------------- Responsive ---------------- */
 @media (max-width: 768px) {
-  .home-container .hero h1 {
-    font-size: 2.2rem;
+  .home-container {
+    gap: 1rem;
   }
-  .home-container .hero p {
-    font-size: 1rem;
-  }
-  .blog-card img {
-    height: 150px;
+
+  .home-tag {
+    font-size: 0.85rem;
+    padding: 0.35rem 0.7rem;
   }
 }
 
 @media (max-width: 480px) {
-  .tags-filter {
-    justify-content: flex-start;
-    overflow-x: auto;
+  .home-tag {
+    font-size: 0.8rem;
+    padding: 0.3rem 0.6rem;
   }
-  .tags-filter button {
-    flex-shrink: 0;
+
+  .home-search input {
+    font-size: 0.95rem;
+  }
+}
+
+/* ---------------- Dark Mode ---------------- */
+@media (prefers-color-scheme: dark) {
+  .home-search input {
+    border-color: #555;
+    background-color: #2a2a2a;
+    color: #eee;
+  }
+
+  .home-search input:focus {
+    border-color: #0b5fff;
+    box-shadow: 0 0 5px rgba(11, 95, 255, 0.4);
+  }
+
+  .home-tag {
+    background-color: #3a3a3a;
+    border-color: #555;
+    color: #eee;
+  }
+
+  .home-tag:hover {
+    background-color: #505050;
+  }
+
+  .home-tag.active {
+    background-color: #0b5fff;
+    color: #fff;
+    border-color: #0b5fff;
+  }
+
+  .home-container {
+    color: #eee;
   }
 }

@@ -1,84 +1,79 @@
-// src/lib/blogApi.js
-const API_URL = (import.meta.env.VITE_API_URL || "http://localhost:4000").replace(/\/$/, "");
+import { API_URL, USE_POSTS_BACKEND, USE_BACKEND_AUTH } from "./env";
 
-const safeUrl = (path = "") => `${API_URL}/${String(path).replace(/^\/+/, "")}`;
+const BASE_URL = `${API_URL}/blogs`;
 
-function getToken(passed) {
-  return passed || localStorage.getItem("token") || "";
-}
-
-function authHeaders(token, json = true) {
-  const t = getToken(token);
-  return {
-    ...(json && { "Content-Type": "application/json" }),
-    ...(t && { Authorization: `Bearer ${t}` }),
-  };
-}
-
-async function handleResponse(res) {
-  let data = null;
-  const contentType = res.headers.get("content-type") || "";
-
+export const getPosts = async () => {
   try {
-    if (contentType.includes("application/json")) {
-      data = await res.json();
-    } else {
-      const text = await res.text();
-      data = text ? { message: text } : {};
+    if (!USE_POSTS_BACKEND) {
+      const data = await import("../assets/blogsData.json");
+      return data.default;
     }
-  } catch {
-    data = {};
+
+    const res = await fetch(BASE_URL);
+    if (!res.ok) throw new Error("Failed to fetch blogs");
+    return await res.json();
+  } catch (err) {
+    console.error("getPosts error:", err);
+    return [];
   }
-
-  if (!res.ok) throw new Error(data?.message || `Request failed (${res.status})`);
-  return data;
-}
-
-// ------------------ POSTS ------------------
-export const getBlogs = async () => {
-  const res = await fetch(safeUrl("posts"));
-  return handleResponse(res);
 };
 
-export const createBlog = async (blog, token) => {
-  const res = await fetch(safeUrl("posts"), {
+export const createPost = async (payload, token) => {
+  if (!USE_POSTS_BACKEND) return { ...payload, id: Date.now() };
+  const res = await fetch(BASE_URL, {
     method: "POST",
-    headers: authHeaders(token),
-    body: JSON.stringify(blog),
+    headers: {
+      "Content-Type": "application/json",
+      ...(USE_BACKEND_AUTH && token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(payload),
   });
-  return handleResponse(res);
+  if (!res.ok) throw new Error("Failed to create blog");
+  return res.json();
 };
 
-export const updateBlog = async (id, blog, token) => {
-  const res = await fetch(safeUrl(`posts/${id}`), {
+export const updatePost = async (id, payload, token) => {
+  if (!USE_POSTS_BACKEND) return { ...payload, id };
+  const res = await fetch(`${BASE_URL}/${id}`, {
     method: "PUT",
-    headers: authHeaders(token),
-    body: JSON.stringify(blog),
+    headers: {
+      "Content-Type": "application/json",
+      ...(USE_BACKEND_AUTH && token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(payload),
   });
-  return handleResponse(res);
+  if (!res.ok) throw new Error("Failed to update blog");
+  return res.json();
 };
 
-export const deleteBlog = async (id, token) => {
-  const res = await fetch(safeUrl(`posts/${id}`), {
+export const deletePost = async (id, token) => {
+  if (!USE_POSTS_BACKEND) return { id };
+  const res = await fetch(`${BASE_URL}/${id}`, {
     method: "DELETE",
-    headers: authHeaders(token, false),
+    headers: USE_BACKEND_AUTH && token ? { Authorization: `Bearer ${token}` } : {},
   });
-  return handleResponse(res);
+  if (!res.ok) throw new Error("Failed to delete blog");
+  return res.json();
 };
-
-export const likeBlog = async (id, token) => {
-  const res = await fetch(safeUrl(`posts/${id}/like`), {
+// ---------------- COMMENTS ----------------
+export const addComment = async (id, comment) => {
+  if (!USE_POSTS_BACKEND) {
+    // local fallback
+    return { ...comment, id: Date.now() };
+  }
+  const res = await fetch(`${BASE_URL}/${id}/comments`, {
     method: "POST",
-    headers: authHeaders(token, false),
-  });
-  return handleResponse(res);
-};
-
-export const addComment = async (id, comment, token) => {
-  const res = await fetch(safeUrl(`posts/${id}/comments`), {
-    method: "POST",
-    headers: authHeaders(token),
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(comment),
   });
-  return handleResponse(res);
+  if (!res.ok) throw new Error("Failed to add comment");
+  return res.json();
+};
+
+// ---------------- LIKES ----------------
+export const likeBlog = async (id) => {
+  if (!USE_POSTS_BACKEND) return { id };
+  const res = await fetch(`${BASE_URL}/${id}/like`, { method: "POST" });
+  if (!res.ok) throw new Error("Failed to like blog");
+  return res.json();
 };

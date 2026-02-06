@@ -1,6 +1,6 @@
 // src/Context/PostsContext.jsx
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
-import { USE_POSTS_BACKEND } from "../lib/env";
+import { USE_POSTS_BACKEND, USE_BACKEND_AUTH } from "../lib/env";
 import * as api from "../lib/blogApi";
 import {
   loadPosts,
@@ -20,22 +20,37 @@ export function PostsProvider({ children }) {
   const [loading, setLoading] = useState(USE_POSTS_BACKEND);
   const [error, setError] = useState("");
 
-  // Sync to localStorage when posts change (for local mode)
+  // ---------------- Helpers ----------------
+  const getAuthToken = useCallback(() => (USE_BACKEND_AUTH ? localStorage.getItem("token") : null), []);
+
+  const tryApi = useCallback(async (fn, fallback) => {
+    setError("");
+    try {
+      return await fn();
+    } catch (e) {
+      const msg = e?.message || "Operation failed";
+      setError(msg);
+      if (fallback) fallback();
+      throw e;
+    }
+  }, []);
+
+  // ---------------- Sync localStorage for local mode ----------------
   useEffect(() => {
     if (!USE_POSTS_BACKEND) savePosts(posts);
   }, [posts]);
 
-  // Fetch posts from backend
+  // ---------------- Fetch posts from backend ----------------
   const refetch = useCallback(async () => {
     if (!USE_POSTS_BACKEND) return;
     setLoading(true);
     setError("");
     try {
-      const data = await api.getBlogs();
-      const list = Array.isArray(data) ? data : data?.posts || [];
-      setPosts(list);
+      const data = await api.getPosts();
+      setPosts(Array.isArray(data) ? data : []);
     } catch (e) {
       setError(e?.message || "Failed to fetch posts");
+      setPosts([]);
     } finally {
       setLoading(false);
     }
@@ -47,83 +62,63 @@ export function PostsProvider({ children }) {
 
   // ---------------- CRUD FUNCTIONS ----------------
   const addPost = useCallback(
-    async (post) => {
-      setError("");
-      try {
-        if (!USE_POSTS_BACKEND) {
-          let created;
-          setPosts((prev) => {
-            created = addPostLS(prev, post)[0];
-            return [created, ...prev];
-          });
-          return created;
-        }
-
-        const token = localStorage.getItem("token");
-        const created = await api.createBlog(post, token);
-        await refetch();
+    async (post) => tryApi(async () => {
+      if (!USE_POSTS_BACKEND) {
+        let created;
+        setPosts((prev) => {
+          created = addPostLS(prev, post)[0];
+          return [created, ...prev];
+        });
         return created;
-      } catch (e) {
-        const msg = e?.message || "Failed to add post";
-        setError(msg);
-        throw e;
       }
-    },
-    [refetch]
+      const token = getAuthToken();
+      const created = await api.createPost(post, token);
+      await refetch();
+      return created;
+    }),
+    [refetch, getAuthToken, tryApi]
   );
 
   const updatePost = useCallback(
-    async (id, patch) => {
-      setError("");
-      try {
-        if (!USE_POSTS_BACKEND) {
-          setPosts((prev) => updatePostLS(prev, id, patch));
-          return;
-        }
-
-        const token = localStorage.getItem("token");
-        await api.updateBlog(id, patch, token);
-        await refetch();
-      } catch (e) {
-        const msg = e?.message || "Failed to update post";
-        setError(msg);
-        throw e;
+    async (id, patch) => tryApi(async () => {
+      if (!USE_POSTS_BACKEND) {
+        setPosts((prev) => updatePostLS(prev, id, patch));
+        return;
       }
-    },
-    [refetch]
+      const token = getAuthToken();
+      await api.updatePost(id, patch, token);
+      await refetch();
+    }),
+    [refetch, getAuthToken, tryApi]
   );
 
   const deletePost = useCallback(
-    async (id) => {
-      setError("");
-      try {
-        if (!USE_POSTS_BACKEND) {
-          setPosts((prev) => deletePostLS(prev, id));
-          return;
-        }
-
-        const token = localStorage.getItem("token");
-        await api.deleteBlog(id, token);
-        await refetch();
-      } catch (e) {
-        const msg = e?.message || "Failed to delete post";
-        setError(msg);
-        throw e;
+    async (id) => tryApi(async () => {
+      if (!USE_POSTS_BACKEND) {
+        setPosts((prev) => deletePostLS(prev, id));
+        return;
       }
-    },
-    [refetch]
+      const token = getAuthToken();
+      await api.deletePost(id, token);
+      await refetch();
+    }),
+    [refetch, getAuthToken, tryApi]
   );
 
   const incViews = useCallback((id) => setPosts((prev) => incViewsLS(prev, id)), []);
   const toggleLike = useCallback((id, userKey) => setPosts((prev) => toggleLikeLS(prev, id, userKey)), []);
   const addComment = useCallback((id, comment) => setPosts((prev) => addCommentLS(prev, id, comment)), []);
 
-  // ---------------- HELPERS ----------------
-  const getId = useCallback((post) => String(post?.id ?? post?._id), []);
-  const findPostById = useCallback((id) => posts.find((p) => getId(p) === String(id)), [posts, getId]);
+  // ---------------- Helpers ----------------
+  const getPostById = useCallback((id) => posts.find((p) => String(p._id ?? p.id) === String(id)) || null, [posts]);
 
-  const uniqueTags = useMemo(() => [...new Set(posts.flatMap((p) => p.tags || []))], [posts]);
+  const uniqueTags = useMemo(() => {
+    const set = new Set();
+    posts?.forEach((p) => p?.tags?.forEach((t) => t && set.add(t.toLowerCase())));
+    return Array.from(set);
+  }, [posts]);
 
+  // ---------------- Context Value ----------------
   const value = useMemo(
     () => ({
       posts,
@@ -136,18 +131,18 @@ export function PostsProvider({ children }) {
       incViews,
       toggleLike,
       addComment,
-      getId,
-      findPostById,
+      getPostById,
       uniqueTags,
       USE_POSTS_BACKEND,
+      USE_BACKEND_AUTH,
     }),
-    [posts, loading, error, refetch, addPost, updatePost, deletePost, incViews, toggleLike, addComment, getId, findPostById, uniqueTags]
+    [posts, loading, error, refetch, addPost, updatePost, deletePost, incViews, toggleLike, addComment, getPostById, uniqueTags]
   );
 
   return <PostsContext.Provider value={value}>{children}</PostsContext.Provider>;
 }
 
-// ---------------- HOOK ----------------
+// ---------------- Hook ----------------
 export function usePosts() {
   const ctx = useContext(PostsContext);
   if (!ctx) throw new Error("usePosts must be used inside <PostsProvider>");

@@ -1,71 +1,77 @@
-/* --- BlogCard.css --- */
-
+/* ---------------- Card Wrapper ---------------- */
 .blog-card {
   background: #fff;
-  border-radius: 1rem;
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 16px;
   overflow: hidden;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
   display: flex;
   flex-direction: column;
-  transition: transform 0.2s, box-shadow 0.2s;
-  font-family: inherit;
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
 }
 
 .blog-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 12px 28px rgba(0,0,0,0.08);
 }
 
+.blog-card:focus-within {
+  outline: 2px solid #0b5fff;
+  outline-offset: 2px;
+}
+
+/* ---------------- Image ---------------- */
 .blog-card-image {
   width: 100%;
-  height: 180px;
+  aspect-ratio: 16/9;
   object-fit: cover;
   display: block;
 }
 
+/* ---------------- Body ---------------- */
 .blog-card-body {
-  padding: 1rem 1.25rem;
+  padding: 1rem 1.2rem;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
 
-.blog-card-body h3 {
+.blog-card h3 {
   margin: 0;
-  font-size: 1.25rem;
-  line-height: 1.2;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #222;
 }
 
 .blog-card-meta {
-  font-size: 0.875rem;
-  color: #666;
+  font-size: 0.85rem;
+  color: #777;
 }
 
 .blog-card-excerpt {
   font-size: 0.95rem;
-  color: #333;
-  margin: 0.25rem 0 0.5rem;
-  line-height: 1.4;
-  flex-grow: 1;
+  color: #555;
+  flex: 1;
+  margin: 0.5rem 0;
 }
 
+/* ---------------- Actions ---------------- */
 .blog-card-actions {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 0.5rem;
   gap: 0.5rem;
+  margin-top: 0.5rem;
 }
 
 .read-more-btn {
   background: #0077ff;
   color: #fff;
   border: none;
-  padding: 0.5rem 0.9rem;
-  border-radius: 0.5rem;
-  font-weight: 600;
+  padding: 0.5rem 1rem;
+  border-radius: 12px;
+  font-size: 0.9rem;
   cursor: pointer;
-  transition: background 0.2s, transform 0.1s;
+  transition: background 0.2s ease, transform 0.12s ease;
 }
 
 .read-more-btn:hover:not(:disabled) {
@@ -73,45 +79,89 @@
   transform: translateY(-1px);
 }
 
+.read-more-btn:focus-visible {
+  outline: 2px solid #0b5fff;
+  outline-offset: 2px;
+}
+
 .like-btn {
   display: flex;
   align-items: center;
-  gap: 0.25rem;
-  background: #f0f0f0;
+  gap: 0.3rem;
+  font-size: 0.9rem;
+  background: none;
   border: none;
-  border-radius: 0.5rem;
-  padding: 0.4rem 0.7rem;
   cursor: pointer;
-  font-size: 0.875rem;
-  transition: background 0.2s, transform 0.1s;
-}
-
-.like-btn:hover:not(:disabled) {
-  background: #e0e0e0;
-  transform: translateY(-1px);
-}
-
-.like-btn.liked {
-  background: #ffeaea;
-  color: #b42318;
+  color: #ff3b30;
+  font-weight: 600;
+  transition: color 0.2s, transform 0.15s ease;
 }
 
 .like-btn span {
-  margin-left: 0.2rem;
-  font-weight: 600;
+  font-size: 0.85rem;
 }
 
-/* Responsive */
-@media (max-width: 520px) {
-  .blog-card-image {
-    height: 150px;
-  }
+.like-btn.liked {
+  color: #e03128;
+}
 
+.like-btn.animating {
+  transform: scale(1.2);
+}
+
+/* ---------------- Responsive ---------------- */
+@media (max-width: 768px) {
   .blog-card-body h3 {
     font-size: 1.1rem;
   }
 
+  .read-more-btn, .like-btn {
+    font-size: 0.85rem;
+    padding: 0.4rem 0.8rem;
+  }
+}
+
+/* ---------------- Dark Mode ---------------- */
+@media (prefers-color-scheme: dark) {
+  .blog-card {
+    background: rgba(255,255,255,0.05);
+    border-color: rgba(255,255,255,0.12);
+    color: #f0f0f0;
+  }
+
+  .blog-card h3 {
+    color: #fff;
+  }
+
+  .blog-card-meta {
+    color: #aaa;
+  }
+
   .blog-card-excerpt {
-    font-size: 0.9rem;
+    color: #ccc;
+  }
+
+  .read-more-btn {
+    background: #66aaff;
+    color: #1e1e1e;
+  }
+
+  .read-more-btn:hover:not(:disabled) {
+    background: #4d91e0;
+  }
+
+  .like-btn {
+    color: #ff6b6b;
+  }
+
+  .like-btn.liked {
+    color: #ff3b30;
+  }
+}
+
+/* ---------------- Reduced Motion ---------------- */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
   }
 }

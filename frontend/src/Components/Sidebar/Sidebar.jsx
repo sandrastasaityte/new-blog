@@ -4,14 +4,18 @@ import { usePosts } from "../../Context/PostsContext";
 import "./Sidebar.css";
 
 export default function Sidebar({ filterTags = [], setFilterTags, onSelectPost }) {
-  const { posts, uniqueTags, getId } = usePosts();
+  const { posts, uniqueTags } = usePosts(); // ✅ removed getId
   const [keyword, setKeyword] = useState("");
 
   const filteredPosts = useMemo(() => {
     return posts
-      .filter((p) => (p.title + " " + p.content).toLowerCase().includes(keyword.toLowerCase()))
-      .filter((p) => (filterTags.length ? p.tags?.some((t) => filterTags.includes(t)) : true))
-      .sort((a, b) => new Date(b.date) - new Date(a.date));
+      .filter((p) =>
+        (p.title + " " + p.content).toLowerCase().includes(keyword.toLowerCase())
+      )
+      .filter((p) =>
+        filterTags.length ? p.tags?.some((t) => filterTags.includes(t)) : true
+      )
+      .sort((a, b) => new Date(b.date || b.createdAt) - new Date(a.date || a.createdAt));
   }, [posts, keyword, filterTags]);
 
   const toggleTag = (tag) => {
@@ -20,6 +24,8 @@ export default function Sidebar({ filterTags = [], setFilterTags, onSelectPost }
       prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
     );
   };
+
+  const getPostId = (p) => p._id || p.id || null; // ✅ safe ID
 
   return (
     <aside className="sidebar">
@@ -66,7 +72,7 @@ export default function Sidebar({ filterTags = [], setFilterTags, onSelectPost }
           <div className="sidebar-list">
             {filteredPosts.slice(0, 6).map((p) => (
               <button
-                key={getId(p)}
+                key={getPostId(p)}
                 type="button"
                 className="sidebar-post"
                 onClick={() => onSelectPost?.(p)}
@@ -74,7 +80,9 @@ export default function Sidebar({ filterTags = [], setFilterTags, onSelectPost }
               >
                 <p className="sidebar-post-title">{p.title}</p>
                 <p className="sidebar-post-meta">
-                  {p.author} {p.date && `• ${new Date(p.date).toLocaleDateString()}`}
+                  {p.author}{" "}
+                  {(p.date || p.createdAt) &&
+                    `• ${new Date(p.date || p.createdAt).toLocaleDateString()}`}
                 </p>
               </button>
             ))}

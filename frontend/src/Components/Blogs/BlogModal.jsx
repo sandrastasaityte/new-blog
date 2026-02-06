@@ -12,34 +12,26 @@ const safeDateLabel = (d) => {
   return Number.isNaN(t.getTime()) ? "—" : t.toLocaleDateString();
 };
 
-const normalizeComments = (comments) => {
-  // supports: ["nice post", ...] OR [{name,text}, ...]
-  return (comments || [])
+const normalizeComments = (comments) =>
+  (comments || [])
     .map((c) => {
+      if (!c) return null;
       if (typeof c === "string") return { name: "Anonymous", text: c };
-      if (c && typeof c === "object")
-        return { name: c.name || "Anonymous", text: c.text || "" };
+      if (typeof c === "object") return { name: c.name || "Anonymous", text: c.text || "" };
       return null;
     })
     .filter((c) => c && String(c.text || "").trim());
-};
 
-// ✅ prefer Mongo id
 const getId = (p) => p?._id ?? p?.id;
-
 const clamp = (n, min, max) => Math.min(max, Math.max(min, n));
 
 export default function BlogModal({ post, onClose, onAddComment, onLike }) {
   const modalRef = useRef(null);
   const lastActiveRef = useRef(null);
-
   const reactId = useId();
 
   const postId = useMemo(() => String(getId(post) ?? ""), [post]);
-  const comments = useMemo(
-    () => normalizeComments(post?.comments),
-    [post?.comments],
-  );
+  const comments = useMemo(() => normalizeComments(post?.comments), [post?.comments]);
 
   const titleId = `blogmodal-title-${reactId}`;
   const descId = `blogmodal-desc-${reactId}`;
@@ -48,11 +40,9 @@ export default function BlogModal({ post, onClose, onAddComment, onLike }) {
     if (!post) return;
 
     lastActiveRef.current = document.activeElement;
-
     const t = setTimeout(() => {
-      const root = modalRef.current;
-      const first = root?.querySelector?.(FOCUSABLE);
-      (first || root)?.focus?.();
+      const first = modalRef.current?.querySelector(FOCUSABLE);
+      (first || modalRef.current)?.focus?.();
     }, 0);
 
     const prevOverflow = document.body.style.overflow;
@@ -63,7 +53,6 @@ export default function BlogModal({ post, onClose, onAddComment, onLike }) {
         onClose?.();
         return;
       }
-
       if (e.key !== "Tab") return;
 
       const root = modalRef.current;
@@ -73,7 +62,7 @@ export default function BlogModal({ post, onClose, onAddComment, onLike }) {
         (el) =>
           !el.hasAttribute("disabled") &&
           el.getAttribute("aria-hidden") !== "true" &&
-          el.offsetParent !== null,
+          el.offsetParent !== null
       );
       if (!focusables.length) return;
 
@@ -105,35 +94,26 @@ export default function BlogModal({ post, onClose, onAddComment, onLike }) {
     };
   }, [post, onClose]);
 
-  const handleComment = ({ name, text }) => {
+  const handleComment = ({ text }) => {
     const t = String(text || "").trim();
     if (!t || !postId) return;
-
-    // ✅ keep compatibility with your current context (string comments)
     onAddComment?.(postId, t);
   };
 
   if (!post) return null;
 
-  const title = post?.title || "Blog post";
-  const author = post?.author || "Admin";
+  const title = String(post?.title || "Blog Post");
+  const author = String(post?.author || "Admin");
   const dateLabel = safeDateLabel(post?.date);
-
   const views = Number.isFinite(Number(post?.views)) ? Number(post.views) : 0;
   const likes = Number.isFinite(Number(post?.likes)) ? Number(post.likes) : 0;
-
-  const rawRating = Number(post?.rating);
-  const rating = Number.isFinite(rawRating) ? clamp(rawRating, 0, 5) : 0;
-
-  const content = String(post?.content || "").trim();
+  const rating = Number.isFinite(Number(post?.rating)) ? clamp(Number(post.rating), 0, 5) : 0;
+  const content = String(post?.content || "").trim() || "No content available.";
 
   return (
     <div
       className="blogmodal-overlay"
-      onPointerDown={(e) => {
-        // ✅ close only when clicking overlay, not inside modal
-        if (e.target === e.currentTarget) onClose?.();
-      }}
+      onPointerDown={(e) => e.target === e.currentTarget && onClose?.()}
       role="presentation"
     >
       <div
@@ -146,12 +126,7 @@ export default function BlogModal({ post, onClose, onAddComment, onLike }) {
         tabIndex={-1}
         ref={modalRef}
       >
-        <button
-          className="blogmodal-close"
-          onClick={onClose}
-          aria-label="Close modal"
-          type="button"
-        >
+        <button className="blogmodal-close" onClick={onClose} aria-label="Close modal" type="button">
           ×
         </button>
 
@@ -160,18 +135,13 @@ export default function BlogModal({ post, onClose, onAddComment, onLike }) {
           alt={title}
           className="blogmodal-img"
           loading="lazy"
-          onError={(e) => {
-            e.currentTarget.onerror = null;
-            e.currentTarget.src = PLACEHOLDER_IMG;
-          }}
+          onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = PLACEHOLDER_IMG; }}
         />
 
         <div className="blogmodal-details">
           <h2 id={titleId}>{title}</h2>
-
           <p className="blogmodal-meta" id={descId}>
-            By <strong>{author}</strong> | {dateLabel} | {views} views | ❤️{" "}
-            {likes}
+            By <strong>{author}</strong> | {dateLabel} | {views} views | ❤️ {likes}
           </p>
 
           <div className="blogmodal-top-actions">
@@ -182,19 +152,15 @@ export default function BlogModal({ post, onClose, onAddComment, onLike }) {
               type="button"
               aria-label="Like this post"
             >
-              ❤️ Like
+              ❤️ Like ({likes})
             </button>
           </div>
 
           <p className="blogmodal-rating">⭐ {rating.toFixed(1)}/5</p>
-
-          <p className="blogmodal-text">{content || "No content available."}</p>
+          <p className="blogmodal-text">{content}</p>
         </div>
 
-        <CommentSection
-          comments={comments}
-          onAddComment={(payload) => onAddComment?.(postId, payload)}
-        />
+        <CommentSection comments={comments} onAddComment={handleComment} />
       </div>
     </div>
   );

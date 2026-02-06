@@ -1,18 +1,16 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { FaUserCircle, FaBars, FaTimes } from "react-icons/fa";
-import AuthModal from "../Auth/AuthModal"; // ✅ fixed path
+import AuthModal from "../Auth/AuthModal"; 
 import "./Navbar.css";
 
 const Navbar = ({ token, setToken }) => {
-  const [open, setOpen] = useState(false); // mobile menu
-  const [authOpen, setAuthOpen] = useState(false); // AuthModal visibility
-  const [authMode, setAuthMode] = useState("login"); // "login" or "signup"
-
+  const [open, setOpen] = useState(false); 
+  const [authOpen, setAuthOpen] = useState(false); 
   const location = useLocation();
 
   // Close mobile menu on route change
-  React.useEffect(() => setOpen(false), [location.pathname]);
+  useEffect(() => setOpen(false), [location.pathname]);
 
   const linkClass = ({ isActive }) => (isActive ? "active" : undefined);
 
@@ -44,7 +42,7 @@ const Navbar = ({ token, setToken }) => {
           <button
             type="button"
             className="icon-btn nav-toggle"
-            onClick={() => setOpen((v) => !v)}
+            onClick={() => setOpen(v => !v)}
             aria-label={open ? "Close menu" : "Open menu"}
             aria-expanded={open}
           >
@@ -53,8 +51,8 @@ const Navbar = ({ token, setToken }) => {
         </div>
 
         {open && (
-          <div className="nav-mobile-overlay open">
-            <div className="nav-mobile">
+          <div className="nav-mobile-overlay open" onClick={() => setOpen(false)}>
+            <div className="nav-mobile" onClick={(e) => e.stopPropagation()}>
               <NavLink to="/" className={linkClass} end>Home</NavLink>
               <NavLink to="/about" className={linkClass}>About</NavLink>
               <NavLink to="/blogs" className={linkClass}>Blogs</NavLink>
@@ -75,12 +73,10 @@ const Navbar = ({ token, setToken }) => {
         )}
       </nav>
 
-      {/* Auth Modal */}
       {authOpen && (
         <AuthModal
           isOpen={authOpen}
           onClose={() => setAuthOpen(false)}
-          defaultMode={authMode}
           setToken={setToken}
         />
       )}

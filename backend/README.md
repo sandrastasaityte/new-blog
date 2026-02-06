@@ -17,3 +17,10 @@ backend/
 │  └─ routes/
 │     ├─ authRoutes.js
 │     └─ blogRoutes.js
+
+
+
+
+2) rebuild:
+npm run build
+npm run serve

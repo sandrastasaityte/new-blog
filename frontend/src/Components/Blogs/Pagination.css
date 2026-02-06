@@ -1,72 +1,65 @@
-/* =========================
-   Pagination.css
-   ========================= */
-
-/* Container */
+/* ===== Pagination Container ===== */
 .pagination {
   display: flex;
   justify-content: center;
   align-items: center;
-  margin: 1rem 0;
-  font-family: sans-serif;
+  margin: 2rem 0;
+  font-family: system-ui, sans-serif;
 }
 
-/* List */
+/* ===== Pagination List ===== */
 .pagination-list {
-  list-style: none;
   display: flex;
-  gap: 0.4rem;
+  list-style: none;
+  gap: 0.3rem;
   padding: 0;
   margin: 0;
+  flex-wrap: wrap;
 }
 
-/* Buttons */
+/* ===== Page Buttons ===== */
 .pagination-list button {
+  padding: 0.5rem 0.75rem;
   min-width: 36px;
-  padding: 0.45rem 0.6rem;
-  border-radius: 8px;
-  border: 1px solid rgba(0,0,0,0.12);
+  border-radius: 6px;
+  border: 1px solid rgba(0,0,0,0.2);
   background: #fff;
+  color: #333;
+  font-size: 0.95rem;
   cursor: pointer;
-  font-size: 0.88rem;
-  transition: transform 0.12s ease, box-shadow 0.2s ease, background 0.2s ease;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.12s ease;
 }
 
 .pagination-list button:hover:not(:disabled) {
+  background: #007bff10;
+  border-color: #007bff40;
   transform: translateY(-1px);
-  box-shadow: 0 6px 14px rgba(0,0,0,0.06);
-}
-
-.pagination-list button:active:not(:disabled) {
-  transform: translateY(0);
-  box-shadow: none;
 }
 
 .pagination-list button:disabled,
 .pagination-list .disabled-btn {
   opacity: 0.5;
   cursor: not-allowed;
+  transform: none;
 }
 
-/* Active page */
+/* ===== Active Page ===== */
 .pagination-list button.active {
-  background: #0b5fff;
+  background: #007bff;
   color: #fff;
-  border-color: #0b5fff;
+  border-color: #0056b3;
   font-weight: 600;
 }
 
-/* Dots */
+/* ===== Dots ===== */
 .pagination-list .dots {
-  display: flex;
-  align-items: center;
-  padding: 0 0.3rem;
-  font-size: 0.95rem;
+  padding: 0.5rem 0.75rem;
   color: #555;
+  font-size: 1rem;
   user-select: none;
 }
 
-/* Screen reader only */
+/* ===== Screen Reader Only ===== */
 .sr-only {
   position: absolute;
   width: 1px;
@@ -75,39 +68,15 @@
   margin: -1px;
   overflow: hidden;
   clip: rect(0,0,0,0);
-  white-space: nowrap;
   border: 0;
 }
 
-/* Responsive: smaller buttons on mobile */
+/* ===== Responsive ===== */
 @media (max-width: 480px) {
-  .pagination-list button {
-    min-width: 30px;
-    padding: 0.35rem 0.5rem;
-    font-size: 0.82rem;
-  }
-}
-
-/* Dark mode */
-@media (prefers-color-scheme: dark) {
-  .pagination-list button {
-    background: rgba(255,255,255,0.08);
-    border-color: rgba(255,255,255,0.18);
-    color: #fff;
-  }
-  .pagination-list button.active {
-    background: #3399ff;
-    border-color: #3399ff;
-    color: #fff;
-  }
+  .pagination-list button,
   .pagination-list .dots {
-    color: #ccc;
-  }
-}
-
-/* Reduced motion */
-@media (prefers-reduced-motion: reduce) {
-  .pagination-list button {
-    transition: none !important;
+    padding: 0.4rem 0.6rem;
+    font-size: 0.85rem;
+    min-width: 28px;
   }
 }

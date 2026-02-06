@@ -7,9 +7,15 @@ dotenv.config();
 let isConnected = false;
 
 export default async function handler(req, res) {
-  if (!isConnected) {
-    await connectDB();
-    isConnected = true;
+  try {
+    if (!isConnected) {
+      await connectDB();
+      isConnected = true;
+      console.log("Database connected ✅");
+    }
+    return app(req, res);
+  } catch (err) {
+    console.error("Database connection failed:", err);
+    res.status(500).json({ error: "Database connection failed" });
   }
-  return app(req, res);
 }

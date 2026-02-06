@@ -1,36 +1,45 @@
 export const authFetch = async (url, options = {}) => {
-  const token = getToken();
+  if (!API_URL) throw new Error("API_URL is not defined. Check your env variables.");
+
+  const { token = getToken(), timeout = 15000, headers: customHeaders, ...fetchOptions } = options;
+
+  const isJson =
+    fetchOptions.body &&
+    typeof fetchOptions.body === "object" &&
+    !(fetchOptions.body instanceof FormData);
 
   const headers = {
-    ...options.headers,
+    ...(isJson && { "Content-Type": "application/json" }),
+    ...(customHeaders || {}),
     ...(token && { Authorization: `Bearer ${token}` }),
   };
 
-  const isJson =
-    options.body &&
-    typeof options.body === "object" &&
-    !(options.body instanceof FormData);
-
-  const requestOptions = {
-    method: options.method || "GET",
-    ...options,
-    headers,
-    body: isJson ? JSON.stringify(options.body) : options.body,
-  };
-
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 15000);
-  requestOptions.signal = controller.signal;
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
 
   try {
-    const res = await fetch(`${API_URL}${url}`, requestOptions);
-    return handleResponse(res);
+    const res = await fetch(`${API_URL}${url}`, {
+      ...fetchOptions,
+      method: fetchOptions.method ?? "GET",
+      headers,
+      signal: controller.signal,
+      ...(fetchOptions.body != null && {
+        body: isJson ? JSON.stringify(fetchOptions.body) : fetchOptions.body,
+      }),
+    });
+
+    return await handleResponse(res);
   } catch (err) {
     if (err.name === "AbortError") {
-      throw new Error(`Request to ${url} timed out after 15s`);
+      throw new Error(`${fetchOptions.method ?? "GET"} request to ${url} timed out after ${timeout / 1000}s`);
     }
-    throw new Error("Network error. Server unreachable.");
+
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      throw new Error("No internet connection.");
+    }
+
+    throw err instanceof Error ? err : new Error(`Network error: ${String(err)}`);
   } finally {
-    clearTimeout(timeout);
+    clearTimeout(timeoutId);
   }
 };

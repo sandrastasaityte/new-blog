@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 
 const MAX_RETRIES = 5;
-const RETRY_DELAY_MS = 3000;
+const BASE_DELAY_MS = 1000; // initial delay
 
 export async function connectDB(retries = MAX_RETRIES) {
   const uri = process.env.MONGO_URI;
@@ -10,19 +10,16 @@ export async function connectDB(retries = MAX_RETRIES) {
   mongoose.set("strictQuery", true);
 
   try {
-    const conn = await mongoose.connect(uri, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
+    const conn = await mongoose.connect(uri);
     console.log(`✅ MongoDB connected: ${conn.connection.host}/${conn.connection.name}`);
   } catch (err) {
     console.error(`❌ MongoDB connection failed: ${err.message}`);
     if (retries > 0) {
-      console.log(`⏳ Retrying in ${RETRY_DELAY_MS / 1000}s... (${retries} attempts left)`);
-      await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
+      const delay = BASE_DELAY_MS * 2 ** (MAX_RETRIES - retries); // exponential backoff
+      console.log(`⏳ Retrying in ${delay / 1000}s... (${retries} attempts left)`);
+      await new Promise((resolve) => setTimeout(resolve, delay));
       return connectDB(retries - 1);
     }
-    console.error("❌ Could not connect to MongoDB. Exiting.");
-    process.exit(1);
+    throw new Error("❌ Could not connect to MongoDB after multiple attempts.");
   }
 }

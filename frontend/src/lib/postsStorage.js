@@ -1,4 +1,6 @@
 // src/Context/postStorage.js
+
+// ------------------- Constants -------------------
 const KEY = "blog_posts_v1";
 
 const nowIso = () => new Date().toISOString();
@@ -10,31 +12,25 @@ const toNum = (v, fallback = 0) => {
 };
 
 const clamp = (n, min, max) => Math.min(max, Math.max(min, n));
-
 const safeStr = (v, fallback = "") => String(v ?? fallback);
 
-// ✅ stable local id generator (only used when creating a new local post)
+// Stable local ID generator
 const makeLocalId = () => `local-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 
-// ✅ Get an id without ever using Date.now() during normalize()
+// Pick ID from post
 const pickId = (p) => {
   if (p?._id) return String(p._id);
   if (p?.id) return String(p.id);
-  return ""; // if missing, we will create one ONCE below
+  return ""; // fallback
 };
 
-/* Normalize posts so UI never crashes */
+// ------------------- Normalize -------------------
 export function normalize(arr) {
   const iso = nowIso();
 
   return (Array.isArray(arr) ? arr : []).map((p, idx) => {
-    // ✅ never change ids during normalize
     let id = pickId(p);
-    if (!id) {
-      // deterministic fallback for seeds that have no ids.
-      // (It will become stable after first save because we store it in localStorage.)
-      id = `seed-${idx}`;
-    }
+    if (!id) id = `seed-${idx}`;
 
     const tags = Array.isArray(p?.tags)
       ? p.tags.map((t) => safeStr(t).trim()).filter(Boolean)
@@ -48,10 +44,8 @@ export function normalize(arr) {
               if (!text) return null;
               return { text, name: "Guest", date: iso };
             }
-
             const text = safeStr(c?.text).trim();
             if (!text) return null;
-
             return {
               text,
               name: safeStr(c?.name, "Guest").trim() || "Guest",
@@ -63,22 +57,15 @@ export function normalize(arr) {
 
     return {
       ...p,
-
-      // keep backend id too
       _id: p?._id,
-
-      // ✅ single source of truth for UI
       id,
-
       title: safeStr(p?.title, "Untitled post").trim(),
       content: safeStr(p?.content, "").trim(),
       tags,
       comments,
-
       views: toNum(p?.views, 0),
       likes: toNum(p?.likes, 0),
       rating: clamp(toNum(p?.rating, 0), 0, 5),
-
       author: safeStr(p?.author, "Admin").trim() || "Admin",
       date: p?.date || today(),
       image: p?.image || "https://via.placeholder.com/600x300",
@@ -86,7 +73,24 @@ export function normalize(arr) {
   });
 }
 
-/* Load from localStorage */
+// ------------------- Safe helper -------------------
+const safePosts = (posts) => Array.isArray(posts) ? posts : [];
+
+// ------------------- Event System -------------------
+const subscribers = new Set();
+
+export function subscribePosts(callback) {
+  if (typeof callback !== "function") return () => {};
+  subscribers.add(callback);
+  return () => subscribers.delete(callback);
+}
+
+function notifySubscribers(posts) {
+  const norm = normalize(posts);
+  subscribers.forEach((cb) => cb(norm));
+}
+
+// ------------------- Load / Clear -------------------
 export function loadPosts(fallback = []) {
   try {
     const raw = localStorage.getItem(KEY);
@@ -94,117 +98,103 @@ export function loadPosts(fallback = []) {
 
     const data = JSON.parse(raw);
     const norm = normalize(data);
-
-    if (norm.length === 0 && Array.isArray(fallback) && fallback.length) {
-      return normalize(fallback);
-    }
-
-    return norm;
+    return norm.length ? norm : normalize(fallback);
   } catch (e) {
     console.warn("Failed to load posts:", e);
     return normalize(fallback);
   }
 }
 
-/* Save safely */
+export function clearPostsStorage() {
+  try {
+    localStorage.removeItem(KEY);
+    notifySubscribers([]);
+  } catch {}
+}
+
+// ------------------- Save -------------------
 export function savePosts(posts) {
   try {
-    localStorage.setItem(KEY, JSON.stringify(normalize(posts)));
+    const norm = normalize(posts);
+    localStorage.setItem(KEY, JSON.stringify(norm));
+    notifySubscribers(norm);
   } catch (e) {
     console.warn("Failed to save posts:", e);
   }
 }
 
-/* Add post */
+// ------------------- Mutators -------------------
 export function addPost(posts, post) {
   const iso = nowIso();
   const p = post || {};
-
-  // ✅ IMPORTANT: assign id ONCE when creating local posts
   const id = p?._id ? String(p._id) : p?.id ? String(p.id) : makeLocalId();
 
-  const newPost = normalize([
-    {
-      ...p,
-      id,
-      _id: p._id,
-      date: p.date ?? iso.slice(0, 10),
-      views: p.views ?? 0,
-      likes: p.likes ?? 0,
-      comments: p.comments ?? [],
-    },
-  ])[0];
+  const newPost = normalize([{
+    ...p,
+    id,
+    _id: p._id,
+    date: p.date ?? iso.slice(0, 10),
+    views: p.views ?? 0,
+    likes: p.likes ?? 0,
+    comments: p.comments ?? [],
+  }])[0];
 
-  return [newPost, ...(Array.isArray(posts) ? posts : [])];
+  const updated = [newPost, ...safePosts(posts)];
+  savePosts(updated);
+  return updated;
 }
 
-/* Update post */
 export function updatePost(posts, id, patch) {
-  const list = Array.isArray(posts) ? posts : [];
-  return normalize(
-    list.map((p) => (String(p.id) === String(id) ? { ...p, ...patch } : p))
+  const updated = normalize(
+    safePosts(posts).map((p) => (String(p.id) === String(id) ? { ...p, ...patch } : p))
   );
+  savePosts(updated);
+  return updated;
 }
 
-/* Delete post */
 export function deletePost(posts, id) {
-  const list = Array.isArray(posts) ? posts : [];
-  return normalize(list.filter((p) => String(p.id) !== String(id)));
+  const updated = normalize(safePosts(posts).filter((p) => String(p.id) !== String(id)));
+  savePosts(updated);
+  return updated;
 }
 
-/* Increment views */
 export function incViews(posts, id) {
-  const list = Array.isArray(posts) ? posts : [];
-  return normalize(
-    list.map((p) =>
-      String(p.id) === String(id) ? { ...p, views: toNum(p.views, 0) + 1 } : p
+  const updated = normalize(
+    safePosts(posts).map((p) =>
+      String(p.id) === String(id) ? { ...p, views: toNum(p.views) + 1 } : p
     )
   );
+  savePosts(updated);
+  return updated;
 }
 
-/* Increment likes */
 export function incLikes(posts, id) {
-  const list = Array.isArray(posts) ? posts : [];
-  return normalize(
-    list.map((p) =>
-      String(p.id) === String(id) ? { ...p, likes: toNum(p.likes, 0) + 1 } : p
+  const updated = normalize(
+    safePosts(posts).map((p) =>
+      String(p.id) === String(id) ? { ...p, likes: toNum(p.likes) + 1 } : p
     )
   );
+  savePosts(updated);
+  return updated;
 }
 
-/* Optional: "toggleLike" placeholder (currently increments) */
 export function toggleLike(posts, id) {
   return incLikes(posts, id);
 }
 
-/* Add comment */
 export function addComment(posts, id, comment) {
-  const list = Array.isArray(posts) ? posts : [];
   const iso = nowIso();
+  const c = typeof comment === "string"
+    ? { text: comment.trim(), name: "Guest", date: iso }
+    : { text: safeStr(comment?.text), name: safeStr(comment?.name, "Guest") || "Guest", date: comment?.date || iso };
 
-  const c =
-    typeof comment === "string"
-      ? { text: comment.trim(), name: "Guest", date: iso }
-      : {
-          text: safeStr(comment?.text).trim(),
-          name: safeStr(comment?.name, "Guest").trim() || "Guest",
-          date: comment?.date || iso,
-        };
+  if (!c.text) return normalize(posts);
 
-  if (!c.text) return normalize(list);
-
-  return normalize(
-    list.map((p) =>
-      String(p.id) === String(id)
-        ? { ...p, comments: [...(p.comments || []), c] }
-        : p
+  const updated = normalize(
+    safePosts(posts).map((p) =>
+      String(p.id) === String(id) ? { ...p, comments: [...(p.comments || []), c] } : p
     )
   );
-}
-
-/* Clear storage */
-export function clearPostsStorage() {
-  try {
-    localStorage.removeItem(KEY);
-  } catch {}
+  savePosts(updated);
+  return updated;
 }

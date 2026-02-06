@@ -1,6 +1,8 @@
-// src/App.jsx
 import React, { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
+
+// Context
+import { PostsProvider } from "./Context/PostsContext";
 
 // Components
 import Navbar from "./Components/Navbar/Navbar";
@@ -14,7 +16,7 @@ import BlogDetails from "./Components/BlogDetails/BlogDetails";
 import AuthModal from "./Components/Auth/AuthModal";
 import ProtectedRoute from "./Components/ProtectedRoute";
 
-// ---------------- Routes wrapper ----------------
+// ---------------- Routes ----------------
 function AppRoutes({ token, onRequireAuth }) {
   return (
     <Routes>
@@ -46,10 +48,18 @@ function Shell({ token, setToken }) {
   const [authOpen, setAuthOpen] = useState(false);
   const [redirectTo, setRedirectTo] = useState(null);
 
+  // Keep token in sync with localStorage
+  useEffect(() => {
+    const onStorage = (e) => e.key === "token" && setToken(e.newValue || "");
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, [setToken]);
+
   const onLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     setToken("");
+    navigate("/", { replace: true });
   };
 
   const onRequireAuth = (loc) => {
@@ -69,10 +79,17 @@ function Shell({ token, setToken }) {
 
   return (
     <>
-      <Navbar token={token} onLogin={() => setAuthOpen(true)} onLogout={onLogout} />
+      <Navbar token={token} setToken={setToken} /> {/* ✅ Pass setToken here */}
       <AppRoutes token={token} onRequireAuth={onRequireAuth} />
       <Footer />
-      <AuthModal isOpen={authOpen} onClose={() => setAuthOpen(false)} setToken={handleSetToken} />
+
+      {authOpen && (
+        <AuthModal
+          isOpen={authOpen}
+          onClose={() => setAuthOpen(false)}
+          setToken={handleSetToken}
+        />
+      )}
     </>
   );
 }
@@ -81,18 +98,11 @@ function Shell({ token, setToken }) {
 export default function App() {
   const [token, setToken] = useState(() => localStorage.getItem("token") || "");
 
-  // Keep token in sync if changed in another tab
-  useEffect(() => {
-    const onStorage = (e) => {
-      if (e.key === "token") setToken(e.newValue || "");
-    };
-    window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
-  }, []);
-
   return (
-    <Router>
-      <Shell token={token} setToken={setToken} />
-    </Router>
+    <PostsProvider>
+      <Router>
+        <Shell token={token} setToken={setToken} />
+      </Router>
+    </PostsProvider>
   );
 }

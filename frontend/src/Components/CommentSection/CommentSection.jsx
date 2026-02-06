@@ -10,6 +10,7 @@ export default function CommentSection({
   const nameId = useId();
   const textId = useId();
 
+  // Normalize comments
   const normalized = useMemo(
     () =>
       (comments || [])
@@ -27,13 +28,15 @@ export default function CommentSection({
   const [error, setError] = useState("");
 
   const listRef = useRef(null);
-
   const remaining = maxLength - text.length;
 
-  // Scroll to bottom on new comment
+  // Scroll to bottom smoothly on new comment
   useEffect(() => {
     if (listRef.current) {
-      listRef.current.scrollTop = listRef.current.scrollHeight;
+      listRef.current.scrollTo({
+        top: listRef.current.scrollHeight,
+        behavior: "smooth",
+      });
     }
   }, [normalized.length]);
 
@@ -56,7 +59,6 @@ export default function CommentSection({
 
     setError("");
     onAddComment?.(payload);
-
     setText("");
   };
 
@@ -72,15 +74,16 @@ export default function CommentSection({
       <h3 className="comment-title">Comments</h3>
 
       {normalized.length === 0 ? (
-        <p className="comment-empty" aria-live="polite">
+        <p className="comment-empty" role="status">
           No comments yet. Be the first!
         </p>
       ) : (
-        <div className="comment-list" ref={listRef} aria-live="polite">
+        <div className="comment-list" ref={listRef} role="list">
           {normalized.map((c, idx) => (
             <div
               key={`${c.date}-${idx}`}
-              className="comment-item"
+              className="comment-item fade-in"
+              role="listitem"
             >
               <div className="comment-head">
                 <strong className="comment-name">{c.name}</strong>
@@ -124,12 +127,9 @@ export default function CommentSection({
             rows={3}
             maxLength={maxLength}
             disabled={busy}
+            className={remaining <= 10 ? "warning" : ""}
           />
-          <div
-            className="comment-counter"
-            aria-live="polite"
-            style={{ color: remaining <= 10 ? "red" : "inherit" }}
-          >
+          <div className="comment-counter" role="status">
             {remaining} characters left
           </div>
         </div>

@@ -7,16 +7,14 @@ export default function Topbar({
   collapsed = false,
   onToggleCollapse = () => {},
   onOpenMobileMenu = () => {},
-
   mobileDrawerId = "admin-mobile-drawer",
   isMobileMenuOpen = false,
-
-  // optional: where the skip link should jump
   contentId = "admin-content",
 }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
+  // Logout handler
   const onLogout = useCallback(() => {
     try {
       logout?.();
@@ -33,6 +31,7 @@ export default function Topbar({
       </a>
 
       <div className="tb-left">
+        {/* Mobile menu toggle */}
         <button
           className="tb-icon-btn tb-mobile-only"
           type="button"
@@ -44,6 +43,7 @@ export default function Topbar({
           ☰
         </button>
 
+        {/* Sidebar collapse toggle */}
         <button
           className="tb-icon-btn tb-desktop-only"
           type="button"
@@ -54,14 +54,17 @@ export default function Topbar({
           {collapsed ? "»" : "«"}
         </button>
 
+        {/* Title */}
         <div className="tb-title">Admin Panel</div>
       </div>
 
       <div className="tb-right">
+        {/* User greeting */}
         <div className="tb-pill">
           {user?.username ? `Hi, ${user.username}` : "Welcome"}
         </div>
 
+        {/* Logout */}
         <button className="tb-btn" onClick={onLogout} type="button">
           Logout
         </button>

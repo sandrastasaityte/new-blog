@@ -1,4 +1,4 @@
-/* Desktop navbar */
+/* ---------------- Desktop Navbar ---------------- */
 .navbar {
   display: flex;
   justify-content: space-between;
@@ -56,14 +56,15 @@
   border-radius: 6px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background 0.2s, transform 0.15s;
 }
 
 .auth-btn:hover {
   background: #ff7f33;
+  transform: translateY(-1px);
 }
 
-/* Mobile */
+/* ---------------- Mobile Navbar ---------------- */
 .nav-toggle {
   display: none;
 }
@@ -77,20 +78,23 @@
     display: inline-flex;
   }
 
-  /* Overlay */
   .nav-mobile-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.6);
+    background: rgba(0,0,0,0.6);
     display: flex;
-    justify-content: center; /* center horizontally */
-    align-items: center;     /* center vertically */
+    justify-content: center;
+    align-items: center;
     opacity: 0;
-    transition: opacity 0.3s ease;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+    pointer-events: none;
   }
 
   .nav-mobile-overlay.open {
     opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
   }
 
   .nav-mobile {
@@ -102,25 +106,55 @@
     gap: 1.5rem;
     text-align: center;
     border-radius: 10px;
+    transform: scale(0.95);
+    transition: transform 0.25s ease, opacity 0.25s ease;
+  }
+
+  .nav-mobile-overlay.open .nav-mobile {
+    transform: scale(1);
   }
 
   .nav-mobile a,
   .nav-mobile-actions button {
     font-size: 1.2rem;
+    text-decoration: none;
+    color: #fff;
+  }
+
+  .nav-mobile a.active,
+  .nav-mobile a:hover {
+    color: #ff6600;
   }
 
   .nav-mobile-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
     margin-top: 1rem;
   }
-}
-/* Remove bullets from all lists */
-ul {
-  list-style: none;   /* removes default bullets */
-  padding: 0;         /* remove default padding */
-  margin: 0;          /* remove default margin */
+
+  .nav-mobile {
+    max-height: 80vh;
+    overflow-y: auto;
+  }
 }
 
-/* Optional: remove bullets only in navbar */
+/* ---------------- Accessibility & Focus ---------------- */
+.nav-links a:focus,
+.nav-mobile a:focus,
+.icon-btn:focus,
+.auth-btn:focus {
+  outline: 2px solid #ff6600;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ---------------- Remove bullets ---------------- */
+ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
 .nav-links,
 .nav-mobile {
   list-style: none;

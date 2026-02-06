@@ -1,102 +1,92 @@
-import React, { useEffect, useState } from "react";
-import { getBlogs } from "../../lib/blogApi";
-import { Link } from "react-router-dom";
+// src/Components/Home/Home.jsx
+import React, { useEffect, useState, useMemo } from "react";
+import { getPosts } from "../../lib/blogApi";
+import BlogCard from "../Blogs/BlogCard";
+import "../Blogs/BlogCard.css";
 import "./Home.css";
 
 export default function Home() {
   const [blogs, setBlogs] = useState([]);
-  const [filteredBlogs, setFilteredBlogs] = useState([]);
-  const [tags, setTags] = useState([]);
-  const [activeTag, setActiveTag] = useState("");
+  const [keyword, setKeyword] = useState("");
+  const [filterTags, setFilterTags] = useState([]);
 
   useEffect(() => {
-    async function fetchBlogs() {
+    const fetchBlogs = async () => {
       try {
-        const data = await getBlogs();
-        const sorted = data
-          .sort((a, b) => new Date(b.date) - new Date(a.date))
-          .slice(0, 8); // latest 8 blogs
-        setBlogs(sorted);
-        setFilteredBlogs(sorted);
-
-        const allTags = Array.from(
-          new Set(sorted.flatMap((b) => b.tags || []))
-        );
-        setTags(allTags);
+        const data = await getPosts();
+        setBlogs(data);
       } catch (err) {
         console.error("Failed to fetch blogs:", err);
       }
-    }
+    };
     fetchBlogs();
   }, []);
 
-  const filterByTag = (tag) => {
-    setActiveTag(tag);
-    if (!tag) {
-      setFilteredBlogs(blogs);
-    } else {
-      setFilteredBlogs(blogs.filter((b) => (b.tags || []).includes(tag)));
-    }
+  // Extract unique tags from all blogs
+  const uniqueTags = useMemo(() => {
+    const set = new Set();
+    blogs.forEach((b) => b.tags?.forEach((t) => t && set.add(t)));
+    return Array.from(set);
+  }, [blogs]);
+
+  // Filter blogs by keyword and tags
+  const filteredBlogs = useMemo(() => {
+    return blogs
+      .filter((b) => {
+        const text = (b.title + " " + b.content + " " + b.excerpt).toLowerCase();
+        return text.includes(keyword.toLowerCase());
+      })
+      .filter((b) => {
+        if (!filterTags.length) return true;
+        return b.tags?.some((t) => filterTags.includes(t));
+      })
+      .sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt));
+  }, [blogs, keyword, filterTags]);
+
+  const toggleTag = (tag) => {
+    setFilterTags((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+    );
   };
 
   return (
-    <main className="home-container">
-      {/* Hero */}
-      <section className="hero">
-        <div className="hero-content">
-          <h1>Welcome to My Blog</h1>
-          <p>Discover latest insights, stories, and updates from our community.</p>
+    <div className="home-container">
+      {/* ---------------- Search ---------------- */}
+      <div className="home-search">
+        <input
+          type="text"
+          placeholder="Search blogs..."
+          value={keyword}
+          onChange={(e) => setKeyword(e.target.value)}
+        />
+      </div>
+
+      {/* ---------------- Tags ---------------- */}
+      {uniqueTags.length > 0 && (
+        <div className="home-tags">
+          {uniqueTags.map((tag) => {
+            const active = filterTags.includes(tag);
+            return (
+              <button
+                key={tag}
+                className={`home-tag ${active ? "active" : ""}`}
+                onClick={() => toggleTag(tag)}
+              >
+                {tag}
+              </button>
+            );
+          })}
         </div>
-      </section>
+      )}
 
-      {/* Tags Filter */}
-      <section className="tags-filter">
-        <button
-          className={!activeTag ? "active" : ""}
-          onClick={() => filterByTag("")}
-        >
-          All
-        </button>
-        {tags.map((tag) => (
-          <button
-            key={tag}
-            className={activeTag === tag ? "active" : ""}
-            onClick={() => filterByTag(tag)}
-          >
-            {tag}
-          </button>
-        ))}
-      </section>
-
-      {/* Blogs Grid */}
-      <section className="blogs-grid">
-        {filteredBlogs.length === 0 ? (
-          <p>No blogs available.</p>
-        ) : (
-          filteredBlogs.map((blog) => (
-            <div key={blog.id} className="blog-card">
-              <img
-                src={blog.image || "https://via.placeholder.com/300x200"}
-                alt={blog.title}
-              />
-              <div className="blog-content">
-                <h3>{blog.title}</h3>
-                <p>{blog.content.slice(0, 100)}...</p>
-                <div className="blog-tags">
-                  {(blog.tags || []).map((t) => (
-                    <span key={t} className="tag">
-                      {t}
-                    </span>
-                  ))}
-                </div>
-                <Link to={`/blog/${blog.id}`} className="read-more">
-                  Read More →
-                </Link>
-              </div>
-            </div>
-          ))
-        )}
-      </section>
-    </main>
+      {/* ---------------- Blog Cards ---------------- */}
+      {filteredBlogs.length === 0 ? (
+        <p>No blogs found.</p>
+      ) : (
+        filteredBlogs.map((post) => (
+          <BlogCard key={post._id || post.id} post={post} />
+        ))
+      )}
+    </div>
   );
 }

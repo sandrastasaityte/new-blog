@@ -1,5 +1,7 @@
+// src/controllers/blogController.js
 import Blog from "../models/Blog.js";
 
+// ---------------- Helpers ----------------
 const toNum = (v, fallback = 0) => {
   const n = Number(v);
   return Number.isFinite(n) ? n : fallback;
@@ -19,17 +21,22 @@ const safeDate = (d) => {
   return Number.isNaN(dt.getTime()) ? new Date() : dt;
 };
 
-// ✅ GET /blogs
+// ---------------- GET /blogs ----------------
 export async function getBlogs(req, res, next) {
   try {
     const blogs = await Blog.find().sort({ date: -1, createdAt: -1 });
-    res.json(blogs);
+    const clean = blogs.map((b) => {
+      const obj = b.toObject();
+      delete obj.__v;
+      return obj;
+    });
+    res.json(clean);
   } catch (e) {
     next(e);
   }
 }
 
-// ✅ POST /blogs (protected)
+// ---------------- POST /blogs ----------------
 export async function createBlog(req, res, next) {
   try {
     const { title, content, image, tags, date, rating, author, authorImage } = req.body || {};
@@ -55,13 +62,15 @@ export async function createBlog(req, res, next) {
       authorImage: String(authorImage || "").trim(),
     });
 
-    res.status(201).json(blog);
+    const blogObj = blog.toObject();
+    delete blogObj.__v;
+    res.status(201).json(blogObj);
   } catch (e) {
     next(e);
   }
 }
 
-// ✅ PUT /blogs/:id (protected)
+// ---------------- PUT /blogs/:id ----------------
 export async function updateBlog(req, res, next) {
   try {
     const blog = await Blog.findById(req.params.id);
@@ -94,18 +103,20 @@ export async function updateBlog(req, res, next) {
     if (patch.tags !== undefined) blog.tags = parseTags(patch.tags);
     if (patch.date !== undefined) blog.date = safeDate(patch.date);
     if (patch.rating !== undefined) blog.rating = clamp(toNum(patch.rating, 0), 0, 5);
-
     if (patch.author !== undefined) blog.author = String(patch.author || "Admin").trim();
     if (patch.authorImage !== undefined) blog.authorImage = String(patch.authorImage || "").trim();
 
     const saved = await blog.save();
-    res.json(saved);
+    const blogObj = saved.toObject();
+    delete blogObj.__v;
+
+    res.json(blogObj);
   } catch (e) {
     next(e);
   }
 }
 
-// ✅ DELETE /blogs/:id (protected)
+// ---------------- DELETE /blogs/:id ----------------
 export async function deleteBlog(req, res, next) {
   try {
     const blog = await Blog.findById(req.params.id);
@@ -121,8 +132,7 @@ export async function deleteBlog(req, res, next) {
   }
 }
 
-// ✅ POST /blogs/:id/like (public or protected — your choice)
-// ⭐ Recommended: return updated blog so frontend can update state easily
+// ---------------- POST /blogs/:id/like ----------------
 export async function likeBlog(req, res, next) {
   try {
     const blog = await Blog.findById(req.params.id);
@@ -131,18 +141,18 @@ export async function likeBlog(req, res, next) {
       throw new Error("Post not found");
     }
 
-    blog.likes = Number(blog.likes || 0) + 1;
-    await blog.save();
+    blog.likes = toNum(blog.likes, 0) + 1;
+    const saved = await blog.save();
 
-    // ✅ easiest for frontend:
-    res.json(blog);
+    const blogObj = saved.toObject();
+    delete blogObj.__v;
+    res.json(blogObj);
   } catch (e) {
     next(e);
   }
 }
 
-// ✅ POST /blogs/:id/comments (public or protected — your choice)
-// ⭐ Recommended: return updated blog so frontend can update state easily
+// ---------------- POST /blogs/:id/comments ----------------
 export async function addComment(req, res, next) {
   try {
     const blog = await Blog.findById(req.params.id);
@@ -151,7 +161,7 @@ export async function addComment(req, res, next) {
       throw new Error("Post not found");
     }
 
-    const name = String(req.body?.name || "Guest").trim() || "Guest";
+    const name = req.user?.username || String(req.body?.name || "Guest").trim() || "Guest";
     const text = String(req.body?.text || "").trim();
 
     if (!text) {
@@ -162,10 +172,11 @@ export async function addComment(req, res, next) {
     blog.comments = blog.comments || [];
     blog.comments.push({ name, text, date: new Date() });
 
-    await blog.save();
+    const saved = await blog.save();
+    const blogObj = saved.toObject();
+    delete blogObj.__v;
 
-    // ✅ easiest for frontend:
-    res.status(201).json(blog);
+    res.status(201).json(blogObj);
   } catch (e) {
     next(e);
   }

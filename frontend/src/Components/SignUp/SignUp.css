@@ -1,12 +1,110 @@
-.signup-wrapper{display:flex;justify-content:center;align-items:center;min-height:100vh;background:#f7f9fc;padding:20px;font-family:sans-serif}
-.signup-form{background:#fff;padding:40px 30px;border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,0.1);width:100%;max-width:400px;text-align:center}
-.signup-form h2{margin-bottom:25px;font-size:28px;color:#333}
-.signup-form input{width:100%;padding:12px;margin:10px 0;border:1px solid #ddd;border-radius:8px;font-size:16px}
-.signup-form input:focus{border-color:#007bff;outline:none}
-.signup-form button{width:100%;padding:12px;margin-top:15px;background:#007bff;color:#fff;border:none;border-radius:8px;cursor:pointer}
-.signup-form button:hover:not(:disabled){background:#0056b3}
-.signup-form button:disabled{background:#a0c5f5;cursor:not-allowed}
-.error{color:#e74c3c;font-size:14px;margin-top:5px}
-.signup-switch{margin-top:20px;font-size:14px;color:#555}
-.toggle-link{background:none;border:none;color:#007bff;cursor:pointer;font-weight:600;text-decoration:underline;margin-left:5px}
-.toggle-link:hover{color:#0056b3}
+/* ---------------- SignUp Wrapper ---------------- */
+.signup-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1.5rem;
+  width: 100%;
+}
+
+/* ---------------- SignUp Form ---------------- */
+.signup-form {
+  background: #fff;
+  padding: 25px 20px;
+  border-radius: 10px;
+  max-width: 380px;
+  width: 100%;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  font-family: sans-serif;
+  text-align: center;
+}
+
+.signup-form h2 {
+  margin-bottom: 15px;
+  font-size: 22px;
+  color: #333;
+}
+
+/* ---------------- Inputs ---------------- */
+.signup-form input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 14px;
+  outline: none;
+  transition: border 0.2s, box-shadow 0.2s;
+}
+
+.signup-form input:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.2);
+}
+
+/* ---------------- Submit Button ---------------- */
+.signup-form button {
+  width: 100%;
+  padding: 10px;
+  margin-top: 5px;
+  background: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.signup-form button:hover:not(:disabled) {
+  background: #0056b3;
+}
+
+.signup-form button:disabled {
+  background: #a0c5f5;
+  cursor: not-allowed;
+}
+
+/* ---------------- Error Message ---------------- */
+.error {
+  color: #e74c3c;
+  font-size: 13px;
+  margin-top: 5px;
+}
+
+/* ---------------- Switch Text ---------------- */
+.signup-switch {
+  font-size: 13px;
+  color: #555;
+  margin-top: 10px;
+}
+
+.toggle-link {
+  background: none;
+  border: none;
+  color: #007bff;
+  cursor: pointer;
+  font-weight: 600;
+  text-decoration: underline;
+  margin-left: 5px;
+}
+
+.toggle-link:hover {
+  color: #0056b3;
+}
+
+/* ---------------- Responsive ---------------- */
+@media (max-width: 400px) {
+  .signup-form {
+    padding: 20px 15px;
+  }
+  .signup-form h2 {
+    font-size: 20px;
+  }
+  .signup-form input,
+  .signup-form button {
+    font-size: 13px;
+  }
+}

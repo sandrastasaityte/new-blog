@@ -1,3 +1,4 @@
+// src/Components/ProtectedRoute.jsx
 import React from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../Context/AuthContext";
@@ -11,12 +12,14 @@ export default function ProtectedRoute({
     </div>
   ),
 }) {
-  const { isAuthed, isLoading } = useAuth();
+  const { user, isLoading } = useAuth();
   const location = useLocation();
 
+  // Show loader while auth state is being determined
   if (isLoading) return fallback;
 
-  if (!isAuthed) {
+  // Redirect unauthorized users
+  if (!user) {
     return (
       <Navigate
         to={redirectTo}
@@ -32,5 +35,6 @@ export default function ProtectedRoute({
     );
   }
 
+  // Authorized users can access children
   return children;
 }

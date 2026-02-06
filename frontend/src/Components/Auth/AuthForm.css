@@ -1,67 +1,121 @@
-.auth-form {
+/* ===== Overlay ===== */
+.auth-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(3px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  padding: clamp(0.5rem, 3vw, 1rem);
+  animation: fadeIn 0.2s ease-out;
+}
+
+/* ===== Modal Container ===== */
+.auth-modal {
   background: #fff;
-  padding: 25px 20px;
-  border-radius: 10px;
-  max-width: 360px;
-  margin: auto;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+  border-radius: 14px;
+  max-width: 380px;
+  width: 100%;
+  padding: clamp(1rem, 2vw, 1.5rem);
+  position: relative;
+  text-align: center;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  font-family: sans-serif;
-  text-align: center;
+  animation: slideIn 0.25s ease-out;
 }
 
-.auth-form h2 {
-  margin-bottom: 15px;
-  font-size: 22px;
-  color: #333;
+/* ===== Header ===== */
+.auth-modal h2 {
+  margin-bottom: 1.2rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #222;
 }
 
-.auth-form input {
+/* ===== Inputs ===== */
+.auth-modal input {
   width: 100%;
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  font-size: 14px;
-}
-
-.auth-form input:focus {
-  border-color: #007bff;
+  padding: 0.75rem 0.9rem;
+  margin-bottom: 0.8rem;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  font-size: 0.95rem;
   outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-.auth-form button {
+.auth-modal input:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.2);
+}
+
+/* ===== Submit Button ===== */
+.auth-modal button[type="submit"] {
   width: 100%;
-  padding: 10px;
-  margin-top: 5px;
+  padding: 0.75rem;
+  border-radius: 8px;
+  border: none;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
   background: #007bff;
   color: #fff;
-  border: none;
-  border-radius: 6px;
-  font-size: 15px;
-  cursor: pointer;
+  transition: transform 0.12s ease, background 0.2s ease, box-shadow 0.2s ease;
+  margin-top: 0.6rem;
 }
 
-.auth-form button:hover:not(:disabled) {
+.auth-modal button[type="submit"]:hover:not(:disabled) {
   background: #0056b3;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12);
 }
 
-.auth-form button:disabled {
-  background: #a0c5f5;
+.auth-modal button[type="submit"]:disabled {
+  opacity: 0.6;
   cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
+/* ===== Close Button ===== */
+.auth-close-btn {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: rgba(0, 0, 0, 0.05);
+  font-size: 20px;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.12s ease;
+}
+
+.auth-close-btn:hover {
+  background: rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+/* ===== Error Messages ===== */
 .error {
   color: #e74c3c;
-  font-size: 13px;
-  margin-top: 5px;
+  font-size: 0.85rem;
+  margin-bottom: 0.7rem;
+  text-align: left;
+  animation: fadeIn 0.2s ease;
 }
 
+/* ===== Toggle Text ===== */
 .toggle-text {
-  font-size: 13px;
-  color: #555;
-  margin-top: 10px;
+  font-size: 0.875rem;
+  margin-top: 1rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .toggle-link {
@@ -71,21 +125,47 @@
   cursor: pointer;
   font-weight: 600;
   text-decoration: underline;
-  margin-left: 5px;
+  padding: 0;
+  margin-left: 0.25rem;
 }
 
-.toggle-link:hover {
-  color: #0056b3;
+/* ===== Animations ===== */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-@media(max-width: 400px){
-  .auth-form {
-    padding: 20px 15px;
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.97);
   }
-  .auth-form h2 {
-    font-size: 20px;
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
-  .auth-form input, .auth-form button {
-    font-size: 13px;
+}
+
+/* ===== Mobile ===== */
+@media (max-width: 480px) {
+  .auth-modal {
+    max-width: 90%;
+    padding: 1rem;
+  }
+
+  .auth-modal h2 {
+    font-size: 1.25rem;
+  }
+
+  .auth-modal input,
+  .auth-modal button[type="submit"] {
+    font-size: 0.9rem;
+    padding: 0.65rem 0.8rem;
   }
 }

@@ -31,7 +31,7 @@ export default function Pagination({ currentPage = 1, totalPages = 1, setPage })
   const isLast = currentPage === totalPages;
 
   const renderButton = (label, targetPage, disabled, ariaLabel) => (
-    <li>
+    <li key={label}>
       <button
         type="button"
         className={disabled ? "disabled-btn" : ""}
@@ -47,8 +47,8 @@ export default function Pagination({ currentPage = 1, totalPages = 1, setPage })
   return (
     <nav className="pagination" aria-label="Pagination">
       <ul className="pagination-list">
-        {renderButton("First", 1, isFirst, "Go to first page")}
-        {renderButton("Prev", currentPage - 1, isFirst, "Go to previous page")}
+        {renderButton("« First", 1, isFirst, "Go to first page")}
+        {renderButton("‹ Prev", currentPage - 1, isFirst, "Go to previous page")}
 
         {items.map((it, idx) =>
           it === "…" ? (
@@ -70,8 +70,8 @@ export default function Pagination({ currentPage = 1, totalPages = 1, setPage })
           )
         )}
 
-        {renderButton("Next", currentPage + 1, isLast, "Go to next page")}
-        {renderButton("Last", totalPages, isLast, "Go to last page")}
+        {renderButton("Next ›", currentPage + 1, isLast, "Go to next page")}
+        {renderButton("Last »", totalPages, isLast, "Go to last page")}
       </ul>
 
       <span className="sr-only" aria-live="polite">

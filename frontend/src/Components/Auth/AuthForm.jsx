@@ -100,74 +100,95 @@ const AuthForm = ({ setToken, onClose, setBusy }) => {
   };
 
   return (
-    <form className="auth-form" onSubmit={handleSubmit} aria-busy={loading}>
-      <h2>{isLogin ? "Login" : "Sign Up"}</h2>
-
-      <input
-        type="email"
-        name="email"
-        placeholder="Email"
-        value={formData.email}
-        onChange={handleChange}
-        required
-        autoComplete="email"
-        disabled={loading}
-      />
-
-      <input
-        type="password"
-        name="password"
-        placeholder="Password"
-        value={formData.password}
-        onChange={handleChange}
-        required
-        minLength={6}
-        autoComplete={isLogin ? "current-password" : "new-password"}
-        disabled={loading}
-      />
-
-      {!isLogin && (
-        <input
-          type="password"
-          name="confirmPassword"
-          placeholder="Confirm Password"
-          value={formData.confirmPassword}
-          onChange={handleChange}
-          required
-          minLength={6}
-          autoComplete="new-password"
-          disabled={loading}
-        />
-      )}
-
-      {error && (
-        <p className="error" role="alert" tabIndex={-1} ref={errorRef}>
-          {error}
-        </p>
-      )}
-
-      <button type="submit" disabled={loading}>
-        {loading
-          ? isLogin
-            ? "Logging in..."
-            : "Creating account..."
-          : isLogin
-          ? "Login"
-          : "Sign Up"}
-      </button>
-
-      <p className="toggle-text">
-        {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
+    <div className="auth-modal-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose?.()}>
+      <div className="auth-modal" onMouseDown={(e) => e.stopPropagation()}>
         <button
+          className="auth-close-btn"
+          onClick={onClose}
           type="button"
-          className="toggle-link"
-          onClick={() => setIsLogin((v) => !v)}
+          aria-label="Close modal"
           disabled={loading}
         >
-          {isLogin ? "Sign Up" : "Login"}
+          ×
         </button>
-      </p>
-    </form>
+
+        <h2>{isLogin ? "Login" : "Sign Up"}</h2>
+
+        <form onSubmit={handleSubmit} aria-busy={loading}>
+          <input
+            type="email"
+            name="email"
+            placeholder="Email"
+            value={formData.email}
+            onChange={handleChange}
+            required
+            autoComplete="email"
+            disabled={loading}
+          />
+
+          <input
+            type="password"
+            name="password"
+            placeholder="Password"
+            value={formData.password}
+            onChange={handleChange}
+            required
+            minLength={6}
+            autoComplete={isLogin ? "current-password" : "new-password"}
+            disabled={loading}
+          />
+
+          {!isLogin && (
+            <input
+              type="password"
+              name="confirmPassword"
+              placeholder="Confirm Password"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              required
+              minLength={6}
+              autoComplete="new-password"
+              disabled={loading}
+            />
+          )}
+
+          {error && (
+            <p
+              className="error"
+              role="alert"
+              aria-live="assertive"
+              tabIndex={-1}
+              ref={errorRef}
+            >
+              {error}
+            </p>
+          )}
+
+          <button type="submit" disabled={loading}>
+            {loading
+              ? isLogin
+                ? "Logging in..."
+                : "Creating account..."
+              : isLogin
+              ? "Login"
+              : "Sign Up"}
+          </button>
+        </form>
+
+        <p className="toggle-text">
+          {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
+          <button
+            type="button"
+            className="toggle-link"
+            onClick={() => setIsLogin((v) => !v)}
+            disabled={loading}
+            aria-pressed={isLogin}
+          >
+            {isLogin ? "Sign Up" : "Login"}
+          </button>
+        </p>
+      </div>
+    </div>
   );
 };
 

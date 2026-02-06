@@ -1,14 +1,14 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { marked } from "marked";
 import DOMPurify from "dompurify";
 import { usePosts } from "../../Context/PostsContext";
-import { createBlog } from "../../lib/blogApi";
+import { createPost as createBlog } from "../../lib/blogApi";
 import "./AddBlog.css";
 
 const PLACEHOLDER_IMG = "https://via.placeholder.com/600x300";
+const DEFAULT_TAGS = ["Economics", "Trade", "AI", "Finance", "Investment"];
 
-// ================= Helpers =================
 function parseTags(input) {
   if (!input) return [];
   return input
@@ -39,34 +39,24 @@ function slugify(text) {
     .replace(/\s+/g, "-");
 }
 
-function normalizeCreatedBlog(created, fallbackPayload) {
-  if (!created) return fallbackPayload;
-  return {
-    ...fallbackPayload,
-    ...created,
-    id: created.id || created._id || fallbackPayload.id,
-  };
-}
-
-// ================= Component =================
 export default function AddBlog() {
   const navigate = useNavigate();
   const { addPost } = usePosts();
+  const previewRef = useRef(null);
 
   const [form, setForm] = useState({
     title: "",
     content: "",
-    tags: "",
+    tags: "Economics, Trade",
     image: "",
-    author: "Admin",
+    author: "Sandra Stasaityte",
     rating: 0,
   });
-
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [apiError, setApiError] = useState("");
 
-  // ===== Autosave draft =====
+  // Autosave draft
   useEffect(() => {
     localStorage.setItem("blog_draft", JSON.stringify(form));
   }, [form]);
@@ -85,34 +75,33 @@ export default function AddBlog() {
     setApiError("");
   };
 
-  // ===== Validation =====
+  const addTag = (tag) => {
+    if (!tagsArray.includes(tag)) {
+      setForm((p) => ({
+        ...p,
+        tags: p.tags ? p.tags + ", " + tag : tag,
+      }));
+    }
+  };
+
   const validate = () => {
     const errs = {};
-
     if (!form.title || form.title.trim().length < 4)
       errs.title = "Title must be at least 4 characters";
-
     if (!form.content || form.content.trim().length < 20)
       errs.content = "Content must be at least 20 characters";
-
     if (form.image) {
       if (!isValidHttpUrl(form.image)) errs.image = "Invalid URL";
       else if (!isImageUrl(form.image)) errs.image = "URL must be an image";
     }
-
     if (form.rating < 0 || form.rating > 5)
       errs.rating = "Rating must be between 0 and 5";
-
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
 
   const handleCancel = () => navigate("/blogs");
-
-  const setRating = (star) => {
-    setForm((p) => ({ ...p, rating: star }));
-  };
-
+  const setRating = (star) => setForm((p) => ({ ...p, rating: star }));
   const onStarKeyDown = (star) => (e) => {
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
@@ -120,7 +109,6 @@ export default function AddBlog() {
     }
   };
 
-  // ===== Submit =====
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validate()) return;
@@ -141,8 +129,7 @@ export default function AddBlog() {
 
     try {
       const created = await createBlog(payload);
-      const normalized = normalizeCreatedBlog(created, payload);
-      addPost(normalized);
+      addPost({ ...payload, id: created?.id || created?._id });
       localStorage.removeItem("blog_draft");
       navigate("/blogs");
     } catch (err) {
@@ -154,14 +141,18 @@ export default function AddBlog() {
 
   const previewSrc = form.image.trim() || PLACEHOLDER_IMG;
 
-  // ===== Markdown Preview (Sanitized) =====
+  // Markdown Preview
   const markdownPreview = useMemo(() => {
     const raw = marked.parse(form.content || "");
-    const clean = DOMPurify.sanitize(raw);
-    return { __html: clean };
+    return { __html: DOMPurify.sanitize(raw) };
   }, [form.content]);
 
-  // ===== Reading time =====
+  useEffect(() => {
+    if (previewRef.current) {
+      previewRef.current.scrollTop = previewRef.current.scrollHeight;
+    }
+  }, [form.content]);
+
   const readingTime = useMemo(() => {
     if (!form.content) return 0;
     const words = form.content.trim().split(/\s+/).length;
@@ -170,7 +161,7 @@ export default function AddBlog() {
 
   return (
     <form className="add-blog-form" onSubmit={handleSubmit}>
-      <h3>Add New Blog</h3>
+      <h3>Add New Economics Blog</h3>
       {apiError && <div className="form-error">{apiError}</div>}
 
       {/* Title */}
@@ -185,6 +176,9 @@ export default function AddBlog() {
           disabled={submitting}
         />
         {errors.title && <div className="field-error">{errors.title}</div>}
+        {form.title && (
+          <div className="slug-preview">Slug: <code>{slugify(form.title)}</code></div>
+        )}
       </label>
 
       {/* Content */}
@@ -204,7 +198,11 @@ export default function AddBlog() {
         {form.content && (
           <>
             <div className="reading-time">⏱ {readingTime} min read</div>
-            <div className="markdown-preview" dangerouslySetInnerHTML={markdownPreview}></div>
+            <div
+              ref={previewRef}
+              className="markdown-preview"
+              dangerouslySetInnerHTML={markdownPreview}
+            />
           </>
         )}
       </label>
@@ -217,14 +215,30 @@ export default function AddBlog() {
           onChange={setField("tags")}
           placeholder="Economics, Trade, AI"
           disabled={submitting}
+          autoComplete="off"
         />
-        {tagsArray.length > 0 && (
-          <div className="tag-preview">
-            {tagsArray.map((t) => (
-              <span key={t.toLowerCase()} className="tag-chip">{t}</span>
-            ))}
-          </div>
-        )}
+
+        <div className="tag-suggestions">
+          {DEFAULT_TAGS.map((tag) => (
+            <button
+              type="button"
+              key={tag}
+              className="tag-suggestion-btn"
+              onClick={() => addTag(tag)}
+              onKeyDown={(e) => e.key === "Enter" && addTag(tag)}
+            >
+              {tag}
+            </button>
+          ))}
+        </div>
+
+        <div className="tag-preview">
+          {tagsArray.map((t) => (
+            <span key={t.toLowerCase()} className="tag-chip">
+              {t}
+            </span>
+          ))}
+        </div>
       </label>
 
       {/* Image */}
@@ -285,7 +299,12 @@ export default function AddBlog() {
 
       {/* Actions */}
       <div className="form-actions">
-        <button type="button" className="btn secondary" onClick={handleCancel} disabled={submitting}>
+        <button
+          type="button"
+          className="btn secondary"
+          onClick={handleCancel}
+          disabled={submitting}
+        >
           Cancel
         </button>
         <button type="submit" className="btn primary" disabled={submitting}>

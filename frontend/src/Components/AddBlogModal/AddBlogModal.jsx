@@ -1,6 +1,7 @@
 // src/Components/AddBlogModal/AddBlogModal.jsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { marked } from "marked";
+import DOMPurify from "dompurify";
 import "./AddBlogModal.css";
 import { createBlog } from "../../lib/blogApi";
 import { usePosts } from "../../Context/PostsContext";
@@ -53,14 +54,15 @@ export default function AddBlogModal({ isOpen, onClose }) {
 
   const tagsArray = useMemo(() => parseTags(form.tags), [form.tags]);
 
+  // Markdown preview with DOMPurify
   const markdownPreview = useMemo(
-    () => ({ __html: marked.parse(form.content || "") }),
+    () => ({ __html: DOMPurify.sanitize(marked.parse(form.content || "")) }),
     [form.content]
   );
 
+  // Focus & ESC handling
   useEffect(() => {
     if (!isOpen) return;
-
     const t = setTimeout(() => titleRef.current?.focus(), 0);
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -122,11 +124,7 @@ export default function AddBlogModal({ isOpen, onClose }) {
   const onStarKeyDown = (star) => (e) => {
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
-      if (!submitting) {
-        setForm((p) => ({ ...p, rating: star }));
-        setErrors((prev) => ({ ...prev, rating: "" }));
-        setApiError("");
-      }
+      if (!submitting) setForm((p) => ({ ...p, rating: star }));
     }
   };
 
@@ -169,6 +167,9 @@ export default function AddBlogModal({ isOpen, onClose }) {
   if (!isOpen) return null;
   const tokenExists = !!localStorage.getItem("token");
 
+  // Predefined economics tag suggestions
+  const suggestedTags = ["Economics", "Trade", "Monetary Policy", "AI in Economics", "Finance", "Investment"];
+
   return (
     <div
       className="addblog-modal-overlay"
@@ -202,18 +203,21 @@ export default function AddBlogModal({ isOpen, onClose }) {
           <form className="add-blog-form add-blog-form--modal" onSubmit={handleSubmit}>
             <div className="addblog-grid">
               <div className="addblog-left">
+                {/* Title */}
                 <label className={`field ${errors.title ? "is-error" : ""}`}>
                   <span>Title</span>
                   <input ref={titleRef} value={form.title} onChange={setField("title")} required minLength={4} disabled={submitting} />
                   {errors.title && <div className="field-error">{errors.title}</div>}
                 </label>
 
+                {/* Content */}
                 <label className={`field ${errors.content ? "is-error" : ""}`}>
                   <span>Content</span>
                   <textarea rows={6} value={form.content} onChange={setField("content")} required minLength={20} disabled={submitting} />
                   {errors.content && <div className="field-error">{errors.content}</div>}
                 </label>
 
+                {/* Tags */}
                 <label className="field">
                   <span>Tags ({tagsArray.length})</span>
                   <input value={form.tags} onChange={setField("tags")} disabled={submitting} />
@@ -224,8 +228,30 @@ export default function AddBlogModal({ isOpen, onClose }) {
                       ))}
                     </div>
                   )}
+
+                  {/* Suggested Tags */}
+                  <div className="tag-suggestions">
+                    {suggestedTags.map((t) => (
+                      <button
+                        type="button"
+                        key={t}
+                        className="tag-suggestion-btn"
+                        onClick={() => {
+                          if (!tagsArray.includes(t)) {
+                            setForm((p) => ({
+                              ...p,
+                              tags: p.tags ? p.tags + ", " + t : t,
+                            }));
+                          }
+                        }}
+                      >
+                        {t}
+                      </button>
+                    ))}
+                  </div>
                 </label>
 
+                {/* Image */}
                 <label className={`field ${errors.image ? "is-error" : ""}`}>
                   <span>Image URL</span>
                   <input value={form.image} onChange={setField("image")} disabled={submitting} />
@@ -235,17 +261,19 @@ export default function AddBlogModal({ isOpen, onClose }) {
                 <div className="image-preview">
                   <img
                     src={form.image.trim() || PLACEHOLDER_IMG}
-                    alt=""
+                    alt="Blog preview"
                     loading="lazy"
                     onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = PLACEHOLDER_IMG; }}
                   />
                 </div>
 
+                {/* Author */}
                 <label className={`field`}>
                   <span>Author</span>
                   <input value={form.author} onChange={setField("author")} disabled={submitting} />
                 </label>
 
+                {/* Rating */}
                 <div className={`rating-input ${errors.rating ? "is-error" : ""}`}>
                   <label>Rating:</label>
                   <div className="stars" aria-label={`Rating ${form.rating} out of 5`}>
@@ -264,12 +292,14 @@ export default function AddBlogModal({ isOpen, onClose }) {
                   {errors.rating && <div className="field-error">{errors.rating}</div>}
                 </div>
 
+                {/* Actions */}
                 <div className="form-actions">
                   <button type="button" className="btn secondary" onClick={safeClose} disabled={submitting}>Cancel</button>
                   <button type="submit" className="btn primary" disabled={submitting || !tokenExists}>{submitting ? "Saving..." : "Add Blog"}</button>
                 </div>
               </div>
 
+              {/* Preview */}
               <div className="addblog-right">
                 <h4>Preview</h4>
                 <div className="markdown-preview" dangerouslySetInnerHTML={markdownPreview}></div>

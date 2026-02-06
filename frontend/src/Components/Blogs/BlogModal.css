@@ -1,5 +1,3 @@
-/* BlogModal.css */
-
 /* ---------------- Overlay ---------------- */
 .blogmodal-overlay {
   position: fixed;
@@ -7,46 +5,61 @@
   left: 0;
   width: 100vw;
   height: 100vh;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(2px);
   z-index: 9999;
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 20px;
+  padding: 1rem;
   overflow-y: auto;
-  animation: fadeIn 0.2s ease-in;
+  animation: fadeIn 0.25s ease-in;
 }
 
 /* ---------------- Modal Box ---------------- */
 .blogmodal-content {
   background-color: #fff;
-  border-radius: 8px;
+  border-radius: 12px;
   max-width: 800px;
   width: 100%;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
   position: relative;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
-  animation: slideIn 0.3s ease-out;
+  overflow: auto; /* scroll content if too tall */
+  animation: modalEnter 0.3s ease-out;
 }
 
-/* ---------------- Close Button ---------------- */
+/* ---------------- Close Button (Always Visible) ---------------- */
 .blogmodal-close {
   position: absolute;
-  top: 12px;
-  right: 12px;
+  top: 8px; /* slightly smaller for small screens */
+  right: 8px;
+  z-index: 1000; /* high enough to be above modal content and image */
   border: none;
-  background: none;
-  font-size: 1.5rem;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 1.6rem;
   cursor: pointer;
   color: #333;
-  transition: color 0.2s;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  transition: color 0.2s ease, transform 0.1s ease, background 0.2s ease;
 }
 
-.blogmodal-close:hover {
+.blogmodal-close:hover,
+.blogmodal-close:focus {
   color: #ff3b30;
+  transform: scale(1.05);
+  background: rgba(255, 255, 255, 1);
+  outline: 3px solid #0b5fff;
+  outline-offset: 3px;
 }
+
 
 /* ---------------- Blog Image ---------------- */
 .blogmodal-img {
@@ -54,103 +67,36 @@
   max-height: 350px;
   object-fit: cover;
   display: block;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  position: relative;
+  z-index: 1; /* ensures image is below close button */
 }
 
 /* ---------------- Blog Details ---------------- */
 .blogmodal-details {
-  padding: 20px;
+  padding: 1.5rem 1.8rem;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 0.75rem;
 }
 
-.blogmodal-details h2 {
-  margin: 0;
-  font-size: 1.8rem;
-  color: #222;
-}
-
-.blogmodal-meta {
-  font-size: 0.9rem;
-  color: #666;
-}
-
-.blogmodal-top-actions {
-  margin: 10px 0;
-  display: flex;
-  gap: 10px;
-}
-
-.blogmodal-like-btn {
-  background-color: #ff3b30;
-  color: #fff;
-  border: none;
-  padding: 6px 14px;
-  border-radius: 20px;
-  cursor: pointer;
-  font-weight: 500;
-  transition: background-color 0.2s;
-}
-
-.blogmodal-like-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.blogmodal-like-btn:hover:not(:disabled) {
-  background-color: #e03128;
-}
-
-.blogmodal-rating {
-  font-size: 1rem;
-  font-weight: 500;
-  color: #ffb400;
-}
-
-.blogmodal-text {
-  font-size: 1rem;
-  line-height: 1.5;
-  color: #333;
-}
-
-/* ---------------- Animations ---------------- */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes slideIn {
-  from {
-    transform: translateY(-20px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-/* ---------------- Responsive ---------------- */
+/* ---------------- Responsive Adjustments ---------------- */
 @media (max-width: 768px) {
-  .blogmodal-content {
-    max-width: 95%;
-  }
-
-  .blogmodal-img {
-    max-height: 250px;
-  }
-
-  .blogmodal-details h2 {
-    font-size: 1.5rem;
+  .blogmodal-close {
+    top: 8px;
+    right: 8px;
+    width: 32px;
+    height: 32px;
+    font-size: 1.4rem;
   }
 }
 
 @media (max-width: 480px) {
-  .blogmodal-text {
-    font-size: 0.95rem;
+  .blogmodal-close {
+    top: 6px;
+    right: 6px;
+    width: 28px;
+    height: 28px;
+    font-size: 1.3rem;
   }
 }

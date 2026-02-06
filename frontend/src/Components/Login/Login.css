@@ -1,91 +1,109 @@
+/* Login.css */
+
+/* ---------------- Container ---------------- */
 .auth-form {
-  background: #fff;
-  padding: 25px 20px;
-  border-radius: 10px;
-  max-width: 360px;
-  margin: auto;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+  max-width: 380px;
+  margin: 40px auto;
+  padding: 30px 25px;
+  background-color: #1a1a1a;
+  border-radius: 12px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
+  color: #fff;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  font-family: sans-serif;
-  text-align: center;
+  gap: 16px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
+/* ---------------- Heading ---------------- */
 .auth-form h2 {
-  margin-bottom: 15px;
-  font-size: 22px;
-  color: #333;
+  font-size: 1.8rem;
+  text-align: center;
+  margin-bottom: 12px;
+  color: #fff;
 }
 
+/* ---------------- Inputs ---------------- */
 .auth-form input {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  font-size: 14px;
-  outline: none;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #444;
+  background-color: #222;
+  color: #fff;
+  font-size: 0.95rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.auth-form input::placeholder {
+  color: #aaa;
 }
 
 .auth-form input:focus {
-  border-color: #007bff;
+  outline: none;
+  border-color: #2575fc;
+  box-shadow: 0 0 5px rgba(37, 117, 252, 0.6);
 }
 
-.auth-form button {
-  width: 100%;
-  padding: 10px;
-  margin-top: 5px;
-  background: #007bff;
-  color: #fff;
+/* ---------------- Error Message ---------------- */
+.auth-form .error {
+  color: #ff6b6b;
+  font-size: 0.85rem;
+  margin: 0;
+  text-align: center;
+}
+
+/* ---------------- Submit Button ---------------- */
+.auth-form button[type="submit"] {
+  padding: 10px 15px;
+  border-radius: 8px;
   border: none;
-  border-radius: 6px;
-  font-size: 15px;
+  background-color: #2575fc;
+  color: #fff;
+  font-weight: 600;
   cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s;
 }
 
-.auth-form button:hover:not(:disabled) {
-  background: #0056b3;
+.auth-form button[type="submit"]:hover:not(:disabled) {
+  background-color: #6a11cb;
+  transform: translateY(-1px);
 }
 
 .auth-form button:disabled {
-  background: #a0c5f5;
+  background-color: #555;
   cursor: not-allowed;
 }
 
-.error {
-  color: #e74c3c;
-  font-size: 13px;
-  margin-top: 5px;
+/* ---------------- Toggle Text ---------------- */
+.auth-form .toggle-text {
+  font-size: 0.88rem;
+  text-align: center;
+  margin-top: 8px;
+  color: #ccc;
 }
 
-.toggle-text {
-  font-size: 13px;
-  color: #555;
-  margin-top: 10px;
-}
-
-.toggle-link {
+.auth-form .toggle-link {
   background: none;
   border: none;
-  color: #007bff;
-  cursor: pointer;
+  color: #2575fc;
   font-weight: 600;
-  text-decoration: underline;
-  margin-left: 5px;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.2s;
 }
 
-.toggle-link:hover {
-  color: #0056b3;
+.auth-form .toggle-link:hover:not(:disabled) {
+  color: #6a11cb;
 }
 
-@media(max-width: 400px){
+/* ---------------- Responsive ---------------- */
+@media (max-width: 480px) {
   .auth-form {
-    padding: 20px 15px;
+    margin: 30px 15px;
+    padding: 25px 20px;
   }
+
   .auth-form h2 {
-    font-size: 20px;
-  }
-  .auth-form input, .auth-form button {
-    font-size: 13px;
+    font-size: 1.5rem;
   }
 }

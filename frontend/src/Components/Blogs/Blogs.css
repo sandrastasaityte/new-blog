@@ -61,11 +61,17 @@
   display: flex;
   align-items: center;
   gap: 0.2rem;
-  transition: background 0.2s ease;
+  transition: background 0.2s ease, transform 0.12s ease;
 }
 
 .filter-chip:hover {
   background: #d1d1d1;
+  transform: translateY(-1px);
+}
+
+.filter-chip:focus-visible {
+  outline: 2px solid #0b5fff;
+  outline-offset: 2px;
 }
 
 .clear-filters {
@@ -81,6 +87,11 @@
 
 .clear-filters:hover {
   background: rgba(11, 95, 255, 0.08);
+}
+
+.clear-filters:focus-visible {
+  outline: 2px solid #0b5fff;
+  outline-offset: 2px;
 }
 
 /* ---------------- Blogs Grid ---------------- */
@@ -120,6 +131,11 @@
 .blog-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 12px 28px rgba(0,0,0,0.08);
+}
+
+.blog-card:focus-within {
+  outline: 2px solid #0b5fff;
+  outline-offset: 2px;
 }
 
 .blog-card img {
@@ -164,11 +180,17 @@
   font-weight: 600;
   padding: 0.2rem 0.4rem;
   border-radius: 6px;
-  transition: background 0.2s ease;
+  transition: background 0.2s ease, transform 0.12s ease;
 }
 
 .blog-card-footer button:hover {
   background: rgba(11,95,255,0.08);
+  transform: translateY(-1px);
+}
+
+.blog-card-footer button:focus-visible {
+  outline: 2px solid #0b5fff;
+  outline-offset: 2px;
 }
 
 /* ---------------- Sidebar ---------------- */
@@ -214,6 +236,11 @@
 
 .sidebar-widget li button:hover {
   background: rgba(11,95,255,0.08);
+}
+
+.sidebar-widget li button:focus-visible {
+  outline: 2px solid #0b5fff;
+  outline-offset: 2px;
 }
 
 /* ---------------- Responsive ---------------- */
@@ -283,5 +310,38 @@
 @media (prefers-reduced-motion: reduce) {
   * {
     transition: none !important;
+  }
+}
+/* ---------------- Dark Mode Improvements for Active Filters & Sidebar ---------------- */
+@media (prefers-color-scheme: dark) {
+  /* Active filter chips */
+  .active-filters .filter-chip {
+    background: #3a3a3a; /* slightly brighter than default chip */
+    color: #fff;
+  }
+
+  .active-filters .filter-chip:hover {
+    background: #505050; /* hover highlight */
+  }
+
+  /* Clear filters button */
+  .active-filters .clear-filters {
+    color: #66aaff;
+  }
+
+  .active-filters .clear-filters:hover {
+    background: rgba(102,170,255,0.15);
+  }
+
+  /* Sidebar: highlight selected tag */
+  .sidebar-widget li button.active,
+  .sidebar-widget li button.selected {
+    background: #5050ff; /* bright blue to indicate active */
+    color: #fff;
+  }
+
+  .sidebar-widget li button.active:hover,
+  .sidebar-widget li button.selected:hover {
+    background: #6060ff;
   }
 }

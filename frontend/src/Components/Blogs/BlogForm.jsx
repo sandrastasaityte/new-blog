@@ -1,13 +1,14 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import "./BlogForm.css";
 
 const PLACEHOLDER_IMG = "https://via.placeholder.com/600x300";
 
+// ---------------- Utility ----------------
 const parseTags = (input) => {
   const raw = String(input || "")
     .split(",")
     .map((t) => t.trim())
     .filter(Boolean);
-
   const seen = new Set();
   const out = [];
   for (const t of raw) {
@@ -21,31 +22,23 @@ const parseTags = (input) => {
 };
 
 const getId = (p) => p?._id ?? p?.id;
-
 const clamp = (n, min, max) => Math.min(max, Math.max(min, n));
 
-const BlogForm = ({
-  onSubmit,
-  editingPost,
-  onCancel,
-  submitLabel,
-  busy = false,
-}) => {
+// ---------------- Blog Form Component ----------------
+const BlogForm = ({ onSubmit, editingPost, onCancel, submitLabel, busy = false }) => {
   const [form, setForm] = useState({
     title: "",
     content: "",
     tags: "",
     imageUrl: "",
-    imageFile: null, // UI-only unless you implement upload
-    imagePreview: "", // URL or blob
+    imageFile: null,
+    imagePreview: "",
     author: "Admin",
     rating: 0,
   });
 
   const [errors, setErrors] = useState({});
   const tagsArray = useMemo(() => parseTags(form.tags), [form.tags]);
-
-  // Track current blob URL so we can revoke properly
   const blobUrlRef = useRef("");
 
   const resetForm = () => {
@@ -62,13 +55,10 @@ const BlogForm = ({
     setErrors({});
   };
 
-  // Hydrate when editing
+  // ---------------- Hydrate for Editing ----------------
   useEffect(() => {
-    // revoke any existing blob URL when switching modes/posts
     if (blobUrlRef.current) {
-      try {
-        URL.revokeObjectURL(blobUrlRef.current);
-      } catch {}
+      try { URL.revokeObjectURL(blobUrlRef.current); } catch {}
       blobUrlRef.current = "";
     }
 
@@ -78,7 +68,6 @@ const BlogForm = ({
     }
 
     const image = editingPost.image || "";
-
     setForm({
       title: editingPost.title || "",
       content: editingPost.content || "",
@@ -90,74 +79,37 @@ const BlogForm = ({
       rating: Number(editingPost.rating || 0),
     });
     setErrors({});
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editingPost]);
 
-  // Cleanup blob URL on unmount
-  useEffect(() => {
-    return () => {
-      if (blobUrlRef.current) {
-        try {
-          URL.revokeObjectURL(blobUrlRef.current);
-        } catch {}
-      }
-    };
+  useEffect(() => () => {
+    if (blobUrlRef.current) {
+      try { URL.revokeObjectURL(blobUrlRef.current); } catch {}
+    }
   }, []);
 
+  // ---------------- Field Setter ----------------
   const setField = (key) => (e) => {
     const value = e.target.value;
-
-    setForm((p) => {
-      const next = { ...p, [key]: value };
-
-      if (key === "imageUrl") {
-        const url = value.trim();
-
-        // If user types a URL -> show it immediately
-        if (url) {
-          next.imagePreview = url;
-        } else {
-          // If URL cleared: keep file preview if exists, else fall back to editing image (or empty)
-          if (p.imageFile && blobUrlRef.current)
-            next.imagePreview = blobUrlRef.current;
-          else next.imagePreview = editingPost?.image || "";
-        }
-      }
-
-      if (key === "rating") {
-        const num = Number(value);
-        next.rating = Number.isFinite(num) ? clamp(num, 0, 5) : 0;
-      }
-
+    setForm((prev) => {
+      const next = { ...prev, [key]: value };
+      if (key === "imageUrl") next.imagePreview = value || prev.imagePreview || editingPost?.image || "";
+      if (key === "rating") next.rating = Number.isFinite(Number(value)) ? clamp(Number(value), 0, 5) : 0;
       return next;
     });
-
     setErrors((prev) => ({ ...prev, [key]: "" }));
   };
 
+  // ---------------- File Handler ----------------
   const handleImageFile = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    if (blobUrlRef.current) {
-      try {
-        URL.revokeObjectURL(blobUrlRef.current);
-      } catch {}
-      blobUrlRef.current = "";
-    }
-
+    if (blobUrlRef.current) try { URL.revokeObjectURL(blobUrlRef.current); } catch {}
     const blobUrl = URL.createObjectURL(file);
     blobUrlRef.current = blobUrl;
-
-    setForm((prev) => ({
-      ...prev,
-      imageFile: file,
-      imagePreview: blobUrl,
-      // Optional: clear URL when file is chosen:
-      // imageUrl: "",
-    }));
+    setForm((prev) => ({ ...prev, imageFile: file, imagePreview: blobUrl }));
   };
 
+  // ---------------- Validation ----------------
   const validate = () => {
     const next = {};
     const title = form.title.trim();
@@ -165,12 +117,10 @@ const BlogForm = ({
     const ratingNum = Number(form.rating);
 
     if (!title) next.title = "Title is required.";
-    else if (title.length < 4)
-      next.title = "Title must be at least 4 characters.";
+    else if (title.length < 4) next.title = "Title must be at least 4 characters.";
 
     if (!content) next.content = "Content is required.";
-    else if (content.length < 20)
-      next.content = "Content must be at least 20 characters.";
+    else if (content.length < 20) next.content = "Content must be at least 20 characters.";
 
     if (!Number.isFinite(ratingNum) || ratingNum < 0 || ratingNum > 5) {
       next.rating = "Rating must be between 0 and 5.";
@@ -179,8 +129,7 @@ const BlogForm = ({
     if (form.imageUrl.trim()) {
       try {
         const u = new URL(form.imageUrl.trim());
-        if (!/^https?:$/.test(u.protocol))
-          next.imageUrl = "Image URL must start with http/https.";
+        if (!/^https?:$/.test(u.protocol)) next.imageUrl = "Image URL must start with http/https.";
       } catch {
         next.imageUrl = "Image must be a valid URL (https://...)";
       }
@@ -190,27 +139,24 @@ const BlogForm = ({
     return Object.keys(next).length === 0;
   };
 
+  // ---------------- Submit Handler ----------------
   const handleSubmit = (e) => {
     e.preventDefault();
     if (busy) return;
     if (!validate()) return;
 
     const existingId = getId(editingPost);
-    const imageUrl = form.imageUrl.trim();
-
     const payload = {
       ...(existingId ? { id: String(existingId) } : {}),
       title: form.title.trim(),
       content: form.content.trim(),
       tags: tagsArray,
-      // ✅ never save blob: preview URL as final image
-      image: imageUrl || editingPost?.image || PLACEHOLDER_IMG,
+      image: form.imageUrl.trim() || editingPost?.image || PLACEHOLDER_IMG,
       author: form.author.trim() || "Admin",
       rating: clamp(Number(form.rating) || 0, 0, 5),
     };
 
     onSubmit?.(payload, { imageFile: form.imageFile });
-
     if (!editingPost) resetForm();
   };
 
@@ -222,137 +168,55 @@ const BlogForm = ({
 
       <label className={`field ${errors.title ? "is-error" : ""}`}>
         <span>Title</span>
-        <input
-          type="text"
-          value={form.title}
-          onChange={setField("title")}
-          placeholder="Title"
-          required
-          minLength={4}
-          disabled={busy}
-        />
-        {errors.title ? (
-          <div className="field-error">{errors.title}</div>
-        ) : null}
+        <input type="text" value={form.title} onChange={setField("title")} placeholder="Title" required minLength={4} disabled={busy} />
+        {errors.title && <div className="field-error">{errors.title}</div>}
       </label>
 
       <label className={`field ${errors.content ? "is-error" : ""}`}>
         <span>Content</span>
-        <textarea
-          value={form.content}
-          onChange={setField("content")}
-          placeholder="Write your blog content…"
-          rows={6}
-          required
-          minLength={20}
-          disabled={busy}
-        />
-        {errors.content ? (
-          <div className="field-error">{errors.content}</div>
-        ) : null}
+        <textarea value={form.content} onChange={setField("content")} placeholder="Write your blog content…" rows={6} required minLength={20} disabled={busy} />
+        {errors.content && <div className="field-error">{errors.content}</div>}
       </label>
 
       <label className="field">
         <span>Tags</span>
-        <input
-          type="text"
-          value={form.tags}
-          onChange={setField("tags")}
-          placeholder="Tags (comma separated)"
-          disabled={busy}
-        />
-        {tagsArray.length ? (
-          <div className="tag-preview">
-            {tagsArray.map((t) => (
-              <span key={t.toLowerCase()} className="tag-chip">
-                {t}
-              </span>
-            ))}
-          </div>
-        ) : null}
+        <input type="text" value={form.tags} onChange={setField("tags")} placeholder="Tags (comma separated)" disabled={busy} />
+        {tagsArray.length > 0 && (
+          <div className="tag-preview">{tagsArray.map((t) => <span key={t.toLowerCase()} className="tag-chip">{t}</span>)}</div>
+        )}
       </label>
 
       <label className={`field ${errors.imageUrl ? "is-error" : ""}`}>
-        <span>Image URL (recommended)</span>
-        <input
-          type="text"
-          value={form.imageUrl}
-          onChange={setField("imageUrl")}
-          placeholder="https://…"
-          disabled={busy}
-        />
-        {errors.imageUrl ? (
-          <div className="field-error">{errors.imageUrl}</div>
-        ) : null}
+        <span>Image URL</span>
+        <input type="text" value={form.imageUrl} onChange={setField("imageUrl")} placeholder="https://…" disabled={busy} />
+        {errors.imageUrl && <div className="field-error">{errors.imageUrl}</div>}
       </label>
 
       <label className="field">
-        <span>Or choose an image file (preview only)</span>
-        <input
-          type="file"
-          accept="image/*"
-          onChange={handleImageFile}
-          disabled={busy}
-        />
+        <span>Or choose an image file</span>
+        <input type="file" accept="image/*" onChange={handleImageFile} disabled={busy} />
       </label>
 
-      {form.imagePreview ? (
-        <img
-          src={form.imagePreview}
-          alt="Preview"
-          className="image-preview"
-          onError={(e) => {
-            e.currentTarget.onerror = null;
-            e.currentTarget.src = PLACEHOLDER_IMG;
-          }}
-        />
-      ) : null}
+      {form.imagePreview && (
+        <img src={form.imagePreview} alt="Preview" className="image-preview" onError={(e) => e.currentTarget.src = PLACEHOLDER_IMG} />
+      )}
 
       <div className="row">
         <label className="field">
           <span>Author</span>
-          <input
-            type="text"
-            value={form.author}
-            onChange={setField("author")}
-            disabled={busy}
-          />
+          <input type="text" value={form.author} onChange={setField("author")} disabled={busy} />
         </label>
 
         <label className={`field ${errors.rating ? "is-error" : ""}`}>
           <span>Rating (0–5)</span>
-          <input
-            type="number"
-            min="0"
-            max="5"
-            step="1"
-            value={form.rating}
-            onChange={setField("rating")}
-            disabled={busy}
-          />
-          {errors.rating ? (
-            <div className="field-error">{errors.rating}</div>
-          ) : null}
+          <input type="number" min="0" max="5" step="1" value={form.rating} onChange={setField("rating")} disabled={busy} />
+          {errors.rating && <div className="field-error">{errors.rating}</div>}
         </label>
       </div>
 
       <div className="form-actions">
-        {onCancel ? (
-          <button
-            type="button"
-            className="btn secondary"
-            onClick={onCancel}
-            disabled={busy}
-          >
-            Cancel
-          </button>
-        ) : null}
-
-        <button type="submit" className="btn primary" disabled={busy}>
-          {busy
-            ? "Saving…"
-            : submitLabel || (isEditing ? "Update Post" : "Add Post")}
-        </button>
+        {onCancel && <button type="button" className="btn secondary" onClick={onCancel} disabled={busy}>Cancel</button>}
+        <button type="submit" className="btn primary" disabled={busy}>{busy ? "Saving…" : submitLabel || (isEditing ? "Update Post" : "Add Post")}</button>
       </div>
     </form>
   );

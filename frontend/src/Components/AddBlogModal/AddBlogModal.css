@@ -191,3 +191,27 @@
     transition: none;
   }
 }
+/* ===== Right (Preview) ===== */
+.addblog-right {
+  position: sticky;
+  top: 1rem; /* small offset from top */
+  border-left: 1px solid rgba(0,0,0,0.06);
+  padding-left: 1rem;
+
+  max-height: calc(95vh - 80px); /* adjust to modal height minus some padding */
+  overflow-y: auto; /* enable vertical scrolling */
+}
+
+/* Optional: smooth scrolling for preview */
+.addblog-right::-webkit-scrollbar {
+  width: 6px;
+}
+
+.addblog-right::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.12);
+  border-radius: 3px;
+}
+
+.addblog-right::-webkit-scrollbar-track {
+  background: transparent;
+}

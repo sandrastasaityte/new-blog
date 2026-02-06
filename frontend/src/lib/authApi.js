@@ -1,7 +1,7 @@
 // src/lib/authApi.js
-const RAW_API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
-const API_URL = RAW_API_URL.replace(/\/$/, "");
+import { API_URL, USE_BACKEND_AUTH } from "./env.js";
 
+// ------------------ Local Storage Helpers ----------------
 function getToken() {
   return localStorage.getItem("token");
 }
@@ -23,13 +23,13 @@ function authHeaders({ json = true, token } = {}) {
   };
 }
 
+// ------------------ Response Handler ----------------
 async function handleResponse(res) {
   const contentType = res.headers.get("content-type") || "";
-  const hasJson = contentType.includes("application/json");
-
   let data = null;
+
   try {
-    data = hasJson ? await res.json() : await res.text();
+    data = contentType.includes("application/json") ? await res.json() : await res.text();
   } catch {}
 
   if (!res.ok) {
@@ -43,41 +43,67 @@ async function handleResponse(res) {
   return data;
 }
 
-// ------------------ AUTH ------------------
+// ------------------ AUTH FUNCTIONS ----------------
 export const register = async (identifier, password) => {
-  const res = await fetch(`${API_URL}/auth/register`, {
-    method: "POST",
-    headers: authHeaders({ json: true }),
-    body: JSON.stringify({ identifier, password }),
-  });
+  if (!USE_BACKEND_AUTH) {
+    console.warn("Backend auth disabled - register skipped");
+    const token = "dev-token";
+    const user = { email: identifier };
+    localStorage.setItem("token", token);
+    localStorage.setItem("user", JSON.stringify(user));
+    return { token, user, raw: { message: "Mock register successful" } };
+  }
 
-  const data = await handleResponse(res);
+  try {
+    const res = await fetch(`${API_URL}/auth/register`, {
+      method: "POST",
+      headers: authHeaders({ json: true }),
+      body: JSON.stringify({ identifier, password }),
+    });
+    const data = await handleResponse(res);
 
-  const token = data?.token || data?.accessToken || data?.jwt || data?.data?.token;
-  const user = data?.user || data?.data?.user || null;
+    const token = data?.token || data?.accessToken || data?.jwt || data?.data?.token;
+    const user = data?.user || data?.data?.user || null;
 
-  if (token) localStorage.setItem("token", token);
-  if (user) localStorage.setItem("user", JSON.stringify(user));
+    if (token) localStorage.setItem("token", token);
+    if (user) localStorage.setItem("user", JSON.stringify(user));
 
-  return { token, user, raw: data };
+    return { token, user, raw: data };
+  } catch (err) {
+    console.error("register error:", err);
+    throw err;
+  }
 };
 
 export const login = async (identifier, password) => {
-  const res = await fetch(`${API_URL}/auth/login`, {
-    method: "POST",
-    headers: authHeaders({ json: true }),
-    body: JSON.stringify({ identifier, password }),
-  });
+  if (!USE_BACKEND_AUTH) {
+    console.warn("Backend auth disabled - login skipped");
+    const token = "dev-token";
+    const user = { email: identifier };
+    localStorage.setItem("token", token);
+    localStorage.setItem("user", JSON.stringify(user));
+    return { token, user, raw: { message: "Mock login successful" } };
+  }
 
-  const data = await handleResponse(res);
+  try {
+    const res = await fetch(`${API_URL}/auth/login`, {
+      method: "POST",
+      headers: authHeaders({ json: true }),
+      body: JSON.stringify({ identifier, password }),
+    });
+    const data = await handleResponse(res);
 
-  const token = data?.token || data?.accessToken || data?.jwt || data?.data?.token;
-  const user = data?.user || data?.data?.user || null;
+    const token = data?.token || data?.accessToken || data?.jwt || data?.data?.token;
+    const user = data?.user || data?.data?.user || null;
 
-  if (token) localStorage.setItem("token", token);
-  if (user) localStorage.setItem("user", JSON.stringify(user));
+    if (token) localStorage.setItem("token", token);
+    if (user) localStorage.setItem("user", JSON.stringify(user));
 
-  return { token, user, raw: data };
+    return { token, user, raw: data };
+  } catch (err) {
+    console.error("login error:", err);
+    throw err;
+  }
 };
 
 export const logout = () => {
@@ -85,19 +111,22 @@ export const logout = () => {
   localStorage.removeItem("user");
 };
 
-// ------------------ USER ------------------
+// ------------------ USER ----------------
 export const getMe = async () => {
-  const res = await fetch(`${API_URL}/auth/me`, {
-    headers: authHeaders({ json: true }),
-  });
+  if (!USE_BACKEND_AUTH) {
+    return getUser(); // return locally stored user in dev mode
+  }
 
-  const data = await handleResponse(res);
-  if (data?.user) localStorage.setItem("user", JSON.stringify(data.user));
-  return data.user;
+  try {
+    const res = await fetch(`${API_URL}/auth/me`, { headers: authHeaders() });
+    const data = await handleResponse(res);
+    if (data?.user) localStorage.setItem("user", JSON.stringify(data.user));
+    return data.user;
+  } catch (err) {
+    console.error("getMe error:", err);
+    return getUser(); // fallback to local
+  }
 };
 
-// ------------------ HELPERS ------------------
-export const authHelpers = {
-  getToken,
-  getUser,
-};
+// ------------------ EXPORT HELPERS ----------------
+export const authHelpers = { getToken, getUser };

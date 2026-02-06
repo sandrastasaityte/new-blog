@@ -1,9 +1,8 @@
 import express from "express";
-import { body } from "express-validator";
+import { body, validationResult } from "express-validator";
 import rateLimit from "express-rate-limit";
 import { register, login, me } from "../controllers/authController.js";
 import { protect as requireAuth } from "../middleware/authMiddleware.js";
-
 
 const router = express.Router();
 
@@ -29,9 +28,18 @@ const loginValidation = [
   body("password").notEmpty().withMessage("Password is required"),
 ];
 
+// ---------- Middleware to handle validation errors ----------
+const validate = (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+  next();
+};
+
 // ---------- Routes ----------
-router.post("/register", registerValidation, asyncHandler(register));
-router.post("/login", loginLimiter, loginValidation, asyncHandler(login));
+router.post("/register", registerValidation, validate, asyncHandler(register));
+router.post("/login", loginLimiter, loginValidation, validate, asyncHandler(login));
 router.get("/me", requireAuth, asyncHandler(me));
 
 export default router;

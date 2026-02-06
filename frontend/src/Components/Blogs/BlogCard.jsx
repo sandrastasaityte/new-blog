@@ -1,55 +1,92 @@
-// src/Blogs/BlogCard.jsx
-import React from "react";
+import React, { useMemo, useState } from "react";
 import { FaHeart, FaRegHeart } from "react-icons/fa";
-import "./BlogCard.css";
+import { Link } from "react-router-dom";
 import { usePosts } from "../../Context/PostsContext";
+import "./BlogCard.css";
+
+const FALLBACK_IMG = "https://via.placeholder.com/400x200";
 
 export default function BlogCard({ post, onReadMore }) {
-  const { toggleLike, getId } = usePosts();
+  const { toggleLike } = usePosts(); // ✅ removed getId
+  const [isLiking, setIsLiking] = useState(false);
 
-  const handleLike = () => {
-    toggleLike(getId(post));
+  // ✅ SAFE ID (backend + local JSON)
+  const postId = useMemo(() => {
+    return post?._id || post?.id || null;
+  }, [post]);
+
+  const handleLike = async () => {
+    if (!postId || isLiking) return;
+    setIsLiking(true);
+    try {
+      await toggleLike(postId);
+    } catch (err) {
+      console.error("Like failed:", err);
+    } finally {
+      setIsLiking(false);
+    }
   };
 
-  const likedByUser = (() => {
+  const likedByUser = useMemo(() => {
     try {
-      const user = JSON.parse(localStorage.getItem("user"));
-      const key = user?.id || user?.email || "";
-      if (!key) return false;
-      return post.likedBy.some((x) => x.toLowerCase() === key.toLowerCase());
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      const key = user?.id || user?.email;
+      if (!key || !Array.isArray(post?.likedBy)) return false;
+
+      return post.likedBy.some(
+        (x) => String(x).toLowerCase() === String(key).toLowerCase()
+      );
     } catch {
       return false;
     }
-  })();
+  }, [post?.likedBy]);
+
+  const title = post?.title || "Untitled";
+  const author = post?.author || "Admin";
+  const date = post?.createdAt
+    ? new Date(post.createdAt).toLocaleDateString()
+    : "—";
+  const excerpt = post?.content
+    ? post.content.slice(0, 100) + "…"
+    : "";
 
   return (
     <div className="blog-card">
-      <img src={post.image} alt={post.title} className="blog-card-image" />
+      <img
+        src={post?.image || FALLBACK_IMG}
+        alt={title}
+        className="blog-card-image"
+        loading="lazy"
+        onError={(e) => {
+          e.currentTarget.onerror = null;
+          e.currentTarget.src = FALLBACK_IMG;
+        }}
+      />
 
       <div className="blog-card-body">
-        <h3>{post.title}</h3>
-        <p className="blog-card-meta">
-          {post.author} • {new Date(post.date).toLocaleDateString()}
-        </p>
-
-        <p className="blog-card-excerpt">
-          {post.content.slice(0, 120)}{post.content.length > 120 ? "..." : ""}
-        </p>
+        <h3>{title}</h3>
+        <p className="blog-card-meta">{author} • {date}</p>
+        <p className="blog-card-excerpt">{excerpt}</p>
 
         <div className="blog-card-actions">
-          <button type="button" className="read-more-btn" onClick={onReadMore}>
-            Read More
-          </button>
+          {onReadMore ? (
+            <button className="read-more-btn" onClick={onReadMore}>
+              Read More
+            </button>
+          ) : (
+            <Link to={`/blog/${postId}`} className="read-more-btn">
+              Read More
+            </Link>
+          )}
 
           <button
-            type="button"
             className={`like-btn ${likedByUser ? "liked" : ""}`}
             onClick={handleLike}
+            disabled={isLiking}
             aria-pressed={likedByUser}
-            title={likedByUser ? "Unlike" : "Like"}
           >
-            {likedByUser ? <FaHeart color="red" /> : <FaRegHeart />}
-            <span>{post.likes || 0}</span>
+            {likedByUser ? <FaHeart /> : <FaRegHeart />}
+            <span>{Number(post?.likes || 0)}</span>
           </button>
         </div>
       </div>

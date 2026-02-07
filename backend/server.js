@@ -13,14 +13,22 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Connect to MongoDB
-connectDB();
+// ---------------- Connect to MongoDB ----------------
+(async () => {
+  try {
+    await connectDB();
+    console.log("MongoDB connected ✅");
+  } catch (err) {
+    console.error("Database connection failed:", err);
+    process.exit(1); // Stop server if DB fails
+  }
+})();
 
-// Routes
+// ---------------- Routes ----------------
 app.use("/auth", authRoutes);
 app.use("/posts", blogRoutes);
 
-// Error handlers
+// ---------------- Error handlers ----------------
 app.use(notFound);
 app.use(errorHandler);
 

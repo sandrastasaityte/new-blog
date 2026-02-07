@@ -1,8 +1,12 @@
-/* ===== Modal Overlay ===== */
+/* ============================== */
+/* Blog Modal - Full Styling       */
+/* ============================== */
+
+/* ===== Overlay ===== */
 .addblog-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.55);
+  background: rgba(0, 0, 0, 0.55);
   backdrop-filter: blur(4px);
   z-index: 9999;
   display: flex;
@@ -21,7 +25,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  box-shadow: 0 40px 80px rgba(0,0,0,0.35);
+  box-shadow: 0 40px 80px rgba(0, 0, 0, 0.35);
   animation: modalIn 0.25s ease;
 }
 
@@ -31,7 +35,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 1rem 1.2rem;
-  border-bottom: 1px solid rgba(0,0,0,0.06);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
   background: #fff;
 }
 
@@ -45,7 +49,7 @@
 .addblog-close {
   appearance: none;
   border: none;
-  background: rgba(0,0,0,0.06);
+  background: rgba(0, 0, 0, 0.06);
   border-radius: 10px;
   width: 36px;
   height: 36px;
@@ -57,8 +61,8 @@
 
 .addblog-close:hover {
   transform: translateY(-1px);
-  box-shadow: 0 8px 16px rgba(0,0,0,0.12);
-  background: rgba(0,0,0,0.1);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12);
+  background: rgba(0, 0, 0, 0.1);
 }
 
 /* ===== Body ===== */
@@ -90,9 +94,25 @@
 /* ===== Right (Preview) ===== */
 .addblog-right {
   position: sticky;
-  top: 0;
-  border-left: 1px solid rgba(0,0,0,0.06);
+  top: 1rem;
+  border-left: 1px solid rgba(0, 0, 0, 0.06);
   padding-left: 1rem;
+  max-height: calc(95vh - 80px);
+  overflow-y: auto;
+}
+
+/* Optional scrollbar styling */
+.addblog-right::-webkit-scrollbar {
+  width: 6px;
+}
+
+.addblog-right::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.12);
+  border-radius: 3px;
+}
+
+.addblog-right::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 .addblog-right h4 {
@@ -107,8 +127,8 @@
   margin-top: 0.7rem;
   border-radius: 14px;
   overflow: hidden;
-  border: 1px solid rgba(0,0,0,0.08);
-  background: rgba(0,0,0,0.03);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: rgba(0, 0, 0, 0.03);
 }
 
 .image-preview img {
@@ -122,9 +142,9 @@
 .markdown-preview {
   margin-top: 0.4rem;
   padding: 0.9rem;
-  background: rgba(0,0,0,0.03);
+  background: rgba(0, 0, 0, 0.03);
   border-radius: 14px;
-  border: 1px solid rgba(0,0,0,0.08);
+  border: 1px solid rgba(0, 0, 0, 0.08);
   font-size: 0.95rem;
   line-height: 1.55;
 }
@@ -146,10 +166,139 @@
 }
 
 .markdown-preview code {
-  background: rgba(0,0,0,0.06);
+  background: rgba(0, 0, 0, 0.06);
   padding: 0.15rem 0.3rem;
   border-radius: 4px;
   font-family: monospace;
+}
+
+/* ===== Tags ===== */
+.tag-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.4rem;
+}
+
+.tag-chip {
+  font-size: 0.82rem;
+  font-weight: 500;
+  padding: 0.28rem 0.6rem;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.tag-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 0.4rem;
+}
+
+.tag-suggestion-btn {
+  padding: 0.28rem 0.6rem;
+  border-radius: 999px;
+  background: rgba(255, 102, 0, 0.1);
+  border: 1px solid rgba(255, 102, 0, 0.3);
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tag-suggestion-btn:hover {
+  background: #ff6600;
+  color: #fff;
+  border-color: #ff6600;
+  transform: translateY(-1px);
+}
+
+/* ===== Rating Stars ===== */
+.rating-input {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  margin: 1rem 0;
+  flex-wrap: wrap;
+}
+
+.stars {
+  display: inline-flex;
+  gap: 0.2rem;
+  user-select: none;
+}
+
+.star {
+  font-size: 1.45rem;
+  cursor: pointer;
+  opacity: 0.45;
+  transition: opacity 0.15s ease, transform 0.15s ease, box-shadow 0.2s ease;
+}
+
+.star:hover,
+.star:focus-visible {
+  opacity: 0.85;
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.12);
+}
+
+.star.filled {
+  opacity: 1;
+}
+
+/* ===== Form Actions ===== */
+.form-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  margin-top: 1.1rem;
+  flex-wrap: wrap;
+}
+
+.btn {
+  padding: 0.72rem 1.05rem;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: #fff;
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.06);
+}
+
+.btn.primary {
+  font-weight: 650;
+}
+
+.btn.secondary {
+  opacity: 0.92;
+}
+
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* ===== Field Errors ===== */
+.field-error,
+.form-error {
+  font-size: 0.9rem;
+  color: #b42318;
+  line-height: 1.25;
+  animation: fadeIn 0.2s ease;
+}
+
+.form-error {
+  padding: 0.8rem 0.9rem;
+  background: rgba(180, 35, 24, 0.08);
+  border: 1px solid rgba(180, 35, 24, 0.16);
+  border-radius: 12px;
+  margin: 0.75rem 0 1rem;
 }
 
 /* ===== Animations ===== */
@@ -162,6 +311,11 @@
     opacity: 1;
     transform: scale(1) translateY(0);
   }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-2px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 /* ===== Mobile ===== */
@@ -181,37 +335,19 @@
   .image-preview img {
     height: 190px;
   }
+
+  .stars {
+    font-size: 1.35rem;
+  }
 }
 
 /* ===== Reduced Motion ===== */
 @media (prefers-reduced-motion: reduce) {
   .addblog-modal,
-  .addblog-close {
+  .addblog-close,
+  .btn,
+  .star {
     animation: none;
     transition: none;
   }
-}
-/* ===== Right (Preview) ===== */
-.addblog-right {
-  position: sticky;
-  top: 1rem; /* small offset from top */
-  border-left: 1px solid rgba(0,0,0,0.06);
-  padding-left: 1rem;
-
-  max-height: calc(95vh - 80px); /* adjust to modal height minus some padding */
-  overflow-y: auto; /* enable vertical scrolling */
-}
-
-/* Optional: smooth scrolling for preview */
-.addblog-right::-webkit-scrollbar {
-  width: 6px;
-}
-
-.addblog-right::-webkit-scrollbar-thumb {
-  background: rgba(0,0,0,0.12);
-  border-radius: 3px;
-}
-
-.addblog-right::-webkit-scrollbar-track {
-  background: transparent;
 }

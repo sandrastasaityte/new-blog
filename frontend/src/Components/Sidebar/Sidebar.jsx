@@ -1,10 +1,9 @@
-// src/Components/Sidebar.jsx
 import React, { useState, useMemo } from "react";
 import { usePosts } from "../../Context/PostsContext";
 import "./Sidebar.css";
 
 export default function Sidebar({ filterTags = [], setFilterTags, onSelectPost }) {
-  const { posts, uniqueTags } = usePosts(); // ✅ removed getId
+  const { posts, uniqueTags } = usePosts();
   const [keyword, setKeyword] = useState("");
 
   const filteredPosts = useMemo(() => {
@@ -25,11 +24,10 @@ export default function Sidebar({ filterTags = [], setFilterTags, onSelectPost }
     );
   };
 
-  const getPostId = (p) => p._id || p.id || null; // ✅ safe ID
+  const getPostId = (p) => p._id || p.id || null;
 
   return (
     <aside className="sidebar">
-      {/* Search */}
       <div className="sidebar-card">
         <input
           type="text"
@@ -40,7 +38,6 @@ export default function Sidebar({ filterTags = [], setFilterTags, onSelectPost }
         />
       </div>
 
-      {/* Tags */}
       <div className="sidebar-card">
         <h3 className="sidebar-title">Tags</h3>
         {uniqueTags.length ? (
@@ -65,14 +62,13 @@ export default function Sidebar({ filterTags = [], setFilterTags, onSelectPost }
         )}
       </div>
 
-      {/* Recent Posts */}
       <div className="sidebar-card">
         <h3 className="sidebar-title">Recent Posts</h3>
         {filteredPosts.length ? (
           <div className="sidebar-list">
-            {filteredPosts.slice(0, 6).map((p) => (
+            {filteredPosts.slice(0, 6).map((p, idx) => (
               <button
-                key={getPostId(p)}
+                key={getPostId(p) || `recent-${idx}`}
                 type="button"
                 className="sidebar-post"
                 onClick={() => onSelectPost?.(p)}

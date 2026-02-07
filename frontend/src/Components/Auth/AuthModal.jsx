@@ -15,9 +15,7 @@ const AuthModal = ({ isOpen, onClose, defaultMode = "login", setToken }) => {
   const [loading, setLoading] = useState(false);
   const errorRef = useRef(null);
 
-  const emailTrimmed = useMemo(() => formData.email.trim(), [formData.email]);
-  const passwordTrimmed = useMemo(() => formData.password.trim(), [formData.password]);
-
+  // Reset modal state when opened
   useEffect(() => {
     if (!isOpen) return;
     setMode(defaultMode);
@@ -25,9 +23,24 @@ const AuthModal = ({ isOpen, onClose, defaultMode = "login", setToken }) => {
     setError("");
   }, [isOpen, defaultMode]);
 
+  // Focus error message when it appears
   useEffect(() => {
-    if (error && errorRef.current) errorRef.current.focus();
+    if (error && errorRef.current) {
+      errorRef.current.focus({ preventScroll: false });
+    }
   }, [error]);
+
+  // ESC key to close modal
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleEsc = (e) => {
+      if (e.key === "Escape") onClose?.();
+    };
+
+    document.addEventListener("keydown", handleEsc);
+    return () => document.removeEventListener("keydown", handleEsc);
+  }, [isOpen, onClose]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -35,34 +48,46 @@ const AuthModal = ({ isOpen, onClose, defaultMode = "login", setToken }) => {
     if (error) setError("");
   };
 
-  const validate = () => {
-    if (!emailTrimmed || !passwordTrimmed) return "Please fill all fields.";
-    if (!isValidEmail(emailTrimmed)) return "Enter a valid email.";
-    if (passwordTrimmed.length < 6) return "Password must be at least 6 characters.";
+  const validate = (data) => {
+    const errors = {};
+    if (!data.email) errors.email = "Email is required.";
+    else if (!isValidEmail(data.email)) errors.email = "Enter a valid email.";
+
+    if (!data.password) errors.password = "Password is required.";
+    else if (data.password.length < 6) errors.password = "Password must be at least 6 characters.";
 
     if (mode === "signup") {
-      const confirmTrimmed = formData.confirmPassword.trim();
-      if (!confirmTrimmed) return "Please confirm your password.";
-      if (passwordTrimmed !== confirmTrimmed) return "Passwords do not match.";
+      if (!data.confirmPassword) errors.confirmPassword = "Please confirm your password.";
+      else if (data.password !== data.confirmPassword) errors.confirmPassword = "Passwords do not match.";
     }
 
-    return "";
+    return errors;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (loading) return;
 
-    const msg = validate();
-    if (msg) return setError(msg);
+    const normalizedData = {
+      email: formData.email.trim(),
+      password: formData.password.trim(),
+      confirmPassword: formData.confirmPassword.trim(),
+    };
+
+    const errors = validate(normalizedData);
+    if (Object.keys(errors).length > 0) {
+      setError(Object.values(errors)[0]); // show first error
+      return;
+    }
 
     try {
       setLoading(true);
       setError("");
 
-      const data = mode === "login"
-        ? await login(emailTrimmed, passwordTrimmed)
-        : await register(emailTrimmed, passwordTrimmed);
+      const data =
+        mode === "login"
+          ? await login(normalizedData.email, normalizedData.password)
+          : await register(normalizedData.email, normalizedData.password);
 
       const token = data?.token || data?.accessToken || null;
       if (!token) return setError("No token returned from server.");
@@ -80,9 +105,15 @@ const AuthModal = ({ isOpen, onClose, defaultMode = "login", setToken }) => {
 
   if (!isOpen) return null;
 
+  const inputProps = {
+    onChange: handleChange,
+    disabled: loading,
+    required: true,
+  };
+
   return (
     <div className="auth-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose?.()}>
-      <div className="auth-box" onMouseDown={(e) => e.stopPropagation()}>
+      <div className="auth-box" onMouseDown={(e) => e.stopPropagation()} aria-busy={loading}>
         <button
           className="close-btn"
           onClick={onClose}
@@ -100,30 +131,24 @@ const AuthModal = ({ isOpen, onClose, defaultMode = "login", setToken }) => {
             name="email"
             placeholder="Email"
             value={formData.email}
-            onChange={handleChange}
-            required
-            disabled={loading}
+            {...inputProps}
           />
           <input
             type="password"
             name="password"
             placeholder="Password"
-            value={formData.password}
-            onChange={handleChange}
-            required
             minLength={6}
-            disabled={loading}
+            value={formData.password}
+            {...inputProps}
           />
           {mode === "signup" && (
             <input
               type="password"
               name="confirmPassword"
               placeholder="Confirm Password"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              required
               minLength={6}
-              disabled={loading}
+              value={formData.confirmPassword}
+              {...inputProps}
             />
           )}
 
@@ -134,7 +159,13 @@ const AuthModal = ({ isOpen, onClose, defaultMode = "login", setToken }) => {
           )}
 
           <button type="submit" disabled={loading}>
-            {loading ? (mode === "login" ? "Logging in..." : "Creating account...") : mode === "login" ? "Login" : "Sign Up"}
+            {loading
+              ? mode === "login"
+                ? "Logging in..."
+                : "Creating account..."
+              : mode === "login"
+              ? "Login"
+              : "Sign Up"}
           </button>
         </form>
 

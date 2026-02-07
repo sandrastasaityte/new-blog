@@ -35,7 +35,9 @@ export function PostsProvider({ children }) {
     }
   }, []);
 
-  // ---------------- Sync localStorage for local mode ----------------
+  const getId = (p) => p._id || p.id;
+
+  // ---------------- Sync localStorage ----------------
   useEffect(() => {
     if (!USE_POSTS_BACKEND) savePosts(posts);
   }, [posts]);
@@ -47,7 +49,18 @@ export function PostsProvider({ children }) {
     setError("");
     try {
       const data = await api.getPosts();
-      setPosts(Array.isArray(data) ? data : []);
+      setPosts(
+        Array.isArray(data)
+          ? data.map((p) => ({
+              ...p,
+              _id: p._id || p.id,
+              createdAt: p.createdAt || p.date || new Date().toISOString(),
+              likes: p.likes || 0,
+              likedBy: p.likedBy || [],
+              comments: p.comments || [],
+            }))
+          : []
+      );
     } catch (e) {
       setError(e?.message || "Failed to fetch posts");
       setPosts([]);
@@ -60,57 +73,102 @@ export function PostsProvider({ children }) {
     if (USE_POSTS_BACKEND) refetch();
   }, [refetch]);
 
-  // ---------------- CRUD FUNCTIONS ----------------
+  // ---------------- CRUD ----------------
   const addPost = useCallback(
-    async (post) => tryApi(async () => {
-      if (!USE_POSTS_BACKEND) {
-        let created;
-        setPosts((prev) => {
-          created = addPostLS(prev, post)[0];
-          return [created, ...prev];
-        });
+    async (post) =>
+      tryApi(async () => {
+        if (!USE_POSTS_BACKEND) {
+          let created;
+          setPosts((prev) => {
+            created = addPostLS(prev, post)[0];
+            return [created, ...prev];
+          });
+          return created;
+        }
+        const token = getAuthToken();
+        const created = await api.createPost(post, token);
+        await refetch();
         return created;
-      }
-      const token = getAuthToken();
-      const created = await api.createPost(post, token);
-      await refetch();
-      return created;
-    }),
+      }),
     [refetch, getAuthToken, tryApi]
   );
 
   const updatePost = useCallback(
-    async (id, patch) => tryApi(async () => {
-      if (!USE_POSTS_BACKEND) {
-        setPosts((prev) => updatePostLS(prev, id, patch));
-        return;
-      }
-      const token = getAuthToken();
-      await api.updatePost(id, patch, token);
-      await refetch();
-    }),
+    async (id, patch) =>
+      tryApi(async () => {
+        if (!USE_POSTS_BACKEND) {
+          setPosts((prev) => updatePostLS(prev, id, patch));
+          return;
+        }
+        const token = getAuthToken();
+        await api.updatePost(id, patch, token);
+        await refetch();
+      }),
     [refetch, getAuthToken, tryApi]
   );
 
   const deletePost = useCallback(
-    async (id) => tryApi(async () => {
-      if (!USE_POSTS_BACKEND) {
-        setPosts((prev) => deletePostLS(prev, id));
-        return;
-      }
-      const token = getAuthToken();
-      await api.deletePost(id, token);
-      await refetch();
-    }),
+    async (id) =>
+      tryApi(async () => {
+        if (!USE_POSTS_BACKEND) {
+          setPosts((prev) => deletePostLS(prev, id));
+          return;
+        }
+        const token = getAuthToken();
+        await api.deletePost(id, token);
+        await refetch();
+      }),
     [refetch, getAuthToken, tryApi]
   );
 
-  const incViews = useCallback((id) => setPosts((prev) => incViewsLS(prev, id)), []);
-  const toggleLike = useCallback((id, userKey) => setPosts((prev) => toggleLikeLS(prev, id, userKey)), []);
-  const addComment = useCallback((id, comment) => setPosts((prev) => addCommentLS(prev, id, comment)), []);
+  // ---------------- Views ----------------
+  const incViews = useCallback(
+    async (id) => {
+      if (!USE_POSTS_BACKEND) {
+        setPosts((prev) => incViewsLS(prev, id));
+        return;
+      }
+      // optional: backend endpoint to increment views
+      setPosts((prev) => incViewsLS(prev, id)); // optimistic update
+    },
+    []
+  );
+
+  // ---------------- Likes ----------------
+  const toggleLike = useCallback(
+    async (id) => {
+      const userKey = localStorage.getItem("user") || "guest";
+      if (!USE_POSTS_BACKEND) {
+        setPosts((prev) => toggleLikeLS(prev, id, userKey));
+        return;
+      }
+      const token = getAuthToken();
+      await tryApi(async () => {
+        await api.likeBlog(id, token);
+        await refetch(); // ensures both admin and frontend see updated likes
+      });
+    },
+    [refetch, getAuthToken, tryApi]
+  );
+
+  // ---------------- Comments ----------------
+  const addComment = useCallback(
+    async (id, comment) => {
+      if (!USE_POSTS_BACKEND) {
+        setPosts((prev) => addCommentLS(prev, id, comment));
+        return;
+      }
+      const token = getAuthToken();
+      await tryApi(async () => {
+        await api.addComment(id, comment, token);
+        await refetch(); // ensures both admin and frontend see updated comments
+      });
+    },
+    [refetch, getAuthToken, tryApi]
+  );
 
   // ---------------- Helpers ----------------
-  const getPostById = useCallback((id) => posts.find((p) => String(p._id ?? p.id) === String(id)) || null, [posts]);
+  const getPostById = useCallback((id) => posts.find((p) => getId(p) === String(id)) || null, [posts]);
 
   const uniqueTags = useMemo(() => {
     const set = new Set();
@@ -135,6 +193,7 @@ export function PostsProvider({ children }) {
       uniqueTags,
       USE_POSTS_BACKEND,
       USE_BACKEND_AUTH,
+      getId,
     }),
     [posts, loading, error, refetch, addPost, updatePost, deletePost, incViews, toggleLike, addComment, getPostById, uniqueTags]
   );

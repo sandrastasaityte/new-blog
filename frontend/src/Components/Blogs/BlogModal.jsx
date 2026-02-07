@@ -3,7 +3,6 @@ import CommentSection from "../CommentSection/CommentSection";
 import "./BlogModal.css";
 
 const PLACEHOLDER_IMG = "https://via.placeholder.com/600x300";
-
 const FOCUSABLE =
   'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
@@ -17,7 +16,8 @@ const normalizeComments = (comments) =>
     .map((c) => {
       if (!c) return null;
       if (typeof c === "string") return { name: "Anonymous", text: c };
-      if (typeof c === "object") return { name: c.name || "Anonymous", text: c.text || "" };
+      if (typeof c === "object")
+        return { name: c.name || "Anonymous", text: c.text || "" };
       return null;
     })
     .filter((c) => c && String(c.text || "").trim());
@@ -31,15 +31,20 @@ export default function BlogModal({ post, onClose, onAddComment, onLike }) {
   const reactId = useId();
 
   const postId = useMemo(() => String(getId(post) ?? ""), [post]);
-  const comments = useMemo(() => normalizeComments(post?.comments), [post?.comments]);
+  const comments = useMemo(
+    () => normalizeComments(post?.comments),
+    [post?.comments],
+  );
 
   const titleId = `blogmodal-title-${reactId}`;
   const descId = `blogmodal-desc-${reactId}`;
 
+  // ---------------- Focus & Escape Handling ----------------
   useEffect(() => {
     if (!post) return;
 
     lastActiveRef.current = document.activeElement;
+
     const t = setTimeout(() => {
       const first = modalRef.current?.querySelector(FOCUSABLE);
       (first || modalRef.current)?.focus?.();
@@ -62,7 +67,7 @@ export default function BlogModal({ post, onClose, onAddComment, onLike }) {
         (el) =>
           !el.hasAttribute("disabled") &&
           el.getAttribute("aria-hidden") !== "true" &&
-          el.offsetParent !== null
+          el.offsetParent !== null,
       );
       if (!focusables.length) return;
 
@@ -94,6 +99,7 @@ export default function BlogModal({ post, onClose, onAddComment, onLike }) {
     };
   }, [post, onClose]);
 
+  // ---------------- Handle Comment ----------------
   const handleComment = ({ text }) => {
     const t = String(text || "").trim();
     if (!t || !postId) return;
@@ -102,13 +108,17 @@ export default function BlogModal({ post, onClose, onAddComment, onLike }) {
 
   if (!post) return null;
 
-  const title = String(post?.title || "Blog Post");
+  // ---------------- Safe Values ----------------
+  const title = String(post?.title || "Untitled");
   const author = String(post?.author || "Admin");
-  const dateLabel = safeDateLabel(post?.date);
+  const dateLabel = safeDateLabel(post?.date || post?.createdAt);
   const views = Number.isFinite(Number(post?.views)) ? Number(post.views) : 0;
   const likes = Number.isFinite(Number(post?.likes)) ? Number(post.likes) : 0;
-  const rating = Number.isFinite(Number(post?.rating)) ? clamp(Number(post.rating), 0, 5) : 0;
+  const rating = Number.isFinite(Number(post?.rating))
+    ? clamp(Number(post.rating), 0, 5)
+    : 0;
   const content = String(post?.content || "").trim() || "No content available.";
+  const image = String(post?.image || PLACEHOLDER_IMG);
 
   return (
     <div
@@ -126,22 +136,29 @@ export default function BlogModal({ post, onClose, onAddComment, onLike }) {
         tabIndex={-1}
         ref={modalRef}
       >
-        <button className="blogmodal-close" onClick={onClose} aria-label="Close modal" type="button">
+        <button
+          className="blogmodal-close"
+          onClick={onClose}
+          aria-label="Close modal"
+          type="button"
+        >
           ×
         </button>
-
         <img
-          src={post?.image || PLACEHOLDER_IMG}
-          alt={title}
+          src={post.image || "/20260207_FND001.jpg"} // use post.image if it exists, otherwise fallback
+          alt={post.title}
+          onError={(e) => {
+            e.currentTarget.onerror = null; // prevent infinite loop
+            e.currentTarget.src = "/20260207_FND001.jpg"; // local fallback
+          }}
           className="blogmodal-img"
-          loading="lazy"
-          onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = PLACEHOLDER_IMG; }}
         />
 
         <div className="blogmodal-details">
           <h2 id={titleId}>{title}</h2>
           <p className="blogmodal-meta" id={descId}>
-            By <strong>{author}</strong> | {dateLabel} | {views} views | ❤️ {likes}
+            By <strong>{author}</strong> | {dateLabel} | {views} views | ❤️{" "}
+            {likes}
           </p>
 
           <div className="blogmodal-top-actions">
@@ -150,7 +167,7 @@ export default function BlogModal({ post, onClose, onAddComment, onLike }) {
               onClick={() => onLike?.(postId)}
               disabled={!onLike || !postId}
               type="button"
-              aria-label="Like this post"
+              aria-pressed={!!post?.likedBy?.length}
             >
               ❤️ Like ({likes})
             </button>

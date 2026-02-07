@@ -37,7 +37,7 @@ export const AUTHORS = [
     bio: "Maria writes about software development, coding tutorials, and emerging technology trends.",
     expertise: ["Web Development", "AI", "Tutorials", "JavaScript", "Cloud"],
     location: "Germany",
-    verified: false,
+    verified: true,
     joinedAt: "2020-03-18",
     stats: {
       posts: 18,
@@ -59,7 +59,7 @@ export const AUTHORS = [
     bio: "John focuses on lifestyle topics, productivity tips, and creative writing.",
     expertise: ["Lifestyle", "Productivity", "Creativity", "Writing", "Mindset"],
     location: "USA",
-    verified: false,
+    verified: true,
     joinedAt: "2019-11-05",
     stats: {
       posts: 27,

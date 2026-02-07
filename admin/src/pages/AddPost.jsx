@@ -98,6 +98,8 @@ export default function AddPost() {
   };
 
   const handleCancel = () => navigate("/admin/posts");
+  // src/pages/AddPost.jsx
+  // Inside handleSubmit
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -105,21 +107,14 @@ export default function AddPost() {
 
     setSubmitting(true);
 
-    const newPost = {
-      id: uuid(),
+    const newPost = addPost({
       title: form.title.trim(),
-      slug: slugify(form.title),
       content: form.content.trim(),
       tags: tagsArray,
       image: form.image.trim() || PLACEHOLDER_IMG,
       author: form.author.trim(),
-      publishedAt: new Date().toISOString(),
-      views: 0,
-      likes: 0,
-      comments: [],
-    };
+    });
 
-    addPost(newPost);
     localStorage.removeItem("admin_post_draft");
     navigate("/admin/posts");
   };

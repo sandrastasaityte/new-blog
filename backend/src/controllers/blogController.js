@@ -133,24 +133,25 @@ export async function deleteBlog(req, res, next) {
 }
 
 // ---------------- POST /blogs/:id/like ----------------
-export async function likeBlog(req, res, next) {
-  try {
-    const blog = await Blog.findById(req.params.id);
-    if (!blog) {
-      res.status(404);
-      throw new Error("Post not found");
-    }
+export const likeBlog = async (req, res) => {
+  const blog = await Blog.findById(req.params.id);
+  if (!blog) return res.status(404).json({ message: "Post not found" });
 
-    blog.likes = toNum(blog.likes, 0) + 1;
-    const saved = await blog.save();
+  const userKey = req.user?.email || req.body?.email || "guest";
+  const index = blog.likedBy.indexOf(userKey);
 
-    const blogObj = saved.toObject();
-    delete blogObj.__v;
-    res.json(blogObj);
-  } catch (e) {
-    next(e);
+  if (index === -1) {
+    blog.likedBy.push(userKey);
+    blog.likes += 1;
+  } else {
+    blog.likedBy.splice(index, 1);
+    blog.likes -= 1;
   }
-}
+
+  await blog.save();
+  res.json({ ok: true, likes: blog.likes, likedBy: blog.likedBy });
+};
+
 
 // ---------------- POST /blogs/:id/comments ----------------
 export async function addComment(req, res, next) {

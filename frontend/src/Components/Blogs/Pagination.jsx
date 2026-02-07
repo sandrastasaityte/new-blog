@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
 import "./Pagination.css";
 
-const getPages = (current, total) => {
+function getPages(current, total) {
   if (!total || total < 1) return [];
   if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
 
@@ -14,15 +14,15 @@ const getPages = (current, total) => {
     if (safe[i + 1] && safe[i + 1] - safe[i] > 1) out.push("…");
   }
   return out;
-};
+}
 
-export default function Pagination({ currentPage = 1, totalPages = 1, setPage }) {
+export default function Pagination({ currentPage = 1, totalPages = 1, onPageChange }) {
   const items = useMemo(() => getPages(currentPage, totalPages), [currentPage, totalPages]);
 
   const go = (p) => {
-    if (typeof setPage !== "function") return;
+    if (!onPageChange) return;
     const next = Math.max(1, Math.min(totalPages, p));
-    if (next !== currentPage) setPage(next);
+    if (next !== currentPage) onPageChange(next);
   };
 
   if (!totalPages || totalPages <= 1) return null;

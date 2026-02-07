@@ -1,12 +1,9 @@
 /* ---------------- Overlay ---------------- */
 .blogmodal-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
+  inset: 0; /* shorthand for top/right/bottom/left = 0 */
   background-color: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(2px);
+  backdrop-filter: blur(3px);
   z-index: 9999;
   display: flex;
   justify-content: center;
@@ -19,23 +16,257 @@
 /* ---------------- Modal Box ---------------- */
 .blogmodal-content {
   background-color: #fff;
+  border-radius: 16px;
+  max-width: 800px;
+  width: 100%;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: modalEnter 0.25s ease-out;
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
+}
+
+.blogmodal-content:focus-within {
+  outline: 2px solid #0b5fff;
+  outline-offset: 2px;
+}
+
+/* ---------------- Close Button ---------------- */
+.blogmodal-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1000;
+  border: none;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 1.6rem;
+  cursor: pointer;
+  color: #333;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  transition: color 0.2s ease, transform 0.12s ease, background 0.2s ease;
+}
+
+.blogmodal-close:hover,
+.blogmodal-close:focus {
+  color: #ff3b30;
+  transform: scale(1.1);
+  background: rgba(255, 255, 255, 1);
+  outline: 3px solid #0b5fff;
+  outline-offset: 3px;
+}
+
+/* ---------------- Blog Image ---------------- */
+.blogmodal-img {
+  width: 100%;
+  max-height: 350px;
+  object-fit: cover;
+  display: block;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  position: relative;
+  z-index: 1;
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+  transition: transform 0.15s ease, filter 0.2s ease;
+}
+
+.blogmodal-img:hover {
+  transform: scale(1.02);
+  filter: brightness(0.98);
+}
+
+/* ---------------- Blog Details ---------------- */
+.blogmodal-details {
+  padding: 1.5rem 1.8rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.blogmodal-details h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #222;
+}
+
+.blogmodal-meta {
+  font-size: 0.85rem;
+  color: #555;
+}
+
+.blogmodal-top-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin: 0.5rem 0;
+}
+
+.blogmodal-like-btn {
+  background: #ff3b30;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  padding: 0.45rem 0.8rem;
+  cursor: pointer;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: transform 0.15s ease, background 0.2s ease;
+}
+
+.blogmodal-like-btn:hover:not(:disabled) {
+  background: #e03128;
+  transform: translateY(-1px);
+}
+
+/* ---------------- Rating / Content ---------------- */
+.blogmodal-rating {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #ffb700;
+}
+
+.blogmodal-text {
+  font-size: 0.95rem;
+  color: #333;
+  line-height: 1.5;
+}
+
+/* ---------------- Animations ---------------- */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalEnter {
+  from { opacity: 0; transform: scale(0.96) translateY(8px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* ---------------- Responsive ---------------- */
+@media (max-width: 768px) {
+  .blogmodal-close {
+    top: 8px;
+    right: 8px;
+    width: 32px;
+    height: 32px;
+    font-size: 1.4rem;
+  }
+
+  .blogmodal-details {
+    padding: 1.2rem 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .blogmodal-close {
+    top: 6px;
+    right: 6px;
+    width: 28px;
+    height: 28px;
+    font-size: 1.3rem;
+  }
+
+  .blogmodal-details {
+    padding: 1rem 1.2rem;
+  }
+
+  .blogmodal-img {
+    max-height: 220px;
+  }
+}
+
+/* ---------------- Dark Mode ---------------- */
+@media (prefers-color-scheme: dark) {
+  .blogmodal-content {
+    background: #111827;
+    color: #f3f4f6;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.6);
+  }
+
+  .blogmodal-details h2 {
+    color: #f3f4f6;
+  }
+
+  .blogmodal-meta {
+    color: #aaa;
+  }
+
+  .blogmodal-text {
+    color: #ddd;
+  }
+
+  .blogmodal-like-btn {
+    background: #ff6b6b;
+  }
+
+  .blogmodal-like-btn:hover:not(:disabled) {
+    background: #ff3b30;
+  }
+
+  .blogmodal-close {
+    background: rgba(255, 255, 255, 0.1);
+    color: #f3f4f6;
+  }
+
+  .blogmodal-close:hover {
+    background: rgba(255, 255, 255, 0.15);
+  }
+}
+
+/* ---------------- Reduced Motion ---------------- */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+/* ---------------- Overlay ---------------- */
+.blogmodal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(2px);
+  z-index: 9999;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1rem;
+  overflow-y: auto; /* allows overlay scroll if content is taller than screen */
+}
+
+/* ---------------- Modal Box ---------------- */
+.blogmodal-content {
+  background-color: #fff;
   border-radius: 12px;
   max-width: 800px;
   width: 100%;
+  max-height: 95vh; /* make sure modal never exceeds viewport */
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
   position: relative;
   display: flex;
   flex-direction: column;
-  overflow: auto; /* scroll content if too tall */
+  overflow-y: auto; /* allow scrolling inside modal */
   animation: modalEnter 0.3s ease-out;
 }
 
 /* ---------------- Close Button (Always Visible) ---------------- */
 .blogmodal-close {
-  position: absolute;
-  top: 8px; /* slightly smaller for small screens */
+  position: sticky; /* sticky keeps button visible inside scrolling modal */
+  top: 8px;
   right: 8px;
-  z-index: 1000; /* high enough to be above modal content and image */
+  z-index: 1000;
   border: none;
   background: rgba(255, 255, 255, 0.9);
   border-radius: 50%;
@@ -49,54 +280,4 @@
   color: #333;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
   transition: color 0.2s ease, transform 0.1s ease, background 0.2s ease;
-}
-
-.blogmodal-close:hover,
-.blogmodal-close:focus {
-  color: #ff3b30;
-  transform: scale(1.05);
-  background: rgba(255, 255, 255, 1);
-  outline: 3px solid #0b5fff;
-  outline-offset: 3px;
-}
-
-
-/* ---------------- Blog Image ---------------- */
-.blogmodal-img {
-  width: 100%;
-  max-height: 350px;
-  object-fit: cover;
-  display: block;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-  position: relative;
-  z-index: 1; /* ensures image is below close button */
-}
-
-/* ---------------- Blog Details ---------------- */
-.blogmodal-details {
-  padding: 1.5rem 1.8rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-/* ---------------- Responsive Adjustments ---------------- */
-@media (max-width: 768px) {
-  .blogmodal-close {
-    top: 8px;
-    right: 8px;
-    width: 32px;
-    height: 32px;
-    font-size: 1.4rem;
-  }
-}
-
-@media (max-width: 480px) {
-  .blogmodal-close {
-    top: 6px;
-    right: 6px;
-    width: 28px;
-    height: 28px;
-    font-size: 1.3rem;
-  }
 }

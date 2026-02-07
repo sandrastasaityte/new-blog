@@ -1,91 +1,82 @@
-// src/Components/Home/Home.jsx
-import React, { useEffect, useState, useMemo } from "react";
-import { getPosts } from "../../lib/blogApi";
+import React, { useMemo, useState } from "react";
+import { usePosts } from "../../Context/PostsContext";
 import BlogCard from "../Blogs/BlogCard";
 import "../Blogs/BlogCard.css";
 import "./Home.css";
 
 export default function Home() {
-  const [blogs, setBlogs] = useState([]);
-  const [keyword, setKeyword] = useState("");
-  const [filterTags, setFilterTags] = useState([]);
+  const { posts: blogs, loading } = usePosts();
+  const [selectedTag, setSelectedTag] = useState("");
 
-  useEffect(() => {
-    const fetchBlogs = async () => {
-      try {
-        const data = await getPosts();
-        setBlogs(data);
-      } catch (err) {
-        console.error("Failed to fetch blogs:", err);
-      }
-    };
-    fetchBlogs();
-  }, []);
+  // Pick top 3 featured blogs (based on likes)
+  const featuredBlogs = useMemo(() => {
+    return [...blogs]
+      .sort((a, b) => (b.likes || 0) - (a.likes || 0))
+      .slice(0, 3);
+  }, [blogs]);
 
-  // Extract unique tags from all blogs
+  // Pick 5 unique tags
   const uniqueTags = useMemo(() => {
     const set = new Set();
     blogs.forEach((b) => b.tags?.forEach((t) => t && set.add(t)));
-    return Array.from(set);
+    return Array.from(set).slice(0, 5);
   }, [blogs]);
 
-  // Filter blogs by keyword and tags
+  // Filter blogs by selected tag
   const filteredBlogs = useMemo(() => {
-    return blogs
-      .filter((b) => {
-        const text = (b.title + " " + b.content + " " + b.excerpt).toLowerCase();
-        return text.includes(keyword.toLowerCase());
-      })
-      .filter((b) => {
-        if (!filterTags.length) return true;
-        return b.tags?.some((t) => filterTags.includes(t));
-      })
-      .sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt));
-  }, [blogs, keyword, filterTags]);
-
-  const toggleTag = (tag) => {
-    setFilterTags((prev) =>
-      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
-    );
-  };
+    if (!selectedTag) return blogs;
+    return blogs.filter((b) => b.tags?.some((t) => t.toLowerCase() === selectedTag.toLowerCase()));
+  }, [blogs, selectedTag]);
 
   return (
     <div className="home-container">
-      {/* ---------------- Search ---------------- */}
-      <div className="home-search">
-        <input
-          type="text"
-          placeholder="Search blogs..."
-          value={keyword}
-          onChange={(e) => setKeyword(e.target.value)}
-        />
-      </div>
+      {/* ---------------- Hero Section ---------------- */}
+      <section className="home-hero">
+        <h1>Welcome to Our Blog</h1>
+        <p>
+          Explore stories, tips, and insights from our authors. Discover the latest trends in technology, lifestyle, and more.
+        </p>
+      </section>
 
-      {/* ---------------- Tags ---------------- */}
+      {/* ---------------- Quick Tags ---------------- */}
       {uniqueTags.length > 0 && (
-        <div className="home-tags">
-          {uniqueTags.map((tag) => {
-            const active = filterTags.includes(tag);
-            return (
-              <button
+        <section className="home-tags-section">
+          <h2>Popular Topics</h2>
+          <div className="home-tags">
+            {uniqueTags.map((tag) => (
+              <span
                 key={tag}
-                className={`home-tag ${active ? "active" : ""}`}
-                onClick={() => toggleTag(tag)}
+                className={`home-tag ${selectedTag === tag ? "home-tag-selected" : ""}`}
+                onClick={() => setSelectedTag(selectedTag === tag ? "" : tag)}
               >
                 {tag}
-              </button>
-            );
-          })}
-        </div>
+              </span>
+            ))}
+          </div>
+        </section>
       )}
 
-      {/* ---------------- Blog Cards ---------------- */}
-      {filteredBlogs.length === 0 ? (
-        <p>No blogs found.</p>
-      ) : (
-        filteredBlogs.map((post) => (
-          <BlogCard key={post._id || post.id} post={post} />
-        ))
+      {/* ---------------- Featured Blogs ---------------- */}
+      <section className="home-featured-section">
+        <h2>{selectedTag ? `Blogs about "${selectedTag}"` : "Featured Blogs"}</h2>
+        {loading ? (
+          <p className="home-message">Loading blogs...</p>
+        ) : filteredBlogs.length === 0 ? (
+          <p className="home-message">No blogs yet.</p>
+        ) : (
+          <div className="home-blogs">
+            {filteredBlogs.map((post) => (
+              <BlogCard key={post._id || post.id} post={post} />
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* ---------------- Call To Action ---------------- */}
+      {blogs.length > 3 && !selectedTag && (
+        <div className="home-cta">
+          <a href="/blogs" className="cta-button">See All Blogs</a>
+        </div>
       )}
     </div>
   );

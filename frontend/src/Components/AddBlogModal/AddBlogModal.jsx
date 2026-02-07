@@ -1,10 +1,9 @@
-// src/Components/AddBlogModal/AddBlogModal.jsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { marked } from "marked";
 import DOMPurify from "dompurify";
-import "./AddBlogModal.css";
 import { createBlog } from "../../lib/blogApi";
 import { usePosts } from "../../Context/PostsContext";
+import "./AddBlogModal.css";
 
 const PLACEHOLDER_IMG = "https://via.placeholder.com/600x300";
 
@@ -42,6 +41,15 @@ function normalizeCreatedBlog(created, fallback) {
   return { ...fallback, ...(b && typeof b === "object" ? b : {}), _id };
 }
 
+const suggestedTags = [
+  "Economics",
+  "Trade",
+  "Monetary Policy",
+  "AI in Economics",
+  "Finance",
+  "Investment",
+];
+
 export default function AddBlogModal({ isOpen, onClose }) {
   const { addPost } = usePosts();
   const overlayRef = useRef(null);
@@ -54,15 +62,16 @@ export default function AddBlogModal({ isOpen, onClose }) {
 
   const tagsArray = useMemo(() => parseTags(form.tags), [form.tags]);
 
-  // Markdown preview with DOMPurify
+  // Markdown preview
   const markdownPreview = useMemo(
     () => ({ __html: DOMPurify.sanitize(marked.parse(form.content || "")) }),
     [form.content]
   );
 
-  // Focus & ESC handling
+  // Reset & focus when modal opens
   useEffect(() => {
     if (!isOpen) return;
+
     const t = setTimeout(() => titleRef.current?.focus(), 0);
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -119,8 +128,8 @@ export default function AddBlogModal({ isOpen, onClose }) {
     return Object.keys(next).length === 0;
   };
 
-  const safeClose = () => { if (!submitting) onClose?.(); };
-  const onOverlayClick = (e) => { if (e.target === overlayRef.current) safeClose(); };
+  const safeClose = () => !submitting && onClose?.();
+  const onOverlayClick = (e) => e.target === overlayRef.current && safeClose();
   const onStarKeyDown = (star) => (e) => {
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
@@ -134,7 +143,7 @@ export default function AddBlogModal({ isOpen, onClose }) {
     setApiError("");
 
     const token = localStorage.getItem("token");
-    if (!token) { setApiError("Please log in first."); return; }
+    if (!token) return setApiError("Please log in first.");
 
     if (!validate()) return;
     setSubmitting(true);
@@ -167,9 +176,6 @@ export default function AddBlogModal({ isOpen, onClose }) {
   if (!isOpen) return null;
   const tokenExists = !!localStorage.getItem("token");
 
-  // Predefined economics tag suggestions
-  const suggestedTags = ["Economics", "Trade", "Monetary Policy", "AI in Economics", "Finance", "Investment"];
-
   return (
     <div
       className="addblog-modal-overlay"
@@ -182,6 +188,7 @@ export default function AddBlogModal({ isOpen, onClose }) {
         aria-modal="true"
         aria-labelledby="addblog-title"
         onMouseDown={(e) => e.stopPropagation()}
+        aria-busy={submitting}
       >
         <div className="addblog-modal-head">
           <h3 id="addblog-title">Add New Blog</h3>
@@ -202,22 +209,34 @@ export default function AddBlogModal({ isOpen, onClose }) {
 
           <form className="add-blog-form add-blog-form--modal" onSubmit={handleSubmit}>
             <div className="addblog-grid">
+              {/* Left: Editor */}
               <div className="addblog-left">
-                {/* Title */}
                 <label className={`field ${errors.title ? "is-error" : ""}`}>
                   <span>Title</span>
-                  <input ref={titleRef} value={form.title} onChange={setField("title")} required minLength={4} disabled={submitting} />
+                  <input
+                    ref={titleRef}
+                    value={form.title}
+                    onChange={setField("title")}
+                    required
+                    minLength={4}
+                    disabled={submitting}
+                  />
                   {errors.title && <div className="field-error">{errors.title}</div>}
                 </label>
 
-                {/* Content */}
                 <label className={`field ${errors.content ? "is-error" : ""}`}>
                   <span>Content</span>
-                  <textarea rows={6} value={form.content} onChange={setField("content")} required minLength={20} disabled={submitting} />
+                  <textarea
+                    rows={6}
+                    value={form.content}
+                    onChange={setField("content")}
+                    required
+                    minLength={20}
+                    disabled={submitting}
+                  />
                   {errors.content && <div className="field-error">{errors.content}</div>}
                 </label>
 
-                {/* Tags */}
                 <label className="field">
                   <span>Tags ({tagsArray.length})</span>
                   <input value={form.tags} onChange={setField("tags")} disabled={submitting} />
@@ -228,8 +247,6 @@ export default function AddBlogModal({ isOpen, onClose }) {
                       ))}
                     </div>
                   )}
-
-                  {/* Suggested Tags */}
                   <div className="tag-suggestions">
                     {suggestedTags.map((t) => (
                       <button
@@ -244,6 +261,7 @@ export default function AddBlogModal({ isOpen, onClose }) {
                             }));
                           }
                         }}
+                        disabled={submitting}
                       >
                         {t}
                       </button>
@@ -251,7 +269,6 @@ export default function AddBlogModal({ isOpen, onClose }) {
                   </div>
                 </label>
 
-                {/* Image */}
                 <label className={`field ${errors.image ? "is-error" : ""}`}>
                   <span>Image URL</span>
                   <input value={form.image} onChange={setField("image")} disabled={submitting} />
@@ -267,39 +284,22 @@ export default function AddBlogModal({ isOpen, onClose }) {
                   />
                 </div>
 
-                {/* Author */}
-                <label className={`field`}>
+                <label className="field">
                   <span>Author</span>
                   <input value={form.author} onChange={setField("author")} disabled={submitting} />
                 </label>
 
-                {/* Rating */}
-                <div className={`rating-input ${errors.rating ? "is-error" : ""}`}>
-                  <label>Rating:</label>
-                  <div className="stars" aria-label={`Rating ${form.rating} out of 5`}>
-                    {[1,2,3,4,5].map((star) => (
-                      <span
-                        key={star}
-                        className={star <= form.rating ? "star filled" : "star"}
-                        onClick={() => !submitting && setForm((p)=>({...p,rating: star}))}
-                        onKeyDown={onStarKeyDown(star)}
-                        role="button"
-                        tabIndex={0}
-                        aria-label={`${star} star`}
-                      >★</span>
-                    ))}
-                  </div>
-                  {errors.rating && <div className="field-error">{errors.rating}</div>}
-                </div>
+               
 
-                {/* Actions */}
                 <div className="form-actions">
                   <button type="button" className="btn secondary" onClick={safeClose} disabled={submitting}>Cancel</button>
-                  <button type="submit" className="btn primary" disabled={submitting || !tokenExists}>{submitting ? "Saving..." : "Add Blog"}</button>
+                  <button type="submit" className="btn primary" disabled={submitting || !tokenExists}>
+                    {submitting ? "Saving..." : "Add Blog"}
+                  </button>
                 </div>
               </div>
 
-              {/* Preview */}
+              {/* Right: Preview */}
               <div className="addblog-right">
                 <h4>Preview</h4>
                 <div className="markdown-preview" dangerouslySetInnerHTML={markdownPreview}></div>

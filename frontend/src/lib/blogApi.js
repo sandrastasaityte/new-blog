@@ -1,30 +1,32 @@
+// src/lib/blogApi.js
 import { API_URL, USE_POSTS_BACKEND, USE_BACKEND_AUTH } from "./env";
 
 const BASE_URL = `${API_URL}/blogs`;
 
-export const getPosts = async () => {
-  try {
-    if (!USE_POSTS_BACKEND) {
-      const data = await import("../assets/blogsData.json");
-      return data.default;
-    }
+// ---------------- Helpers ----------------
+function getAuthHeader(token) {
+  if (!USE_BACKEND_AUTH || !token) return {};
+  return { Authorization: `Bearer ${token}` };
+}
 
-    const res = await fetch(BASE_URL);
-    if (!res.ok) throw new Error("Failed to fetch blogs");
-    return await res.json();
-  } catch (err) {
-    console.error("getPosts error:", err);
-    return [];
+// ---------------- CRUD ----------------
+export const getPosts = async () => {
+  if (!USE_POSTS_BACKEND) {
+    const data = await import("../assets/blogsData.json");
+    return data.default;
   }
+  const res = await fetch(BASE_URL);
+  if (!res.ok) throw new Error("Failed to fetch blogs");
+  return res.json();
 };
 
 export const createPost = async (payload, token) => {
-  if (!USE_POSTS_BACKEND) return { ...payload, id: Date.now() };
+  if (!USE_POSTS_BACKEND) return { ...payload, _id: Date.now().toString() };
   const res = await fetch(BASE_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      ...(USE_BACKEND_AUTH && token ? { Authorization: `Bearer ${token}` } : {}),
+      ...getAuthHeader(token),
     },
     body: JSON.stringify(payload),
   });
@@ -33,12 +35,12 @@ export const createPost = async (payload, token) => {
 };
 
 export const updatePost = async (id, payload, token) => {
-  if (!USE_POSTS_BACKEND) return { ...payload, id };
+  if (!USE_POSTS_BACKEND) return { ...payload, _id: id };
   const res = await fetch(`${BASE_URL}/${id}`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
-      ...(USE_BACKEND_AUTH && token ? { Authorization: `Bearer ${token}` } : {}),
+      ...getAuthHeader(token),
     },
     body: JSON.stringify(payload),
   });
@@ -47,23 +49,24 @@ export const updatePost = async (id, payload, token) => {
 };
 
 export const deletePost = async (id, token) => {
-  if (!USE_POSTS_BACKEND) return { id };
+  if (!USE_POSTS_BACKEND) return { _id: id };
   const res = await fetch(`${BASE_URL}/${id}`, {
     method: "DELETE",
-    headers: USE_BACKEND_AUTH && token ? { Authorization: `Bearer ${token}` } : {},
+    headers: getAuthHeader(token),
   });
   if (!res.ok) throw new Error("Failed to delete blog");
   return res.json();
 };
+
 // ---------------- COMMENTS ----------------
-export const addComment = async (id, comment) => {
-  if (!USE_POSTS_BACKEND) {
-    // local fallback
-    return { ...comment, id: Date.now() };
-  }
+export const addComment = async (id, comment, token) => {
+  if (!USE_POSTS_BACKEND) return { ...comment, _id: Date.now().toString() };
   const res = await fetch(`${BASE_URL}/${id}/comments`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      ...getAuthHeader(token),
+    },
     body: JSON.stringify(comment),
   });
   if (!res.ok) throw new Error("Failed to add comment");
@@ -71,9 +74,12 @@ export const addComment = async (id, comment) => {
 };
 
 // ---------------- LIKES ----------------
-export const likeBlog = async (id) => {
-  if (!USE_POSTS_BACKEND) return { id };
-  const res = await fetch(`${BASE_URL}/${id}/like`, { method: "POST" });
+export const likeBlog = async (id, token) => {
+  if (!USE_POSTS_BACKEND) return { _id: id };
+  const res = await fetch(`${BASE_URL}/${id}/like`, {
+    method: "POST",
+    headers: getAuthHeader(token),
+  });
   if (!res.ok) throw new Error("Failed to like blog");
   return res.json();
 };

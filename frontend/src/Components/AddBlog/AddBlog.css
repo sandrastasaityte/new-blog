@@ -1,14 +1,13 @@
 /* ============================= */
-/* AddBlog Form - Full Styling   */
+/* AddBlog Form Styling           */
 /* ============================= */
 
-/* --- Layout --- */
 .add-blog-form {
   max-width: 780px;
   margin: 2rem auto;
-  padding: clamp(1.1rem, 2.5vw, 1.8rem);
+  padding: clamp(1.2rem, 2.5vw, 1.8rem);
   background: #fff;
-  border: 1px solid rgba(0,0,0,0.06);
+  border: 1px solid rgba(0,0,0,0.08);
   border-radius: 18px;
   box-shadow: 0 12px 34px rgba(0,0,0,0.05);
   overflow: hidden;
@@ -16,14 +15,14 @@
 
 .add-blog-form h3 {
   margin-bottom: 1rem;
-  font-size: 1.4rem;
+  font-size: 1.5rem;
   letter-spacing: -0.01em;
 }
 
 /* --- Fields --- */
 .field {
   display: grid;
-  gap: 0.45rem;
+  gap: 0.5rem;
   margin: 0.9rem 0;
 }
 
@@ -34,14 +33,15 @@
 }
 
 .field input,
-.field textarea {
+.field textarea,
+.field select {
   width: 100%;
-  padding: 0.78rem 0.9rem;
-  border: 1px solid rgba(0,0,0,0.12);
+  padding: 0.75rem 0.9rem;
+  border: 1px solid rgba(0,0,0,0.15);
   border-radius: 12px;
   outline: none;
   background: #fff;
-  transition: box-shadow 0.2s ease, border-color 0.2s ease, transform 0.1s ease;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
 .field textarea {
@@ -50,40 +50,34 @@
 }
 
 .field input:focus,
-.field textarea:focus {
+.field textarea:focus,
+.field select:focus {
   border-color: rgba(0,0,0,0.28);
   box-shadow: 0 0 0 4px rgba(0,0,0,0.08);
 }
 
 .field input:disabled,
-.field textarea:disabled {
+.field textarea:disabled,
+.field select:disabled {
   background: rgba(0,0,0,0.03);
   color: rgba(0,0,0,0.6);
 }
 
-/* Error */
-.field:has(.field-error) input,
-.field:has(.field-error) textarea,
-.field.has-error input,
-.field.has-error textarea {
-  border-color: rgba(180, 35, 24, 0.35);
-  box-shadow: 0 0 0 4px rgba(180, 35, 24, 0.08);
-}
-
+/* Errors */
 .field-error,
 .form-error {
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   color: #b42318;
   line-height: 1.25;
   animation: fadeIn 0.2s ease;
 }
 
 .form-error {
-  padding: 0.8rem 0.9rem;
+  padding: 0.75rem 0.9rem;
   background: rgba(180, 35, 24, 0.08);
   border: 1px solid rgba(180, 35, 24, 0.16);
   border-radius: 12px;
-  margin: 0.75rem 0 1rem;
+  margin: 0.7rem 0 1rem;
 }
 
 /* --- Tags --- */
@@ -97,17 +91,24 @@
 .tag-chip {
   font-size: 0.82rem;
   font-weight: 500;
-  padding: 0.28rem 0.6rem;
+  padding: 0.25rem 0.6rem;
   border-radius: 999px;
   background: rgba(0,0,0,0.05);
   border: 1px solid rgba(0,0,0,0.12);
+  cursor: pointer;
+  user-select: none;
 }
 
-/* Tag suggestions */
+.tag-chip:hover {
+  background: #ff6600;
+  color: #fff;
+  border-color: #ff6600;
+}
+
 .tag-suggestions {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.45rem;
+  gap: 0.4rem;
   margin-top: 0.4rem;
 }
 
@@ -180,46 +181,6 @@
   font-size: 0.9rem;
 }
 
-/* --- Rating stars --- */
-.rating-input {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.9rem;
-  margin: 1rem 0;
-  flex-wrap: wrap;
-}
-
-.rating-input label {
-  font-weight: 650;
-  color: #222;
-}
-
-.stars {
-  display: inline-flex;
-  gap: 0.22rem;
-  user-select: none;
-}
-
-.star {
-  font-size: 1.45rem;
-  cursor: pointer;
-  opacity: 0.45;
-  transition: opacity 0.15s ease, transform 0.15s ease, box-shadow 0.2s ease;
-}
-
-.star:hover,
-.star:focus-visible {
-  opacity: 0.85;
-  transform: translateY(0);
-  outline: none;
-  box-shadow: 0 0 0 4px rgba(0,0,0,0.12);
-}
-
-.star.filled {
-  opacity: 1;
-}
-
 /* --- Actions --- */
 .form-actions {
   display: flex;
@@ -271,56 +232,25 @@
 
 /* --- Responsive --- */
 @media (max-width: 520px) {
-  .form-actions {
-    justify-content: stretch;
-  }
-  .btn {
-    width: 100%;
-  }
-  .image-preview {
-    height: 190px;
-  }
+  .form-actions { justify-content: stretch; }
+  .btn { width: 100%; }
+  .image-preview { height: 190px; }
 }
 
 /* --- Dark Mode --- */
 @media (prefers-color-scheme: dark) {
   .add-blog-form {
     background: #020617;
-    border: 1px solid rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.08);
     box-shadow: 0 20px 50px rgba(0,0,0,0.6);
   }
-  .field span,
-  .rating-input label {
-    color: #e5e7eb;
-  }
+  .field span { color: #e5e7eb; }
   .field input,
-  .field textarea {
-    background: #020617;
-    color: #f9fafb;
-    border-color: rgba(255,255,255,0.12);
-  }
-  .markdown-preview {
-    background: rgba(255,255,255,0.04);
-    border-color: rgba(255,255,255,0.08);
-    color: #e5e7eb;
-  }
-  .tag-chip {
-    background: rgba(255,255,255,0.06);
-    border-color: rgba(255,255,255,0.12);
-    color: #e5e7eb;
-  }
-  .btn {
-    background: #020617;
-    color: #e5e7eb;
-    border-color: rgba(255,255,255,0.12);
-  }
-  .tag-suggestion-btn {
-    background: rgba(255,102,0,0.15);
-    border-color: rgba(255,102,0,0.35);
-    color: #f9fafb;
-  }
-  .tag-suggestion-btn:hover {
-    background: #ff6600;
-    color: #fff;
-  }
+  .field textarea,
+  .field select { background: #020617; color: #f9fafb; border-color: rgba(255,255,255,0.12); }
+  .markdown-preview { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.08); color: #e5e7eb; }
+  .tag-chip { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.12); color: #e5e7eb; }
+  .tag-suggestion-btn { background: rgba(255,102,0,0.15); border-color: rgba(255,102,0,0.35); color: #f9fafb; }
+  .tag-suggestion-btn:hover { background: #ff6600; color: #fff; }
+  .btn { background: #020617; color: #e5e7eb; border-color: rgba(255,255,255,0.12); }
 }

@@ -1,17 +1,19 @@
 import React from "react";
-import { AUTHORS, getTopVerifiedAuthors } from "../../assets/authors";
+import { getTopVerifiedAuthors } from "../../assets/authors";
 import { FaTwitter, FaLinkedin, FaGithub, FaGlobe, FaCheckCircle } from "react-icons/fa";
 import "./About.css";
 
+const FALLBACK_IMAGE = "/default-profile.png"; // fallback avatar
+
 export default function About() {
-  const verifiedAuthors = getTopVerifiedAuthors(); // top verified authors
+  const authors = getTopVerifiedAuthors(); // top verified authors
 
   return (
     <section className="authors-section" aria-labelledby="authors-title">
-      <h2 id="authors-title">Meet Our Authors</h2>
+      <h2 id="authors-title">Meet Our Verified Authors</h2>
 
       <div className="authors-container">
-        {AUTHORS.map((author, index) => {
+        {authors.map((author, index) => {
           const {
             id,
             name,
@@ -19,10 +21,10 @@ export default function About() {
             bio,
             image,
             social,
-            expertise,
+            expertise = [],
             verified,
             location,
-            stats,
+            stats = {},
           } = author;
 
           return (
@@ -33,10 +35,11 @@ export default function About() {
             >
               <div className="author-image-wrap">
                 <img
-                  src={image}
-                  alt={`${name} profile`}
+                  src={image || FALLBACK_IMAGE}
+                  alt={`${name} profile picture`}
                   loading="lazy"
                   className="author-image"
+                  onError={(e) => (e.target.src = FALLBACK_IMAGE)}
                 />
                 {verified && (
                   <FaCheckCircle className="verified-badge" title="Verified Author" />
@@ -48,10 +51,10 @@ export default function About() {
               {location && <p className="author-location">{location}</p>}
               <p className="author-bio">{bio}</p>
 
-              {expertise && expertise.length > 0 && (
+              {expertise.length > 0 && (
                 <div className="author-expertise">
-                  {expertise.map((skill, idx) => (
-                    <span key={idx} className="expertise-badge">
+                  {expertise.map((skill) => (
+                    <span key={skill} className="expertise-badge">
                       {skill}
                     </span>
                   ))}
@@ -59,12 +62,11 @@ export default function About() {
               )}
 
               <div className="author-stats">
-                <span>Posts: {stats?.posts || 0}</span>
-                <span>Followers: {stats?.followers || 0}</span>
-                <span>Likes: {stats?.likes || 0}</span>
+                <span>Posts: {stats.posts || 0}</span>
+                <span>Followers: {stats.followers || 0}</span>
+                <span>Likes: {stats.likes || 0}</span>
               </div>
 
-              {/* Social links */}
               <div className="author-social" aria-label={`${name} social links`}>
                 {social?.twitter && (
                   <a href={social.twitter} target="_blank" rel="noopener noreferrer" aria-label={`${name} Twitter`}>

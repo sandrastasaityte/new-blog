@@ -1,13 +1,18 @@
+// src/Components/AddBlog/AddBlog.jsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { marked } from "marked";
 import DOMPurify from "dompurify";
 import { usePosts } from "../../Context/PostsContext";
-import { createPost as createBlog } from "../../lib/blogApi";
+import { AUTHORS } from "../../assets/authors";
 import "./AddBlog.css";
 
 const PLACEHOLDER_IMG = "https://via.placeholder.com/600x300";
-const DEFAULT_TAGS = ["Economics", "Trade", "AI", "Finance", "Investment"];
+const COMMON_TAGS = [
+  "Economics","Trade","AI","Finance","Investment",
+  "Technology","Programming","Startups","Web","Cloud",
+  "Lifestyle","Productivity","Writing","Creativity"
+];
 
 function parseTags(input) {
   if (!input) return [];
@@ -19,25 +24,12 @@ function parseTags(input) {
 }
 
 function isValidHttpUrl(value) {
-  try {
-    const url = new URL(value);
-    return url.protocol === "http:" || url.protocol === "https:";
-  } catch {
-    return false;
-  }
+  try { const url = new URL(value); return url.protocol === "http:" || url.protocol === "https:"; }
+  catch { return false; }
 }
 
-function isImageUrl(url) {
-  return /\.(jpg|jpeg|png|webp|gif|svg)$/i.test(url);
-}
-
-function slugify(text) {
-  return text
-    .toLowerCase()
-    .trim()
-    .replace(/[^\w\s-]/g, "")
-    .replace(/\s+/g, "-");
-}
+function isImageUrl(url) { return /\.(jpg|jpeg|png|webp|gif|svg)$/i.test(url); }
+function slugify(text) { return text.toLowerCase().trim().replace(/[^\w\s-]/g,"").replace(/\s+/g,"-"); }
 
 export default function AddBlog() {
   const navigate = useNavigate();
@@ -47,269 +39,155 @@ export default function AddBlog() {
   const [form, setForm] = useState({
     title: "",
     content: "",
-    tags: "Economics, Trade",
+    tags: "",
     image: "",
-    author: "Sandra Stasaityte",
-    rating: 0,
+    author: AUTHORS[0]?.name || "",
   });
+
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [apiError, setApiError] = useState("");
+  const [suggestedTags, setSuggestedTags] = useState([]);
 
   // Autosave draft
-  useEffect(() => {
-    localStorage.setItem("blog_draft", JSON.stringify(form));
-  }, [form]);
-
-  useEffect(() => {
-    const draft = localStorage.getItem("blog_draft");
-    if (draft) setForm(JSON.parse(draft));
-  }, []);
+  useEffect(() => { localStorage.setItem("blog_draft", JSON.stringify(form)); }, [form]);
+  useEffect(() => { const draft = localStorage.getItem("blog_draft"); if(draft) setForm(JSON.parse(draft)); }, []);
 
   const tagsArray = useMemo(() => parseTags(form.tags), [form.tags]);
 
+  // Universal setField
   const setField = (key) => (e) => {
-    const value = e.target.value;
-    setForm((p) => ({ ...p, [key]: key === "rating" ? Number(value) : value }));
+    setForm((prev) => ({ ...prev, [key]: e.target.value }));
     setErrors((prev) => ({ ...prev, [key]: "" }));
     setApiError("");
   };
 
   const addTag = (tag) => {
-    if (!tagsArray.includes(tag)) {
-      setForm((p) => ({
-        ...p,
-        tags: p.tags ? p.tags + ", " + tag : tag,
-      }));
+    if(!tagsArray.includes(tag)) {
+      setForm((p)=>({ ...p, tags: tagsArray.concat(tag).join(", ") }));
     }
+  };
+
+  const removeTag = (tag) => {
+    setForm((p)=>({ ...p, tags: tagsArray.filter(t=>t!==tag).join(", ") }));
+  };
+
+  // Auto-suggest tags from content
+  useEffect(() => {
+    if(!form.content) return setSuggestedTags([]);
+    const lowerContent = form.content.toLowerCase();
+    const matched = COMMON_TAGS.filter(tag => lowerContent.includes(tag.toLowerCase()) && !tagsArray.includes(tag));
+    setSuggestedTags(matched);
+  }, [form.content, tagsArray]);
+
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0]; if(!file) return;
+    const reader = new FileReader();
+    reader.onload = () => setForm(p=>({...p, image: reader.result}));
+    reader.readAsDataURL(file);
   };
 
   const validate = () => {
     const errs = {};
-    if (!form.title || form.title.trim().length < 4)
-      errs.title = "Title must be at least 4 characters";
-    if (!form.content || form.content.trim().length < 20)
-      errs.content = "Content must be at least 20 characters";
-    if (form.image) {
-      if (!isValidHttpUrl(form.image)) errs.image = "Invalid URL";
-      else if (!isImageUrl(form.image)) errs.image = "URL must be an image";
-    }
-    if (form.rating < 0 || form.rating > 5)
-      errs.rating = "Rating must be between 0 and 5";
+    if(!form.title || form.title.trim().length<4) errs.title = "Title must be at least 4 characters";
+    if(!form.content || form.content.trim().length<20) errs.content = "Content must be at least 20 characters";
+    if(form.image && !form.image.startsWith("data:") && !isValidHttpUrl(form.image)) errs.image = "Invalid URL";
+    else if(form.image && !form.image.startsWith("data:") && !isImageUrl(form.image)) errs.image = "URL must be an image";
     setErrors(errs);
-    return Object.keys(errs).length === 0;
+    return Object.keys(errs).length===0;
   };
 
   const handleCancel = () => navigate("/blogs");
-  const setRating = (star) => setForm((p) => ({ ...p, rating: star }));
-  const onStarKeyDown = (star) => (e) => {
-    if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      setRating(star);
-    }
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!validate()) return;
+    if(!validate()) return;
 
-    setSubmitting(true);
-    setApiError("");
-
+    setSubmitting(true); setApiError("");
     const payload = {
       title: form.title.trim(),
       slug: slugify(form.title),
       content: form.content.trim(),
       tags: tagsArray,
-      image: form.image.trim() || null,
+      image: form.image || null,
       author: form.author.trim(),
-      rating: form.rating,
       createdAt: new Date().toISOString(),
     };
 
     try {
-      const created = await createBlog(payload);
-      addPost({ ...payload, id: created?.id || created?._id });
+      await addPost(payload);
       localStorage.removeItem("blog_draft");
       navigate("/blogs");
-    } catch (err) {
+    } catch(err) {
       setApiError(err.message || "Failed to create blog");
-    } finally {
-      setSubmitting(false);
-    }
+    } finally { setSubmitting(false); }
   };
 
-  const previewSrc = form.image.trim() || PLACEHOLDER_IMG;
-
-  // Markdown Preview
-  const markdownPreview = useMemo(() => {
-    const raw = marked.parse(form.content || "");
-    return { __html: DOMPurify.sanitize(raw) };
-  }, [form.content]);
-
-  useEffect(() => {
-    if (previewRef.current) {
-      previewRef.current.scrollTop = previewRef.current.scrollHeight;
-    }
-  }, [form.content]);
-
-  const readingTime = useMemo(() => {
-    if (!form.content) return 0;
-    const words = form.content.trim().split(/\s+/).length;
-    return Math.max(1, Math.ceil(words / 200));
-  }, [form.content]);
+  const previewSrc = form.image || PLACEHOLDER_IMG;
+  const markdownPreview = useMemo(()=>({__html: DOMPurify.sanitize(marked.parse(form.content||""))}),[form.content]);
+  useEffect(()=>{ if(previewRef.current) previewRef.current.scrollTop = previewRef.current.scrollHeight; },[form.content]);
 
   return (
     <form className="add-blog-form" onSubmit={handleSubmit}>
-      <h3>Add New Economics Blog</h3>
+      <h3>Add New Blog</h3>
       {apiError && <div className="form-error">{apiError}</div>}
 
       {/* Title */}
       <label className="field">
         <span>Title</span>
-        <input
-          value={form.title}
-          onChange={setField("title")}
-          placeholder="Title"
-          required
-          minLength={4}
-          disabled={submitting}
-        />
+        <input value={form.title} onChange={setField("title")} placeholder="Title" disabled={submitting} />
         {errors.title && <div className="field-error">{errors.title}</div>}
-        {form.title && (
-          <div className="slug-preview">Slug: <code>{slugify(form.title)}</code></div>
-        )}
       </label>
 
       {/* Content */}
       <label className="field">
         <span>Content (Markdown supported)</span>
-        <textarea
-          value={form.content}
-          onChange={setField("content")}
-          placeholder="Write your blog content…"
-          required
-          minLength={20}
-          rows={7}
-          disabled={submitting}
-        />
+        <textarea value={form.content} onChange={setField("content")} placeholder="Write your blog content…" rows={7} disabled={submitting}/>
         {errors.content && <div className="field-error">{errors.content}</div>}
-
-        {form.content && (
-          <>
-            <div className="reading-time">⏱ {readingTime} min read</div>
-            <div
-              ref={previewRef}
-              className="markdown-preview"
-              dangerouslySetInnerHTML={markdownPreview}
-            />
-          </>
-        )}
+        {form.content && <div ref={previewRef} className="markdown-preview" dangerouslySetInnerHTML={markdownPreview}/>}
       </label>
 
-      {/* Tags */}
+      {/* Auto-suggested tags */}
+      {suggestedTags.length>0 && <div className="tag-suggestions">
+        {suggestedTags.map(t=>(
+          <button type="button" key={t} className="tag-suggestion-btn" onClick={()=>addTag(t)}>{t}</button>
+        ))}
+      </div>}
+
+      {/* Tags input */}
       <label className="field">
         <span>Tags</span>
-        <input
-          value={form.tags}
-          onChange={setField("tags")}
-          placeholder="Economics, Trade, AI"
-          disabled={submitting}
-          autoComplete="off"
-        />
-
-        <div className="tag-suggestions">
-          {DEFAULT_TAGS.map((tag) => (
-            <button
-              type="button"
-              key={tag}
-              className="tag-suggestion-btn"
-              onClick={() => addTag(tag)}
-              onKeyDown={(e) => e.key === "Enter" && addTag(tag)}
-            >
-              {tag}
-            </button>
-          ))}
-        </div>
-
+        <input value={form.tags} onChange={setField("tags")} placeholder="Add tags manually…" disabled={submitting}/>
         <div className="tag-preview">
-          {tagsArray.map((t) => (
-            <span key={t.toLowerCase()} className="tag-chip">
-              {t}
-            </span>
+          {tagsArray.map(t=>(
+            <span key={t.toLowerCase()} className="tag-chip" onClick={()=>removeTag(t)}>{t} ×</span>
           ))}
         </div>
       </label>
 
       {/* Image */}
       <label className="field">
-        <span>Image URL</span>
-        <input
-          value={form.image}
-          onChange={setField("image")}
-          placeholder="https://…"
-          disabled={submitting}
-        />
+        <span>Image URL or Upload</span>
+        <input type="text" value={form.image.startsWith("data:") ? "" : form.image} onChange={setField("image")} placeholder="https://…" disabled={submitting}/>
+        <input type="file" accept="image/*" onChange={handleFileUpload} disabled={submitting}/>
         {errors.image && <div className="field-error">{errors.image}</div>}
         <div className="image-preview-wrap">
-          <img
-            className="image-preview"
-            src={previewSrc}
-            alt="Blog preview"
-            loading="lazy"
-            onError={(e) => {
-              e.currentTarget.onerror = null;
-              e.currentTarget.src = PLACEHOLDER_IMG;
-            }}
-          />
+          <img className="image-preview" src={previewSrc} alt="Blog preview" onError={e=>{e.currentTarget.onerror=null;e.currentTarget.src=PLACEHOLDER_IMG}}/>
         </div>
       </label>
 
-      {/* Author */}
+      {/* Author dropdown */}
       <label className="field">
         <span>Author</span>
-        <input
-          value={form.author}
-          onChange={setField("author")}
-          placeholder="Author"
-          disabled={submitting}
-        />
+        <select value={form.author} onChange={setField("author")} disabled={submitting}>
+          {AUTHORS.map(a=> <option key={a.id} value={a.name}>{a.name}</option> )}
+        </select>
       </label>
-
-      {/* Rating */}
-      <div className="rating-input">
-        <label>Rating:</label>
-        <div className="stars">
-          {[1, 2, 3, 4, 5].map((star) => (
-            <span
-              key={star}
-              className={star <= form.rating ? "star filled" : "star"}
-              onClick={() => !submitting && setRating(star)}
-              onKeyDown={onStarKeyDown(star)}
-              role="button"
-              tabIndex={0}
-              aria-label={`${star} star`}
-            >
-              ★
-            </span>
-          ))}
-        </div>
-        {errors.rating && <div className="field-error">{errors.rating}</div>}
-      </div>
 
       {/* Actions */}
       <div className="form-actions">
-        <button
-          type="button"
-          className="btn secondary"
-          onClick={handleCancel}
-          disabled={submitting}
-        >
-          Cancel
-        </button>
-        <button type="submit" className="btn primary" disabled={submitting}>
-          {submitting ? "Adding…" : "Add Blog"}
-        </button>
+        <button type="button" className="btn secondary" onClick={handleCancel} disabled={submitting}>Cancel</button>
+        <button type="submit" className="btn primary" disabled={submitting}>Add Blog</button>
       </div>
     </form>
   );

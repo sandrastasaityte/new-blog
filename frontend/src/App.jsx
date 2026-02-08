@@ -1,5 +1,12 @@
-import React, { useState, useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
+import React, { useState, useEffect, useCallback } from "react";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+  useNavigate,
+  useLocation,
+} from "react-router-dom";
 
 // Context
 import { PostsProvider } from "./Context/PostsContext";
@@ -16,7 +23,9 @@ import BlogDetails from "./Components/BlogDetails/BlogDetails";
 import AuthModal from "./Components/Auth/AuthModal";
 import ProtectedRoute from "./Components/ProtectedRoute";
 
-// ---------------- Routes ----------------
+/* ========================================================
+   ROUTES
+======================================================== */
 function AppRoutes({ token, onRequireAuth }) {
   return (
     <Routes>
@@ -40,7 +49,9 @@ function AppRoutes({ token, onRequireAuth }) {
   );
 }
 
-// ---------------- Shell ----------------
+/* ========================================================
+   APP SHELL
+======================================================== */
 function Shell({ token, setToken }) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -48,39 +59,63 @@ function Shell({ token, setToken }) {
   const [authOpen, setAuthOpen] = useState(false);
   const [redirectTo, setRedirectTo] = useState(null);
 
-  // Keep token in sync with localStorage
+  /* ---------------- Sync token across tabs ---------------- */
   useEffect(() => {
-    const onStorage = (e) => e.key === "token" && setToken(e.newValue || "");
-    window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
+    const handleStorage = (e) => {
+      if (e.key === "token") {
+        setToken(e.newValue || "");
+      }
+    };
+
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
   }, [setToken]);
 
-  const onLogout = () => {
+  /* ---------------- Logout ---------------- */
+  const logout = useCallback(() => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     setToken("");
     navigate("/", { replace: true });
-  };
+  }, [navigate, setToken]);
 
-  const onRequireAuth = (loc) => {
-    const target = (loc?.pathname || location.pathname) + (loc?.search || location.search || "");
-    setRedirectTo(target);
-    setAuthOpen(true);
-  };
+  /* ---------------- Require Auth ---------------- */
+  const onRequireAuth = useCallback(
+    (loc) => {
+      const target =
+        (loc?.pathname || location.pathname) +
+        (loc?.search || location.search || "");
 
-  const handleSetToken = (t) => {
-    setToken(t || "");
-    setAuthOpen(false);
-    if (redirectTo) {
-      navigate(redirectTo, { replace: true });
-      setRedirectTo(null);
-    }
-  };
+      setRedirectTo(target);
+      setAuthOpen(true);
+    },
+    [location]
+  );
+
+  /* ---------------- Login Success ---------------- */
+  const handleSetToken = useCallback(
+    (newToken) => {
+      if (!newToken) return;
+
+      localStorage.setItem("token", newToken);
+      setToken(newToken);
+
+      setAuthOpen(false);
+
+      if (redirectTo) {
+        navigate(redirectTo, { replace: true });
+        setRedirectTo(null);
+      }
+    },
+    [navigate, redirectTo, setToken]
+  );
 
   return (
     <>
-      <Navbar token={token} setToken={setToken} /> {/* ✅ Pass setToken here */}
+      <Navbar token={token} setToken={logout} />
+
       <AppRoutes token={token} onRequireAuth={onRequireAuth} />
+
       <Footer />
 
       {authOpen && (
@@ -94,9 +129,13 @@ function Shell({ token, setToken }) {
   );
 }
 
-// ---------------- App ----------------
+/* ========================================================
+   ROOT APP
+======================================================== */
 export default function App() {
-  const [token, setToken] = useState(() => localStorage.getItem("token") || "");
+  const [token, setToken] = useState(
+    () => localStorage.getItem("token") || ""
+  );
 
   return (
     <PostsProvider>

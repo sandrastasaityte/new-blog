@@ -1,5 +1,8 @@
 // src/Context/postStorage.js
-const KEY = "blog_posts_v1";
+
+/* ---------------- Constants ---------------- */
+
+const STORAGE_KEY = "blog_posts_v1";
 
 const nowIso = () => new Date().toISOString();
 const today = () => nowIso().slice(0, 10);
@@ -11,40 +14,48 @@ const toNum = (v, fallback = 0) => {
 
 const clamp = (n, min, max) => Math.min(max, Math.max(min, n));
 
-const uniqStrings = (arr) => {
-  const out = [];
-  const seen = new Set();
-  (Array.isArray(arr) ? arr : []).forEach((x) => {
-    const s = String(x || "").trim();
-    if (!s) return;
-    const k = s.toLowerCase();
-    if (seen.has(k)) return;
-    seen.add(k);
-    out.push(s);
-  });
-  return out;
-};
+const makeLocalId = () =>
+  `local-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 
-// ---------------- Cached User Key ----------------
-let cachedUserKey = null;
-export const getUserKey = (userKey) => {
-  if (userKey) return String(userKey).trim();
-  if (cachedUserKey) return cachedUserKey;
+
+/* ---------------- User Helper ---------------- */
+
+export function getUserKey(userKey) {
+  if (userKey) return String(userKey);
 
   try {
     const raw = localStorage.getItem("user");
-    if (!raw) return "";
-    const u = JSON.parse(raw);
-    cachedUserKey = String(u?.id || u?._id || u?.email || "").trim();
-    return cachedUserKey;
-  } catch {
-    return "";
-  }
-};
+    if (!raw) return "guest";
 
-// ---------------- Normalization Helpers ----------------
-const normalizeComments = (comments) => {
+    const u = JSON.parse(raw);
+    return String(u?.id || u?._id || u?.email || "guest");
+  } catch {
+    return "guest";
+  }
+}
+
+
+/* ---------------- Normalizers ---------------- */
+
+function normalizeTags(tags) {
+  if (!Array.isArray(tags)) return [];
+
+  const seen = new Set();
+
+  return tags
+    .map((t) => String(t || "").trim())
+    .filter(Boolean)
+    .filter((t) => {
+      const k = t.toLowerCase();
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
+}
+
+function normalizeComments(comments) {
   const iso = nowIso();
+
   return (Array.isArray(comments) ? comments : [])
     .map((c) => {
       if (typeof c === "string") {
@@ -52,142 +63,194 @@ const normalizeComments = (comments) => {
         if (!text) return null;
         return { text, name: "Guest", date: iso };
       }
+
       const text = String(c?.text || "").trim();
       if (!text) return null;
+
       return {
         text,
-        name: String(c?.name || "Guest").trim(),
-        date: c?.date || iso,
+        name: String(c?.name || "Guest"),
+        date: c?.date || iso
       };
     })
     .filter(Boolean);
-};
+}
 
-const normalizeTags = (tags) =>
-  (Array.isArray(tags) ? tags : [])
-    .map((t) => String(t).trim())
-    .filter(Boolean);
+function normalizeLikedBy(arr) {
+  if (!Array.isArray(arr)) return [];
 
-const normalizeLikedBy = (likedBy) => uniqStrings(likedBy || []);
+  return [...new Set(arr.map((x) => String(x)))];
+}
 
-// ---------------- Normalize Posts ----------------
-export function normalize(arr) {
-  const iso = nowIso();
-  return (Array.isArray(arr) ? arr : []).map((p, idx) => {
-    const id = String(p?.id ?? p?._id ?? `${idx}-${p?.title ?? "post"}`);
-    const tags = normalizeTags(p?.tags);
-    const comments = normalizeComments(p?.comments);
+
+/* ---------------- Normalize Posts ---------------- */
+
+export function normalize(posts) {
+  return (Array.isArray(posts) ? posts : []).map((p, index) => {
+    const id = String(p?._id || p?.id || `seed-${index}`);
+
     const likedBy = normalizeLikedBy(p?.likedBy);
+
     return {
       ...p,
+
       id,
-      title: String(p?.title || "Untitled post").trim(),
-      content: String(p?.content || "").trim(),
-      tags,
-      comments,
-      views: toNum(p?.views, 0),
+      _id: p?._id,
+
+      title: String(p?.title || "Untitled post"),
+      content: String(p?.content || ""),
+
+      tags: normalizeTags(p?.tags),
+      comments: normalizeComments(p?.comments),
+
       likedBy,
-      likes: likedBy.length ? likedBy.length : toNum(p?.likes, 0),
+      likes: likedBy.length || toNum(p?.likes, 0),
+
+      views: toNum(p?.views, 0),
       rating: clamp(toNum(p?.rating, 0), 0, 5),
-      author: String(p?.author || "Admin").trim(),
+
+      author: String(p?.author || "Admin"),
       date: p?.date || today(),
-      image: p?.image || "https://via.placeholder.com/600x300",
+      image: p?.image || "/placeholder.jpg"
     };
   });
 }
 
-// ---------------- Storage Helpers ----------------
+
+/* ---------------- Storage ---------------- */
+
 export function loadPosts(fallback = []) {
   try {
-    const raw = localStorage.getItem(KEY);
+    const raw = localStorage.getItem(STORAGE_KEY);
     const data = raw ? JSON.parse(raw) : fallback;
     return normalize(data);
-  } catch (e) {
-    console.warn("Failed to load posts:", e);
+  } catch {
     return normalize(fallback);
   }
 }
 
 export function savePosts(posts) {
-  try {
-    localStorage.setItem(KEY, JSON.stringify(normalize(posts)));
-  } catch (e) {
-    console.warn("Failed to save posts:", e);
-  }
+  localStorage.setItem(
+    STORAGE_KEY,
+    JSON.stringify(normalize(posts))
+  );
 }
 
-export function clearPostsStorage() {
-  try {
-    localStorage.removeItem(KEY);
-  } catch {}
-}
 
-// ---------------- CRUD Functions ----------------
+/* ---------------- CRUD ---------------- */
+
 export function addPost(posts, post) {
-  const iso = nowIso();
-  const newPost = normalize([{
-    ...post,
-    id: post.id ?? post._id ?? `p-${Date.now()}`,
-    date: post.date ?? iso.slice(0, 10),
-    views: post.views ?? 0,
-    likes: post.likes ?? 0,
-    likedBy: post.likedBy ?? [],
-    comments: post.comments ?? [],
-  }])[0];
-  return { posts: [newPost, ...(Array.isArray(posts) ? posts : [])], post: newPost };
+  const newPost = normalize([
+    {
+      ...post,
+      id: post?.id || post?._id || makeLocalId(),
+      date: post?.date || today(),
+      likes: 0,
+      views: 0,
+      likedBy: [],
+      comments: []
+    }
+  ])[0];
+
+  const updated = [newPost, ...(posts || [])];
+  savePosts(updated);
+
+  return updated;
 }
+
 
 export function updatePost(posts, id, patch) {
-  const updatedPosts = normalize(
-    (Array.isArray(posts) ? posts : []).map((p) => (String(p.id) === String(id) ? { ...p, ...patch } : p))
-  );
-  const updatedPost = updatedPosts.find((p) => String(p.id) === String(id));
-  return { posts: updatedPosts, post: updatedPost };
-}
-
-export function deletePost(posts, id) {
-  return normalize((Array.isArray(posts) ? posts : []).filter((p) => String(p.id) !== String(id)));
-}
-
-export function incViews(posts, id) {
-  return normalize(
-    (Array.isArray(posts) ? posts : []).map((p) =>
-      String(p.id) === String(id) ? { ...p, views: toNum(p.views, 0) + 1 } : p
+  const updated = normalize(
+    posts.map((p) =>
+      String(p.id) === String(id) ? { ...p, ...patch } : p
     )
   );
+
+  savePosts(updated);
+  return updated;
 }
+
+
+export function deletePost(posts, id) {
+  const updated = normalize(
+    posts.filter((p) => String(p.id) !== String(id))
+  );
+
+  savePosts(updated);
+  return updated;
+}
+
+
+/* ---------------- Views ---------------- */
+
+export function incViews(posts, id) {
+  const updated = normalize(
+    posts.map((p) =>
+      String(p.id) === String(id)
+        ? { ...p, views: toNum(p.views) + 1 }
+        : p
+    )
+  );
+
+  savePosts(updated);
+  return updated;
+}
+
+
+/* ---------------- Likes ---------------- */
 
 export function toggleLike(posts, id, userKey) {
   const who = getUserKey(userKey);
-  if (!who) return normalize(posts);
 
-  return normalize(
-    (Array.isArray(posts) ? posts : []).map((p) => {
+  const updated = normalize(
+    posts.map((p) => {
       if (String(p.id) !== String(id)) return p;
-      const likedBy = normalizeLikedBy(p?.likedBy);
-      const exists = likedBy.some((x) => x.toLowerCase() === who.toLowerCase());
+
+      const likedBy = normalizeLikedBy(p.likedBy);
+
+      const exists = likedBy.includes(who);
+
       const nextLikedBy = exists
-        ? likedBy.filter((x) => x.toLowerCase() !== who.toLowerCase())
+        ? likedBy.filter((x) => x !== who)
         : [...likedBy, who];
-      return { ...p, likedBy: nextLikedBy, likes: nextLikedBy.length };
+
+      return {
+        ...p,
+        likedBy: nextLikedBy,
+        likes: nextLikedBy.length
+      };
     })
   );
+
+  savePosts(updated);
+  return updated;
 }
 
+
+/* ---------------- Comments ---------------- */
+
 export function addComment(posts, id, comment) {
-  const c =
+  const iso = nowIso();
+
+  const newComment =
     typeof comment === "string"
-      ? { text: comment.trim(), name: "Guest", date: nowIso() }
+      ? { text: comment.trim(), name: "Guest", date: iso }
       : {
           text: String(comment?.text || "").trim(),
-          name: String(comment?.name || "Guest").trim(),
-          date: comment?.date || nowIso(),
+          name: String(comment?.name || "Guest"),
+          date: comment?.date || iso
         };
-  if (!c.text) return normalize(posts);
 
-  return normalize(
-    (Array.isArray(posts) ? posts : []).map((p) =>
-      String(p.id) === String(id) ? { ...p, comments: [...(p.comments || []), c] } : p
+  if (!newComment.text) return posts;
+
+  const updated = normalize(
+    posts.map((p) =>
+      String(p.id) === String(id)
+        ? { ...p, comments: [...(p.comments || []), newComment] }
+        : p
     )
   );
+
+  savePosts(updated);
+  return updated;
 }

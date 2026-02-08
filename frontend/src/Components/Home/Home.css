@@ -1,123 +1,155 @@
 .home-container {
   max-width: 1200px;
-  margin: 2rem auto;
-  padding: 0 1rem;
+  margin: auto;
+  padding: 2rem 1.2rem;
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: 3rem;
 }
 
-/* ---------------- Hero ---------------- */
+/* FADE IN */
+.fade-in {
+  animation: fadeIn 0.6s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* HERO */
 .home-hero {
   text-align: center;
-  padding: 2rem 1rem;
-  background: linear-gradient(120deg, #0b5fff, #5bb1ff);
-  border-radius: 12px;
+  padding: 3rem 1rem;
+  background: linear-gradient(135deg, #0077ff, #00c6ff);
   color: white;
+  border-radius: 14px;
 }
 
 .home-hero h1 {
-  font-size: 2.5rem;
-  margin-bottom: 0.5rem;
+  font-size: 2rem;
+  margin-bottom: 1rem;
 }
 
 .home-hero p {
-  font-size: 1.1rem;
-  max-width: 700px;
-  margin: 0 auto;
+  max-width: 600px;
+  margin: auto;
+  line-height: 1.6;
 }
 
-/* ---------------- Tags Section ---------------- */
-.home-tags-section h2 {
-  font-size: 1.5rem;
-  margin-bottom: 0.5rem;
-  color: #0b5fff;
+.hero-btn {
+  display: inline-block;
+  margin-top: 1.5rem;
+  background: white;
+  color: #0077ff;
+  padding: 0.6rem 1.3rem;
+  border-radius: 8px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+/* TAGS */
+.home-tags-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.clear-tag-btn {
+  background: none;
+  border: none;
+  color: #0077ff;
+  cursor: pointer;
+  font-size: 0.9rem;
 }
 
 .home-tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: 0.6rem;
+  margin-top: 0.8rem;
 }
 
 .home-tag {
-  padding: 0.4rem 0.8rem;
-  border-radius: 16px;
-  background-color: #f5f5f5;
-  border: 1px solid #ccc;
-  font-size: 0.9rem;
+  background: #eef5ff;
+  border: none;
+  padding: 0.35rem 0.9rem;
+  border-radius: 999px;
+  cursor: pointer;
 }
 
-/* ---------------- Featured Blogs ---------------- */
-.home-featured-section h2 {
-  font-size: 1.8rem;
-  margin-bottom: 1rem;
-  color: #0b5fff;
+.home-tag.active {
+  background: #0077ff;
+  color: white;
 }
 
+/* BLOG GRID */
 .home-blogs {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: 1fr;
+  gap: 1.2rem;
 }
 
-.blog-card {
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+@media (min-width: 600px) {
+  .home-blogs {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
-.blog-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+@media (min-width: 900px) {
+  .home-blogs {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 
-/* ---------------- Call To Action ---------------- */
+/* SKELETON */
+.home-skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+.skeleton-card {
+  height: 240px;
+  border-radius: 12px;
+  background: linear-gradient(90deg,#eee,#ddd,#eee);
+  animation: shimmer 1.4s infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200px 0 }
+  100% { background-position: 200px 0 }
+}
+
+/* EMPTY */
+.home-empty {
+  text-align: center;
+}
+
+.home-empty button {
+  margin-top: 1rem;
+  background: #0077ff;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+}
+
+/* CTA */
 .home-cta {
-  display: flex;
-  justify-content: center;
-  margin: 2rem 0;
+  text-align: center;
 }
 
 .cta-button {
-  padding: 0.8rem 1.5rem;
-  font-size: 1rem;
-  background-color: #0b5fff;
+  background: #0077ff;
   color: white;
+  padding: 0.6rem 1.4rem;
   border-radius: 8px;
   text-decoration: none;
-  transition: all 0.25s ease;
 }
 
-.cta-button:hover {
-  background-color: #004ecc;
-  transform: scale(1.05);
-}
-
-/* ---------------- Messages ---------------- */
-.home-message {
-  text-align: center;
-  font-size: 1rem;
-  color: #777;
-  margin-top: 1rem;
-}
-
-/* ---------------- Dark Mode ---------------- */
+/* DARK MODE */
 @media (prefers-color-scheme: dark) {
-  .home-hero {
-    background: linear-gradient(120deg, #0b5fff, #2a2a2a);
-  }
-
-  .home-tag {
-    background-color: #3a3a3a;
-    border-color: #555;
-    color: #eee;
-  }
-
-  .home-message {
-    color: #aaa;
-  }
-}
-.home-tag-selected {
-  background-color: #0b5fff;
-  color: white;
-  border-color: #0b5fff;
+  .home-tag { background: #1f2937; color: #60a5fa; }
+  .home-tag.active { background: #60a5fa; color: #111827; }
 }

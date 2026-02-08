@@ -1,83 +1,70 @@
-/* Footer.css */
-
 .footer {
-  background-color: #111;
-  color: #e5e5e5;
+  background: #111;
+  color: #ddd;
   padding: 3rem 1.5rem 1rem;
-  font-size: 0.95rem;
 }
 
 .footer-container {
   max-width: 1200px;
-  margin: 0 auto;
+  margin: auto;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 2rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
 }
 
 /* Sections */
 .footer-section h3 {
-  font-size: 1.1rem;
-  margin-bottom: 0.75rem;
   color: #fff;
+  margin-bottom: .7rem;
 }
 
 .footer-section p {
+  font-size: .9rem;
   line-height: 1.6;
-  color: #ccc;
-}
-
-/* About */
-.footer-section.about p {
-  max-width: 320px;
+  color: #bbb;
 }
 
 /* Links */
-.footer-section.links ul {
+.footer-links {
   list-style: none;
   padding: 0;
   margin: 0;
 }
 
-.footer-section.links li {
-  margin-bottom: 0.4rem;
+.footer-links li {
+  margin-bottom: .4rem;
 }
 
-.footer-section.links a {
-  color: #ccc;
+.footer-links a {
+  color: #bbb;
   text-decoration: none;
-  transition: color 0.2s ease;
+  transition: color .2s;
 }
 
-.footer-section.links a:hover {
-  color: #0070f3;
-}
-
-/* Contact */
-.footer-section.contact p {
-  margin-bottom: 0.4rem;
+.footer-links a:hover {
+  color: #4da6ff;
 }
 
 /* Social Icons */
 .social-icons {
   display: flex;
-  gap: 0.75rem;
-  margin-top: 0.75rem;
+  gap: .6rem;
+  margin-top: .7rem;
 }
 
 .social-icons a {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: #1e1e1e;
-  border-radius: 50%;
   width: 36px;
   height: 36px;
-  transition: background-color 0.2s, transform 0.2s;
+  background: #1f1f1f;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform .2s, background .2s;
 }
 
 .social-icons a:hover {
-  background-color: #0070f3;
+  background: #4da6ff;
   transform: translateY(-2px);
 }
 
@@ -89,86 +76,82 @@
 /* Subscribe */
 .subscribe-form {
   display: flex;
-  gap: 0.5rem;
-  margin-top: 0.75rem;
+  gap: .5rem;
+  margin-top: .6rem;
 }
 
 .subscribe-form input {
   flex: 1;
-  padding: 0.45rem 0.6rem;
+  padding: .45rem .6rem;
   border-radius: 6px;
   border: 1px solid #333;
-  background-color: #1a1a1a;
-  color: #fff;
-  font-size: 0.9rem;
-}
-
-.subscribe-form input::placeholder {
-  color: #aaa;
+  background: #1a1a1a;
+  color: white;
 }
 
 .subscribe-form input:focus {
   outline: none;
-  border-color: #0070f3;
+  border-color: #4da6ff;
 }
 
 .subscribe-form button {
-  padding: 0.45rem 0.9rem;
-  border-radius: 6px;
+  padding: .45rem .9rem;
   border: none;
-  background-color: #0070f3;
-  color: #fff;
+  border-radius: 6px;
+  background: #4da6ff;
+  color: white;
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: background .2s;
 }
 
 .subscribe-form button:hover:not(:disabled) {
-  background-color: #005bb5;
+  background: #2e86ff;
 }
 
 .subscribe-form button:disabled {
-  background-color: #555;
+  opacity: .6;
   cursor: not-allowed;
 }
 
-/* Subscribe feedback */
+/* Feedback */
 .subscribe-error {
-  margin-top: 0.5rem;
   color: #ff6b6b;
-  font-size: 0.85rem;
+  font-size: .85rem;
+  margin-top: .4rem;
 }
 
 .subscribe-success {
-  margin-top: 0.5rem;
   color: #4ade80;
-  font-size: 0.85rem;
+  font-size: .85rem;
+  margin-top: .4rem;
+  animation: fadeIn .3s ease;
 }
 
-/* Footer bottom */
 .footer-bottom {
-  margin-top: 2.5rem;
-  border-top: 1px solid #222;
-  padding-top: 1rem;
   text-align: center;
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid #222;
   color: #777;
-  font-size: 0.85rem;
+  font-size: .85rem;
 }
 
-/* Screen-reader only */
+/* Animation */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-3px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Screen reader */
 .sr-only {
   position: absolute;
   width: 1px;
   height: 1px;
-  padding: 0;
-  margin: -1px;
   overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
 }
 
-/* Responsive */
+/* Mobile */
 @media (max-width: 600px) {
   .subscribe-form {
     flex-direction: column;

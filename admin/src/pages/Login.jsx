@@ -1,108 +1,197 @@
-// src/pages/Login.jsx
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useCallback
+} from "react";
+
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../Context/AuthContext";
 import "./Admin.css";
 
 export default function Login() {
+
   const { user, login } = useAuth();
-  const nav = useNavigate();
-  const loc = useLocation();
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  const userRef = useRef(null);
+  const usernameRef = useRef(null);
 
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [err, setErr] = useState("");
+  const [form, setForm] = useState({
+    username: "",
+    password: ""
+  });
+
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Redirect logged-in users to /admin
-  useEffect(() => {
-    if (user) {
-      nav("/admin", { replace: true });
-    }
-  }, [user, nav]);
+  /* -----------------------------------------
+     Redirect if already authenticated
+  ----------------------------------------- */
 
   useEffect(() => {
-    userRef.current?.focus?.();
+    if (user) navigate("/admin", { replace: true });
+  }, [user, navigate]);
+
+  /* -----------------------------------------
+     Focus username input
+  ----------------------------------------- */
+
+  useEffect(() => {
+    usernameRef.current?.focus();
   }, []);
 
-  const from = useMemo(() => {
-    const s = loc.state?.from;
+  /* -----------------------------------------
+     Resolve redirect target safely
+  ----------------------------------------- */
 
-    if (s && typeof s === "object" && s.pathname) {
-      return s.pathname + (s.search || "");
+  const redirectPath = useMemo(() => {
+
+    const from = location.state?.from;
+
+    if (from && typeof from === "object" && from.pathname) {
+      return from.pathname + (from.search || "");
     }
 
-    if (typeof s === "string" && s.trim()) return s;
+    if (typeof from === "string" && from.trim()) {
+      return from;
+    }
 
     return "/admin";
-  }, [loc.state]);
 
-  const canSubmit = username.trim() && password.trim() && !loading;
+  }, [location.state]);
 
-  const onSubmit = async (e) => {
+  /* -----------------------------------------
+     Derived state
+  ----------------------------------------- */
+
+  const canSubmit = useMemo(() => {
+    return (
+      form.username.trim() &&
+      form.password.trim() &&
+      !loading
+    );
+  }, [form, loading]);
+
+  /* -----------------------------------------
+     Handlers
+  ----------------------------------------- */
+
+  const setField = useCallback((key) => (e) => {
+    const value = e.target.value;
+
+    setForm(prev => ({ ...prev, [key]: value }));
+    setError("");
+  }, []);
+
+  /* -----------------------------------------
+     Submit
+  ----------------------------------------- */
+
+  const handleSubmit = useCallback(async (e) => {
+
     e.preventDefault();
 
-    const u = username.trim();
-    const p = password.trim();
+    const username = form.username.trim();
+    const password = form.password.trim();
 
-    if (!u || !p) {
-      setErr("Enter username and password.");
+    if (!username || !password) {
+      setError("Enter username and password.");
       return;
     }
 
     if (loading) return;
 
-    setErr("");
     setLoading(true);
+    setError("");
 
     try {
-      const res = await login({ username: u, password: p });
+
+      const res = await login({ username, password });
+
       if (!res?.ok) {
-        setErr(res?.message || "Login failed");
+        setError(res?.message || "Login failed");
         return;
       }
-      nav(from, { replace: true });
-    } catch (e2) {
-      setErr(e2?.message || "Login failed");
+
+      navigate(redirectPath, { replace: true });
+
+    } catch (err) {
+
+      setError(err?.message || "Login failed");
+
     } finally {
       setLoading(false);
     }
-  };
+
+  }, [form, login, loading, navigate, redirectPath]);
+
+  /* -----------------------------------------
+     UI
+  ----------------------------------------- */
 
   return (
     <div className="auth-wrapper">
+
       <h2 style={{ marginTop: 0 }}>Admin Login</h2>
 
-      {err ? <div className="form-error">{err}</div> : null}
+      {error && (
+        <div
+          className="form-error"
+          role="alert"
+          aria-live="assertive"
+        >
+          {error}
+        </div>
+      )}
 
-      <form className="auth-form" onSubmit={onSubmit}>
+      <form
+        className="auth-form"
+        onSubmit={handleSubmit}
+        noValidate
+      >
+
+        {/* Username */}
+
         <input
-          ref={userRef}
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
+          ref={usernameRef}
+          value={form.username}
+          onChange={setField("username")}
           placeholder="Username"
           autoComplete="username"
           disabled={loading}
+          aria-invalid={!!error}
         />
+
+        {/* Password */}
 
         <input
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="Password"
           type="password"
+          value={form.password}
+          onChange={setField("password")}
+          placeholder="Password"
           autoComplete="current-password"
           disabled={loading}
+          aria-invalid={!!error}
         />
 
-        <button className="btn primary" disabled={!canSubmit} type="submit">
+        {/* Submit */}
+
+        <button
+          className="btn primary"
+          disabled={!canSubmit}
+          type="submit"
+        >
           {loading ? "Signing in..." : "Sign in"}
         </button>
+
+        {/* Demo note */}
 
         <p style={{ marginTop: 10, opacity: 0.7, fontSize: 13 }}>
           Demo mode: any username + password works.
         </p>
+
       </form>
     </div>
   );

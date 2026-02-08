@@ -1,20 +1,26 @@
-// src/pages/admin/AddPost.jsx
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { marked } from "marked";
 import DOMPurify from "dompurify";
 import { usePosts } from "../Context/PostsContext";
-import { v4 as uuid } from "uuid";
+
+import { AUTHORS } from "../assets/authors";
+
 import "./AddPost.css";
 
 const PLACEHOLDER_IMG = "https://via.placeholder.com/600x300";
-const DEFAULT_TAGS = ["Economics", "Trade", "AI", "Finance", "Investment"];
+
+const COMMON_TAGS = [
+  "Economics","Trade","AI","Finance","Investment",
+  "Technology","Programming","Startups","Web","Cloud",
+  "Lifestyle","Productivity","Writing","Creativity"
+];
 
 function parseTags(input) {
   if (!input) return [];
   return input
     .split(",")
-    .map((t) => t.trim())
+    .map(t => t.trim())
     .filter(Boolean)
     .filter((v, i, a) => a.indexOf(v) === i);
 }
@@ -33,14 +39,13 @@ function isImageUrl(url) {
 }
 
 function slugify(text) {
-  return text
-    .toLowerCase()
-    .trim()
-    .replace(/[^\w\s-]/g, "")
-    .replace(/\s+/g, "-");
+  return text.toLowerCase().trim().replace(/[^\w\s-]/g,"").replace(/\s+/g,"-");
 }
 
-export default function AddPost() {
+/* ⭐ IMPORTANT CHANGE → redirectTo prop */
+
+export default function AddBlog({ redirectTo = "/blogs" }) {
+
   const navigate = useNavigate();
   const { addPost } = usePosts();
   const previewRef = useRef(null);
@@ -48,156 +53,196 @@ export default function AddPost() {
   const [form, setForm] = useState({
     title: "",
     content: "",
-    tags: "Economics, Trade",
+    tags: "",
     image: "",
-    author: "Sandra Stasaityte",
+    author: AUTHORS[0]?.name || ""
   });
+
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
+  const [apiError, setApiError] = useState("");
+  const [suggestedTags, setSuggestedTags] = useState([]);
 
-  // Autosave draft
+  /* ---------- Draft Autosave ---------- */
+
   useEffect(() => {
-    localStorage.setItem("admin_post_draft", JSON.stringify(form));
+    localStorage.setItem("blog_draft", JSON.stringify(form));
   }, [form]);
 
-  // Load draft
   useEffect(() => {
-    const draft = localStorage.getItem("admin_post_draft");
+    const draft = localStorage.getItem("blog_draft");
     if (draft) setForm(JSON.parse(draft));
   }, []);
+
+  /* ---------- Tags ---------- */
 
   const tagsArray = useMemo(() => parseTags(form.tags), [form.tags]);
 
   const setField = (key) => (e) => {
-    const value = e.target.value;
-    setForm((p) => ({ ...p, [key]: value }));
-    setErrors((prev) => ({ ...prev, [key]: "" }));
+    setForm(prev => ({ ...prev, [key]: e.target.value }));
+    setErrors(prev => ({ ...prev, [key]: "" }));
+    setApiError("");
   };
 
   const addTag = (tag) => {
     if (!tagsArray.includes(tag)) {
-      setForm((p) => ({
-        ...p,
-        tags: p.tags ? p.tags + ", " + tag : tag,
-      }));
+      setForm(p => ({ ...p, tags: tagsArray.concat(tag).join(", ") }));
     }
   };
 
+  const removeTag = (tag) => {
+    setForm(p => ({ ...p, tags: tagsArray.filter(t => t !== tag).join(", ") }));
+  };
+
+  /* ---------- Auto Tag Suggest ---------- */
+
+  useEffect(() => {
+    if (!form.content) return setSuggestedTags([]);
+
+    const lowerContent = form.content.toLowerCase();
+
+    const matched = COMMON_TAGS.filter(tag =>
+      lowerContent.includes(tag.toLowerCase()) &&
+      !tagsArray.includes(tag)
+    );
+
+    setSuggestedTags(matched);
+
+  }, [form.content, tagsArray]);
+
+  /* ---------- Upload ---------- */
+
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => setForm(p => ({ ...p, image: reader.result }));
+    reader.readAsDataURL(file);
+  };
+
+  /* ---------- Validation ---------- */
+
   const validate = () => {
     const errs = {};
-    if (!form.title || form.title.trim().length < 3)
-      errs.title = "Title must be at least 3 characters";
+
+    if (!form.title || form.title.trim().length < 4)
+      errs.title = "Title must be at least 4 characters";
+
     if (!form.content || form.content.trim().length < 20)
       errs.content = "Content must be at least 20 characters";
-    if (form.image && !isValidHttpUrl(form.image))
-      errs.image = "Invalid image URL";
-    else if (form.image && !isImageUrl(form.image))
-      errs.image = "URL must point to an image";
+
+    if (form.image && !form.image.startsWith("data:") && !isValidHttpUrl(form.image))
+      errs.image = "Invalid URL";
+
+    else if (form.image && !form.image.startsWith("data:") && !isImageUrl(form.image))
+      errs.image = "URL must be an image";
+
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
 
-  const handleCancel = () => navigate("/admin/posts");
-  // src/pages/AddPost.jsx
-  // Inside handleSubmit
+  /* ---------- Cancel ---------- */
 
-  const handleSubmit = (e) => {
+  const handleCancel = () => navigate(redirectTo);
+
+  /* ---------- Submit ---------- */
+
+  const handleSubmit = async (e) => {
+
     e.preventDefault();
     if (!validate()) return;
 
     setSubmitting(true);
+    setApiError("");
 
-    const newPost = addPost({
+    const payload = {
       title: form.title.trim(),
+      slug: slugify(form.title),
       content: form.content.trim(),
       tags: tagsArray,
-      image: form.image.trim() || PLACEHOLDER_IMG,
+      image: form.image || null,
       author: form.author.trim(),
-    });
+      createdAt: new Date().toISOString()
+    };
 
-    localStorage.removeItem("admin_post_draft");
-    navigate("/admin/posts");
+    try {
+
+      await addPost(payload);
+
+      localStorage.removeItem("blog_draft");
+
+      /* ⭐ Redirect configurable */
+      navigate(redirectTo);
+
+    } catch (err) {
+      setApiError(err.message || "Failed to create blog");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  const markdownPreview = useMemo(() => {
-    const raw = marked.parse(form.content || "");
-    return { __html: DOMPurify.sanitize(raw) };
-  }, [form.content]);
+  /* ---------- Preview ---------- */
+
+  const previewSrc = form.image || PLACEHOLDER_IMG;
+
+  const markdownPreview = useMemo(() => ({
+    __html: DOMPurify.sanitize(marked.parse(form.content || ""))
+  }), [form.content]);
 
   useEffect(() => {
-    if (previewRef.current) {
+    if (previewRef.current)
       previewRef.current.scrollTop = previewRef.current.scrollHeight;
-    }
   }, [form.content]);
+
+  /* ---------- UI ---------- */
 
   return (
     <form className="add-blog-form" onSubmit={handleSubmit}>
-      <h3>Add New Post</h3>
+
+      <h3>Add New Blog</h3>
+
+      {apiError && <div className="form-error">{apiError}</div>}
 
       {/* Title */}
       <label className="field">
         <span>Title</span>
-        <input
-          value={form.title}
-          onChange={setField("title")}
-          placeholder="Title"
-          required
-          disabled={submitting}
-        />
+        <input value={form.title} onChange={setField("title")} disabled={submitting}/>
         {errors.title && <div className="field-error">{errors.title}</div>}
-        {form.title && (
-          <div className="slug-preview">
-            Slug: <code>{slugify(form.title)}</code>
-          </div>
-        )}
       </label>
 
       {/* Content */}
       <label className="field">
-        <span>Content (Markdown supported)</span>
-        <textarea
-          value={form.content}
-          onChange={setField("content")}
-          placeholder="Write your post content…"
-          required
-          rows={7}
-          disabled={submitting}
-        />
+        <span>Content</span>
+        <textarea value={form.content} onChange={setField("content")} rows={7} disabled={submitting}/>
         {errors.content && <div className="field-error">{errors.content}</div>}
         {form.content && (
-          <div
-            ref={previewRef}
-            className="markdown-preview"
-            dangerouslySetInnerHTML={markdownPreview}
-          />
+          <div ref={previewRef} className="markdown-preview"
+            dangerouslySetInnerHTML={markdownPreview}/>
         )}
       </label>
+
+      {/* Suggested Tags */}
+      {suggestedTags.length > 0 && (
+        <div className="tag-suggestions">
+          {suggestedTags.map(t => (
+            <button type="button" key={t}
+              className="tag-suggestion-btn"
+              onClick={() => addTag(t)}>
+              {t}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Tags */}
       <label className="field">
         <span>Tags</span>
-        <input
-          value={form.tags}
-          onChange={setField("tags")}
-          placeholder="Economics, Trade"
-          disabled={submitting}
-        />
-        <div className="tag-suggestions">
-          {DEFAULT_TAGS.map((tag) => (
-            <button
-              type="button"
-              key={tag}
-              className="tag-suggestion-btn"
-              onClick={() => addTag(tag)}
-            >
-              {tag}
-            </button>
-          ))}
-        </div>
+        <input value={form.tags} onChange={setField("tags")} />
         <div className="tag-preview">
-          {tagsArray.map((t) => (
-            <span key={t.toLowerCase()} className="tag-chip">
-              {t}
+          {tagsArray.map(t => (
+            <span key={t} className="tag-chip" onClick={() => removeTag(t)}>
+              {t} ×
             </span>
           ))}
         </div>
@@ -205,23 +250,20 @@ export default function AddPost() {
 
       {/* Image */}
       <label className="field">
-        <span>Image URL</span>
+        <span>Image URL or Upload</span>
         <input
-          value={form.image}
+          type="text"
+          value={form.image.startsWith("data:") ? "" : form.image}
           onChange={setField("image")}
-          placeholder="https://…"
-          disabled={submitting}
         />
+        <input type="file" accept="image/*" onChange={handleFileUpload} />
         {errors.image && <div className="field-error">{errors.image}</div>}
+
         <div className="image-preview-wrap">
-          <img
-            src={form.image || PLACEHOLDER_IMG}
+          <img className="image-preview"
+            src={previewSrc}
             alt="Preview"
-            className="image-preview"
-            onError={(e) => {
-              e.currentTarget.onerror = null;
-              e.currentTarget.src = PLACEHOLDER_IMG;
-            }}
+            onError={(e)=>{e.currentTarget.src = PLACEHOLDER_IMG}}
           />
         </div>
       </label>
@@ -229,28 +271,26 @@ export default function AddPost() {
       {/* Author */}
       <label className="field">
         <span>Author</span>
-        <input
-          value={form.author}
-          onChange={setField("author")}
-          placeholder="Author"
-          disabled={submitting}
-        />
+        <select value={form.author} onChange={setField("author")}>
+          {AUTHORS.map(a => (
+            <option key={a.id} value={a.name}>{a.name}</option>
+          ))}
+        </select>
       </label>
 
       {/* Actions */}
       <div className="form-actions">
-        <button
-          type="button"
-          className="btn secondary"
-          onClick={handleCancel}
-          disabled={submitting}
-        >
+        <button type="button" className="btn secondary"
+          onClick={handleCancel}>
           Cancel
         </button>
-        <button type="submit" className="btn primary" disabled={submitting}>
-          {submitting ? "Adding…" : "Add Post"}
+
+        <button type="submit" className="btn primary"
+          disabled={submitting}>
+          Add Blog
         </button>
       </div>
+
     </form>
   );
 }

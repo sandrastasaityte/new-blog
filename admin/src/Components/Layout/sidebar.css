@@ -1,62 +1,113 @@
-/* Sidebar shell */
+/* =====================================================
+   THEME VARIABLES
+===================================================== */
+
+:root {
+  --sb-bg: #ffffff;
+  --sb-border: rgba(0,0,0,0.06);
+  --sb-hover: rgba(0,0,0,0.04);
+  --sb-active: rgba(255,102,0,0.10);
+  --sb-active-border: rgba(255,102,0,0.25);
+  --sb-focus: rgba(255,102,0,0.85);
+  --sb-tooltip-bg: #111;
+  --sb-shadow: 0 10px 22px rgba(0,0,0,0.06);
+}
+
+/* =====================================================
+   SIDEBAR SHELL
+===================================================== */
+
 .admin-sidebar {
   height: 100%;
   display: flex;
   flex-direction: column;
   gap: 14px;
+
   padding: 14px 12px;
 
-  background: #fff;
-  border-right: 1px solid rgba(0,0,0,0.06);
+  background: var(--sb-bg);
+  border-right: 1px solid var(--sb-border);
 
-  /* ✅ if items grow, sidebar should scroll (desktop + mobile drawer) */
   overflow-y: auto;
   overscroll-behavior: contain;
+
+  scroll-behavior: smooth;
+
+  /* Firefox scrollbar */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0,0,0,0.14) transparent;
 }
 
-/* Optional: nicer scrollbar (won't break anything if ignored) */
-.admin-sidebar::-webkit-scrollbar { width: 10px; }
+/* =====================================================
+   SCROLLBAR
+===================================================== */
+
+.admin-sidebar::-webkit-scrollbar {
+  width: 10px;
+}
+
 .admin-sidebar::-webkit-scrollbar-thumb {
   background: rgba(0,0,0,0.10);
   border-radius: 999px;
   border: 3px solid rgba(255,255,255,0.9);
 }
-.admin-sidebar::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.14); }
 
-/* Collapsed width handling is usually done by the layout grid,
-   but we still tighten inner spacing here */
+.admin-sidebar::-webkit-scrollbar-thumb:hover {
+  background: rgba(0,0,0,0.18);
+}
+
+/* =====================================================
+   COLLAPSED MODE
+===================================================== */
+
 .admin-sidebar.collapsed {
   padding: 12px 10px;
 }
 
-/* Brand */
+/* =====================================================
+   BRAND
+===================================================== */
+
 .sb-brand {
   border-radius: 14px;
   background: rgba(0,0,0,0.02);
-  border: 1px solid rgba(0,0,0,0.06);
+  border: 1px solid var(--sb-border);
 }
 
-/* If brand is a NavLink */
 .sb-brand-link {
   display: flex;
   align-items: center;
   gap: 10px;
+
   padding: 10px 8px;
   border-radius: 14px;
+
   text-decoration: none;
   color: inherit;
+
+  transition: background 0.18s ease;
 }
+
+.sb-brand-link:hover {
+  background: var(--sb-hover);
+}
+
+/* LOGO */
 
 .sb-logo {
   width: 38px;
   height: 38px;
   border-radius: 14px;
+
   display: grid;
   place-items: center;
+
   font-weight: 900;
   color: #fff;
+
   background: linear-gradient(135deg, #ff6600, #ff8a3d);
   box-shadow: 0 10px 22px rgba(0,0,0,0.10);
+
   flex: 0 0 auto;
 }
 
@@ -66,36 +117,55 @@
   letter-spacing: -0.01em;
 }
 
-/* Section */
+/* =====================================================
+   NAV SECTION
+===================================================== */
+
 .sb-section {
   display: grid;
   gap: 8px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
 }
 
-/* Links */
+/* =====================================================
+   NAV LINKS
+===================================================== */
+
 .sb-link {
+  position: relative;
+
   display: flex;
   align-items: center;
   gap: 10px;
+
   padding: 10px 10px;
   border-radius: 14px;
 
   color: rgba(0,0,0,0.76);
   text-decoration: none;
-  font-weight: 800;
+  font-weight: 700;
 
   border: 1px solid transparent;
   background: transparent;
 
-  transition: transform 0.12s ease, box-shadow 0.2s ease, background 0.2s ease, border-color 0.2s ease;
   min-height: 44px;
+
+  transition:
+    transform 0.12s ease,
+    background 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
 }
 
+/* Hover */
+
 .sb-link:hover {
-  background: rgba(0,0,0,0.03);
-  border-color: rgba(0,0,0,0.06);
+  background: var(--sb-hover);
+  border-color: var(--sb-border);
   transform: translateY(-1px);
-  box-shadow: 0 10px 22px rgba(0,0,0,0.06);
+  box-shadow: var(--sb-shadow);
 }
 
 .sb-link:active {
@@ -103,40 +173,83 @@
   box-shadow: none;
 }
 
+/* ACTIVE */
+
 .sb-link.active {
-  background: rgba(255, 102, 0, 0.10);
-  border-color: rgba(255, 102, 0, 0.25);
-  color: rgba(0,0,0,0.86);
+  background: var(--sb-active);
+  border-color: var(--sb-active-border);
+  color: rgba(0,0,0,0.90);
 }
+
+/* =====================================================
+   ICONS
+===================================================== */
 
 .sb-ico {
   width: 34px;
   height: 34px;
   border-radius: 12px;
+
   display: grid;
   place-items: center;
+
   background: rgba(0,0,0,0.03);
-  border: 1px solid rgba(0,0,0,0.06);
+  border: 1px solid var(--sb-border);
+
   flex: 0 0 auto;
+
+  transition: background 0.18s ease, border-color 0.18s ease;
 }
 
-/* Active icon style */
 .sb-link.active .sb-ico {
-  background: rgba(255, 102, 0, 0.15);
-  border-color: rgba(255, 102, 0, 0.22);
+  background: rgba(255,102,0,0.15);
+  border-color: rgba(255,102,0,0.22);
 }
 
-/* Collapsed behavior */
+/* =====================================================
+   COLLAPSED NAV
+===================================================== */
+
 .admin-sidebar.collapsed .sb-link {
   justify-content: center;
   padding: 10px 8px;
 }
 
-.admin-sidebar.collapsed .sb-ico {
-  margin: 0;
+/* =====================================================
+   TOOLTIP (Improved)
+===================================================== */
+
+.admin-sidebar.collapsed .sb-link::after {
+  content: attr(data-tooltip);
+
+  position: absolute;
+  left: calc(100% + 12px);
+  top: 50%;
+  transform: translateY(-50%);
+
+  background: var(--sb-tooltip-bg);
+  color: #fff;
+
+  padding: 6px 10px;
+  border-radius: 6px;
+
+  font-size: 13px;
+  white-space: nowrap;
+
+  opacity: 0;
+  pointer-events: none;
+
+  transition: opacity 0.15s ease;
 }
 
-/* Footer */
+.admin-sidebar.collapsed .sb-link:hover::after {
+  opacity: 1;
+}
+
+/* =====================================================
+   FOOTER
+===================================================== */
+
 .sb-footer {
   margin-top: auto;
   padding-top: 8px;
@@ -148,10 +261,37 @@
   padding: 0 8px;
 }
 
-/* Better focus (target controls only) */
+/* =====================================================
+   ACCESSIBILITY
+===================================================== */
+
 .sb-link:focus-visible,
 .sb-brand-link:focus-visible {
-  outline: 2px solid rgba(255, 102, 0, 0.85);
+  outline: 2px solid var(--sb-focus);
   outline-offset: 3px;
   border-radius: 14px;
+}
+
+/* =====================================================
+   TOUCH IMPROVEMENTS
+===================================================== */
+
+@media (hover: none) {
+  .sb-link:hover {
+    transform: none;
+    box-shadow: none;
+  }
+}
+
+/* =====================================================
+   REDUCED MOTION
+===================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .sb-link,
+  .sb-ico,
+  .sb-brand-link {
+    transition: none !important;
+    animation: none !important;
+  }
 }

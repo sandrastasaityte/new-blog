@@ -1,72 +1,88 @@
-/* src/components/layout/layout.css */
+/* ================= Shell ================= */
 
-/* ---------- Shell ---------- */
 .admin-shell {
+  --sidebar-width: 260px;
+  --sidebar-collapsed-width: 84px;
+
   display: grid;
-  grid-template-columns: 260px 1fr;
+  grid-template-columns: var(--sidebar-width) 1fr;
 
   min-height: 100vh;
   min-width: 0;
   background: #f6f7fb;
+
+  /* prevents layout reflow */
+  contain: layout paint;
 }
 
-/* collapsed desktop */
+/* Collapsed */
 .admin-shell.is-collapsed {
-  grid-template-columns: 84px 1fr;
+  grid-template-columns: var(--sidebar-collapsed-width) 1fr;
+  transition: grid-template-columns 0.22s ease;
 }
 
-/* ---------- Desktop Sidebar ---------- */
+/* ================= Desktop Sidebar ================= */
+
 .admin-sidebar-desktop {
   position: sticky;
   top: 0;
+
   height: 100vh;
   align-self: start;
 
   background: #ffffff;
   overflow: hidden;
 
-  /* ✅ keep border here (remove it from .admin-sidebar in sidebar.css) */
   border-right: 1px solid rgba(0, 0, 0, 0.06);
+
+  /* Safari sticky fix */
+  will-change: transform;
 }
 
-/* ---------- Main ---------- */
+/* ================= Main ================= */
+
 .admin-main {
-  /* ✅ lock main column height so content scroll is stable */
   height: 100vh;
   min-width: 0;
 
   display: flex;
   flex-direction: column;
 
-  /* important: prevent body horizontal scroll from long content */
   overflow: hidden;
 }
 
-/* Topbar is sticky itself; we just ensure content area scrolls */
+/* Scroll content */
 .admin-content {
   padding: 18px;
   min-width: 0;
 
-  /* ✅ internal scroll area */
   overflow: auto;
   flex: 1 1 auto;
 
-  /* nicer scrolling on iOS */
   -webkit-overflow-scrolling: touch;
+
+  /* prevents horizontal overflow */
+  contain: content;
 }
 
-/* ---------- Mobile Drawer ---------- */
+/* ================= Mobile Drawer ================= */
+
 .admin-sidebar-mobile {
-  display: none; /* hidden on desktop */
+  display: none;
 }
 
 .admin-overlay {
   border: none;
   cursor: pointer;
+
+  /* GPU acceleration */
+  will-change: opacity;
 }
 
-/* ---------- Responsive ---------- */
+/* ================= Responsive ================= */
+
 @media (max-width: 980px) {
+
   .admin-shell,
   .admin-shell.is-collapsed {
     grid-template-columns: 1fr;
@@ -76,63 +92,76 @@
     display: none;
   }
 
-  /* ✅ main should still be full height */
   .admin-main {
     height: 100vh;
   }
 
   .admin-sidebar-mobile {
     display: block;
+
     position: fixed;
     inset: 0;
     z-index: 999;
 
     pointer-events: none;
     opacity: 0;
-    transition: opacity 0.18s ease;
+
+    transition: opacity 0.2s ease;
   }
 
   .admin-sidebar-mobile.open {
     pointer-events: auto;
     opacity: 1;
 
-    /* optional blur */
     backdrop-filter: blur(2px);
     -webkit-backdrop-filter: blur(2px);
   }
 
+  /* ---------- Overlay ---------- */
+
   .admin-overlay {
     position: absolute;
     inset: 0;
+
     background: rgba(0, 0, 0, 0.38);
     opacity: 0;
-    transition: opacity 0.18s ease;
+
+    transition: opacity 0.2s ease;
   }
 
   .admin-sidebar-mobile.open .admin-overlay {
     opacity: 1;
   }
 
+  /* ---------- Drawer ---------- */
+
   .admin-drawer {
     position: absolute;
     left: 0;
     top: 0;
+
     height: 100%;
     width: min(86vw, 320px);
 
     background: #ffffff;
     border-right: 1px solid rgba(0, 0, 0, 0.08);
 
-    /* ✅ drawer scroll */
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
 
-    transform: translateX(-100%);
-    transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+    transform: translate3d(-100%, 0, 0);
+
+    transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+
+    /* iPhone safe area */
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+
+    will-change: transform;
   }
 
   .admin-sidebar-mobile.open .admin-drawer {
-    transform: translateX(0);
+    transform: translate3d(0, 0, 0);
   }
 
   .admin-content {
@@ -140,11 +169,14 @@
   }
 }
 
-/* Motion accessibility */
+/* ================= Reduced Motion ================= */
+
 @media (prefers-reduced-motion: reduce) {
+
   .admin-sidebar-mobile,
   .admin-overlay,
-  .admin-drawer {
+  .admin-drawer,
+  .admin-shell.is-collapsed {
     transition: none !important;
   }
 }

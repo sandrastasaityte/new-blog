@@ -1,40 +1,69 @@
 // src/Components/ProtectedRoute.jsx
+
 import React from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../Context/AuthContext";
 
 export default function ProtectedRoute({
   children,
+
+  /* Redirect destination */
   redirectTo = "/login",
+
+  /* Optional roles: ["admin"] */
+  roles = null,
+
+  /* Loading UI */
   fallback = (
-    <div style={{ padding: 18, display: "grid", placeItems: "center" }}>
+    <div className="route-loading">
       Checking session…
+    </div>
+  ),
+
+  /* Unauthorized UI */
+  unauthorizedFallback = (
+    <div style={{ padding: 20 }}>
+      <h3>Access denied</h3>
+      <p>You do not have permission to view this page.</p>
     </div>
   ),
 }) {
   const { user, isLoading } = useAuth();
   const location = useLocation();
 
-  // Show loader while auth state is being determined
+  /* -----------------------
+     Loading state
+  ------------------------ */
+
   if (isLoading) return fallback;
 
-  // Redirect unauthorized users
+  /* -----------------------
+     Not authenticated
+  ------------------------ */
+
   if (!user) {
     return (
       <Navigate
         to={redirectTo}
         replace
         state={{
-          from: {
-            pathname: location.pathname,
-            search: location.search,
-            hash: location.hash,
-          },
+          from: location
         }}
       />
     );
   }
 
-  // Authorized users can access children
+  /* -----------------------
+     Role protection
+  ------------------------ */
+
+  if (roles && !roles.includes(user.role)) {
+    return unauthorizedFallback;
+  }
+
+  /* -----------------------
+     Success
+  ------------------------ */
+
   return children;
 }

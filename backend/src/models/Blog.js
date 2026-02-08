@@ -2,13 +2,20 @@ import mongoose from "mongoose";
 
 const blogSchema = new mongoose.Schema({
   title: { type: String, required: true },
+
   slug: { type: String, required: true, unique: true },
+
   content: { type: String, required: true },
+
   tags: { type: [String], default: [] },
-  image: { type: String },
+
+  image: String,
   author: { type: String, default: "Admin" },
+
   likes: { type: Number, default: 0 },
-  likedBy: { type: [String], default: [] }, // store user emails or IDs
+
+  likedBy: { type: [String], default: [] },
+
   comments: [
     {
       user: String,
@@ -16,6 +23,7 @@ const blogSchema = new mongoose.Schema({
       createdAt: { type: Date, default: Date.now },
     },
   ],
+
   createdAt: { type: Date, default: Date.now },
 });
 

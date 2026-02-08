@@ -1,74 +1,137 @@
-// src/pages/Posts.jsx
 import React, { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
 import { usePosts } from "../Context/PostsContext";
 import "./Admin.css";
 
 export default function Posts() {
-  const { posts = [], deletePost, toggleLike, getId, addComment } = usePosts();
-  const [commentInputs, setCommentInputs] = useState({}); // track input per post
 
-  const sorted = useMemo(
-    () => [...posts].sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt)),
-    [posts]
-  );
+  const {
+    posts,
+    deletePost,
+    toggleLike,
+    deleteComment
+  } = usePosts();
 
-  const onDelete = (p) => {
-    if (!window.confirm(`Delete "${p.title || "this post"}"?`)) return;
-    deletePost(getId(p));
-  };
+  const [expanded, setExpanded] = useState(null);
 
-  const handleCommentChange = (id, value) => {
-    setCommentInputs((prev) => ({ ...prev, [id]: value }));
-  };
+  const sorted = useMemo(() => {
+    return [...posts].sort((a,b)=>
+      new Date(b.publishedAt) - new Date(a.publishedAt)
+    );
+  }, [posts]);
 
-  const handleAddComment = (p) => {
-    const text = commentInputs[getId(p)]?.trim();
-    if (!text) return;
-    addComment(getId(p), { author: "Admin", text, date: new Date().toISOString() });
-    setCommentInputs((prev) => ({ ...prev, [getId(p)]: "" }));
+  const confirmDeletePost = (post) => {
+    if (!window.confirm(`Delete "${post.title}"?`)) return;
+    deletePost(post.id);
   };
 
   return (
     <div className="admin-page">
-      <div className="admin-head">
-        <h1>Posts</h1>
-        <p className="admin-muted">Manage your blog posts.</p>
-        <Link className="btn primary" to="/admin/add-post">+ Add Post</Link>
-      </div>
+
+      <h1>Posts Moderation</h1>
 
       <div className="table">
+
         <div className="row head">
           <div>Title</div>
-          <div className="right">Date</div>
           <div className="right">Likes</div>
           <div className="right">Comments</div>
           <div className="right">Actions</div>
         </div>
 
-        {sorted.length ? sorted.map((p) => (
-          <div className="row" key={getId(p)}>
-            <div className="strong" title={p.title}>{p.title || "Untitled"}</div>
-            <div className="right">{new Date(p.publishedAt).toLocaleDateString()}</div>
-            <div className="right">{p.likes || 0}</div>
-            <div className="right">{p.comments?.length || 0}</div>
-            <div className="right actions">
-              <button className="btn" onClick={() => toggleLike(getId(p))}>Like</button>
-              <button className="btn" onClick={() => handleAddComment(p)}>Comment</button>
-              <button className="btn danger" onClick={() => onDelete(p)}>Delete</button>
-            </div>
-            <div className="row comment-row">
-              <input
-                type="text"
-                placeholder="Add comment…"
-                value={commentInputs[getId(p)] || ""}
-                onChange={(e) => handleCommentChange(getId(p), e.target.value)}
-              />
-            </div>
-          </div>
-        )) : (
-          <div className="row"><div className="admin-muted">No posts yet.</div><div/><div/><div/><div/></div>
-        )}
+        {sorted.map(post => {
+
+          const isOpen = expanded === post.id;
+
+          return (
+            <React.Fragment key={post.id}>
+
+              {/* POST ROW */}
+              <div className="row">
+
+                <div className="strong">
+                  {post.title}
+                </div>
+
+                <div className="right">
+                  {post.likes?.length || 0}
+                </div>
+
+                <div className="right">
+                  {post.comments?.length || 0}
+                </div>
+
+                <div className="actions">
+
+                  <button
+                    className="btn"
+                    onClick={() =>
+                      setExpanded(isOpen ? null : post.id)
+                    }
+                  >
+                    {isOpen ? "Hide" : "View"}
+                  </button>
+
+                  <button
+                    className="btn danger"
+                    onClick={() => confirmDeletePost(post)}
+                  >
+                    Delete Post
+                  </button>
+
+                </div>
+
+              </div>
+
+              {/* COMMENTS PANEL */}
+              {isOpen && (
+                <div className="row" style={{ background:"#fafafa" }}>
+
+                  <div style={{ gridColumn:"1 / -1" }}>
+
+                    <h4>Comments</h4>
+
+                    {!post.comments?.length && (
+                      <p className="admin-muted">
+                        No comments
+                      </p>
+                    )}
+
+                    {post.comments?.map(comment => (
+                      <div
+                        key={comment.id}
+                        style={{
+                          display:"flex",
+                          justifyContent:"space-between",
+                          marginBottom:8
+                        }}
+                      >
+
+                        <div>
+                          <strong>{comment.author}</strong>
+                          <p>{comment.text}</p>
+                        </div>
+
+                        <button
+                          className="btn danger"
+                          onClick={() =>
+                            deleteComment(post.id, comment.id)
+                          }
+                        >
+                          Delete Comment
+                        </button>
+
+                      </div>
+                    ))}
+
+                  </div>
+
+                </div>
+              )}
+
+            </React.Fragment>
+          );
+        })}
+
       </div>
     </div>
   );

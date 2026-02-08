@@ -226,3 +226,32 @@
   color: #999;
 }
 
+.blogs-right {
+  position: sticky;
+  top: 80px;
+  height: fit-content;
+}
+
+/* Skeleton loader */
+.blogs-skeleton {
+  text-align: center;
+  padding: 80px 0;
+  font-size: 1.2rem;
+  opacity: 0.7;
+}
+
+/* Empty message */
+.blogs-empty {
+  text-align: center;
+  padding: 40px 0;
+  opacity: 0.7;
+}
+
+/* Smooth hover */
+.all-blogs-grid > * {
+  transition: transform 0.2s ease;
+}
+
+.all-blogs-grid > *:hover {
+  transform: translateY(-3px);
+}

@@ -1,312 +1,198 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { marked } from "marked";
 import DOMPurify from "dompurify";
-import { createBlog } from "../../lib/blogApi";
+import { createBlog, uploadFile } from "../../lib/blogApi";
 import { usePosts } from "../../Context/PostsContext";
 import "./AddBlogModal.css";
 
-const PLACEHOLDER_IMG = "https://via.placeholder.com/600x300";
+const PLACEHOLDER = "https://via.placeholder.com/600x300";
+const DRAFT_KEY = "blog_draft";
 
-const initialForm = {
-  title: "",
-  content: "",
-  tags: "",
-  image: "",
-  author: "Admin",
-  rating: 0,
-};
+marked.setOptions({ mangle: false, headerIds: false });
 
-function parseTags(input) {
-  const raw = String(input || "")
-    .split(",")
-    .map((t) => t.trim())
-    .filter(Boolean);
-  const seen = new Set();
-  const out = [];
-  for (const t of raw) {
-    const key = t.toLowerCase();
-    if (!seen.has(key)) {
-      seen.add(key);
-      out.push(t);
-    }
-  }
-  return out;
+function debounce(fn, delay = 300) {
+  let t;
+  return (...args) => {
+    clearTimeout(t);
+    t = setTimeout(() => fn(...args), delay);
+  };
 }
-
-function normalizeCreatedBlog(created, fallback) {
-  const b = created?.blog ?? created?.data ?? created ?? fallback;
-  const _id = String(
-    b?._id ?? b?.id ?? fallback?._id ?? fallback?.id ?? (globalThis.crypto?.randomUUID?.() || Date.now())
-  );
-  return { ...fallback, ...(b && typeof b === "object" ? b : {}), _id };
-}
-
-const suggestedTags = [
-  "Economics",
-  "Trade",
-  "Monetary Policy",
-  "AI in Economics",
-  "Finance",
-  "Investment",
-];
 
 export default function AddBlogModal({ isOpen, onClose }) {
   const { addPost } = usePosts();
-  const overlayRef = useRef(null);
+  const modalRef = useRef(null);
   const titleRef = useRef(null);
 
-  const [form, setForm] = useState(initialForm);
-  const [errors, setErrors] = useState({});
+  const [form, setForm] = useState({
+    title: "",
+    content: "",
+    tags: "",
+    image: "",
+    rating: 0,
+  });
+
+  const [history, setHistory] = useState([]);
+  const [redoStack, setRedoStack] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const [apiError, setApiError] = useState("");
 
-  const tagsArray = useMemo(() => parseTags(form.tags), [form.tags]);
-
-  // Markdown preview
-  const markdownPreview = useMemo(
-    () => ({ __html: DOMPurify.sanitize(marked.parse(form.content || "")) }),
-    [form.content]
-  );
-
-  // Reset & focus when modal opens
+  /* ================= Draft Autosave ================= */
   useEffect(() => {
     if (!isOpen) return;
 
-    const t = setTimeout(() => titleRef.current?.focus(), 0);
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    const saved = localStorage.getItem(DRAFT_KEY);
+    if (saved) setForm(JSON.parse(saved));
 
-    const onEsc = (e) => {
-      if (e.key === "Escape" && !submitting) onClose?.();
-    };
-    document.addEventListener("keydown", onEsc);
+  }, [isOpen]);
 
-    return () => {
-      clearTimeout(t);
-      document.body.style.overflow = prevOverflow;
-      document.removeEventListener("keydown", onEsc);
-      setForm(initialForm);
-      setErrors({});
-      setApiError("");
-      setSubmitting(false);
-    };
-  }, [isOpen, onClose, submitting]);
+  useEffect(() => {
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(form));
+  }, [form]);
 
-  const setField = (key) => (e) => {
-    const value = e.target.value;
-    setForm((p) => ({ ...p, [key]: key === "rating" ? Number(value) : value }));
-    setErrors((p) => ({ ...p, [key]: "" }));
-    setApiError("");
+  /* ================= Undo / Redo ================= */
+  const pushHistory = (newState) => {
+    setHistory(h => [...h, form]);
+    setRedoStack([]);
+    setForm(newState);
   };
 
-  const validate = () => {
-    const next = {};
-    const title = form.title.trim();
-    const content = form.content.trim();
-
-    if (!title) next.title = "Title is required.";
-    else if (title.length < 4) next.title = "Title must be at least 4 characters.";
-
-    if (!content) next.content = "Content is required.";
-    else if (content.length < 20) next.content = "Content must be at least 20 characters.";
-
-    if (form.image.trim()) {
-      try {
-        const u = new URL(form.image.trim());
-        if (!/^https?:$/.test(u.protocol)) next.image = "Image URL must start with http/https.";
-      } catch {
-        next.image = "Image must be a valid URL (https://...)";
-      }
-    }
-
-    const ratingNum = Number(form.rating);
-    if (!Number.isFinite(ratingNum) || ratingNum < 0 || ratingNum > 5) {
-      next.rating = "Rating must be between 0 and 5.";
-    }
-
-    setErrors(next);
-    return Object.keys(next).length === 0;
+  const undo = () => {
+    if (!history.length) return;
+    const prev = history[history.length - 1];
+    setRedoStack(r => [form, ...r]);
+    setHistory(h => h.slice(0, -1));
+    setForm(prev);
   };
 
-  const safeClose = () => !submitting && onClose?.();
-  const onOverlayClick = (e) => e.target === overlayRef.current && safeClose();
-  const onStarKeyDown = (star) => (e) => {
-    if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      if (!submitting) setForm((p) => ({ ...p, rating: star }));
-    }
+  const redo = () => {
+    if (!redoStack.length) return;
+    const next = redoStack[0];
+    setHistory(h => [...h, form]);
+    setRedoStack(r => r.slice(1));
+    setForm(next);
   };
 
-  const handleSubmit = async (e) => {
+  /* ================= Markdown Preview ================= */
+  const preview = useMemo(() => ({
+    __html: DOMPurify.sanitize(marked.parse(form.content || "")),
+  }), [form.content]);
+
+  /* ================= Drag & Drop Upload ================= */
+  const onDrop = async (e) => {
     e.preventDefault();
-    if (submitting) return;
-    setApiError("");
+    const file = e.dataTransfer.files?.[0];
+    if (!file) return;
 
-    const token = localStorage.getItem("token");
-    if (!token) return setApiError("Please log in first.");
-
-    if (!validate()) return;
-    setSubmitting(true);
-
-    const payload = {
-      title: form.title.trim(),
-      content: form.content.trim(),
-      tags: tagsArray,
-      image: form.image.trim() || PLACEHOLDER_IMG,
-      author: (form.author || "Admin").trim(),
-      rating: Number(form.rating) || 0,
-      date: new Date().toISOString(),
-      views: 0,
-      likes: 0,
-      comments: [],
-    };
+    const fd = new FormData();
+    fd.append("file", file);
 
     try {
-      const created = await createBlog(payload, token);
-      const blog = normalizeCreatedBlog(created, payload);
-      addPost?.(blog);
-      onClose?.();
+      const res = await uploadFile(fd);
+      pushHistory({ ...form, image: res.url });
+    } catch {
+      setApiError("Upload failed");
+    }
+  };
+
+  /* ================= Toolbar ================= */
+  const insertMarkdown = (syntax) => {
+    pushHistory({
+      ...form,
+      content: form.content + syntax,
+    });
+  };
+
+  /* ================= Submit ================= */
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSubmitting(true);
+
+    try {
+      const blog = await createBlog({
+        ...form,
+        tags: form.tags.split(",").map(t => t.trim()),
+        image: form.image || PLACEHOLDER,
+        date: new Date().toISOString(),
+      });
+
+      addPost(blog);
+      localStorage.removeItem(DRAFT_KEY);
+      onClose();
+
     } catch (err) {
-      setApiError(err?.message || "Failed to create blog.");
+      setApiError(err.message);
     } finally {
       setSubmitting(false);
     }
   };
 
   if (!isOpen) return null;
-  const tokenExists = !!localStorage.getItem("token");
 
   return (
-    <div
-      className="addblog-modal-overlay"
-      ref={overlayRef}
-      onMouseDown={onOverlayClick}
-    >
+    <div className="modal-overlay">
       <div
-        className="addblog-modal addblog-modal--editor"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="addblog-title"
-        onMouseDown={(e) => e.stopPropagation()}
-        aria-busy={submitting}
+        className="modal premium"
+        ref={modalRef}
+        onDrop={onDrop}
+        onDragOver={(e) => e.preventDefault()}
       >
-        <div className="addblog-modal-head">
-          <h3 id="addblog-title">Add New Blog</h3>
-          <button
-            type="button"
-            className="addblog-close"
-            onClick={safeClose}
-            disabled={submitting}
-            aria-label="Close modal"
-          >
-            ×
-          </button>
-        </div>
+        <header className="modal-header">
+          <h3>Add Blog</h3>
+          <button onClick={onClose}>×</button>
+        </header>
 
-        <div className="addblog-body">
-          {!tokenExists && <div className="form-error">Please log in to add a blog.</div>}
-          {apiError && <div className="form-error">{apiError}</div>}
+        <form className="modal-body" onSubmit={handleSubmit}>
+          {apiError && <div className="error">{apiError}</div>}
 
-          <form className="add-blog-form add-blog-form--modal" onSubmit={handleSubmit}>
-            <div className="addblog-grid">
-              {/* Left: Editor */}
-              <div className="addblog-left">
-                <label className={`field ${errors.title ? "is-error" : ""}`}>
-                  <span>Title</span>
-                  <input
-                    ref={titleRef}
-                    value={form.title}
-                    onChange={setField("title")}
-                    required
-                    minLength={4}
-                    disabled={submitting}
-                  />
-                  {errors.title && <div className="field-error">{errors.title}</div>}
-                </label>
+          {/* Toolbar */}
+          <div className="toolbar">
+            <button type="button" onClick={() => insertMarkdown("**bold**")}>B</button>
+            <button type="button" onClick={() => insertMarkdown("_italic_")}>I</button>
+            <button type="button" onClick={() => insertMarkdown("### Heading")}>H</button>
+            <button type="button" onClick={undo}>Undo</button>
+            <button type="button" onClick={redo}>Redo</button>
+          </div>
 
-                <label className={`field ${errors.content ? "is-error" : ""}`}>
-                  <span>Content</span>
-                  <textarea
-                    rows={6}
-                    value={form.content}
-                    onChange={setField("content")}
-                    required
-                    minLength={20}
-                    disabled={submitting}
-                  />
-                  {errors.content && <div className="field-error">{errors.content}</div>}
-                </label>
+          <input
+            ref={titleRef}
+            placeholder="Title"
+            value={form.title}
+            onChange={(e) => pushHistory({ ...form, title: e.target.value })}
+            required
+          />
 
-                <label className="field">
-                  <span>Tags ({tagsArray.length})</span>
-                  <input value={form.tags} onChange={setField("tags")} disabled={submitting} />
-                  {tagsArray.length > 0 && (
-                    <div className="tag-preview" aria-label="Parsed tags">
-                      {tagsArray.map((t) => (
-                        <span key={t.toLowerCase()} className="tag-chip">{t}</span>
-                      ))}
-                    </div>
-                  )}
-                  <div className="tag-suggestions">
-                    {suggestedTags.map((t) => (
-                      <button
-                        type="button"
-                        key={t}
-                        className="tag-suggestion-btn"
-                        onClick={() => {
-                          if (!tagsArray.includes(t)) {
-                            setForm((p) => ({
-                              ...p,
-                              tags: p.tags ? p.tags + ", " + t : t,
-                            }));
-                          }
-                        }}
-                        disabled={submitting}
-                      >
-                        {t}
-                      </button>
-                    ))}
-                  </div>
-                </label>
+          <textarea
+            rows={8}
+            placeholder="Write blog..."
+            value={form.content}
+            onChange={(e) => pushHistory({ ...form, content: e.target.value })}
+          />
 
-                <label className={`field ${errors.image ? "is-error" : ""}`}>
-                  <span>Image URL</span>
-                  <input value={form.image} onChange={setField("image")} disabled={submitting} />
-                  {errors.image && <div className="field-error">{errors.image}</div>}
-                </label>
+          <input
+            placeholder="Tags"
+            value={form.tags}
+            onChange={(e) => pushHistory({ ...form, tags: e.target.value })}
+          />
 
-                <div className="image-preview">
-                  <img
-                    src={form.image.trim() || PLACEHOLDER_IMG}
-                    alt="Blog preview"
-                    loading="lazy"
-                    onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = PLACEHOLDER_IMG; }}
-                  />
-                </div>
+          <input
+            placeholder="Image URL or drag image"
+            value={form.image}
+            onChange={(e) => pushHistory({ ...form, image: e.target.value })}
+          />
 
-                <label className="field">
-                  <span>Author</span>
-                  <input value={form.author} onChange={setField("author")} disabled={submitting} />
-                </label>
+          <div className="image-preview">
+            <img src={form.image || PLACEHOLDER} alt="" />
+          </div>
 
-               
+          <div className="preview"
+               dangerouslySetInnerHTML={preview} />
 
-                <div className="form-actions">
-                  <button type="button" className="btn secondary" onClick={safeClose} disabled={submitting}>Cancel</button>
-                  <button type="submit" className="btn primary" disabled={submitting || !tokenExists}>
-                    {submitting ? "Saving..." : "Add Blog"}
-                  </button>
-                </div>
-              </div>
-
-              {/* Right: Preview */}
-              <div className="addblog-right">
-                <h4>Preview</h4>
-                <div className="markdown-preview" dangerouslySetInnerHTML={markdownPreview}></div>
-              </div>
-            </div>
-          </form>
-        </div>
+          <div className="actions">
+            <button type="submit" disabled={submitting}>
+              {submitting ? "Saving..." : "Publish"}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

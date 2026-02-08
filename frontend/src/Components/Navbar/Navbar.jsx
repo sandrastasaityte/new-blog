@@ -1,78 +1,194 @@
-import React, { useState, useEffect } from "react";
-import { Link, NavLink, useLocation } from "react-router-dom";
+// src/Components/Navbar/Navbar.jsx
+
+import React, { useState, useEffect, useRef, useMemo } from "react";
+import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { FaUserCircle, FaBars, FaTimes } from "react-icons/fa";
-import AuthModal from "../Auth/AuthModal"; 
+import AuthModal from "../Auth/AuthModal";
 import "./Navbar.css";
 
-const Navbar = ({ token, setToken }) => {
-  const [open, setOpen] = useState(false); 
-  const [authOpen, setAuthOpen] = useState(false); 
+export default function Navbar({ token, setToken }) {
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [authOpen, setAuthOpen] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  const dropdownRef = useRef(null);
   const location = useLocation();
+  const navigate = useNavigate();
 
-  // Close mobile menu on route change
-  useEffect(() => setOpen(false), [location.pathname]);
+  /* ---------------- Navigation Config ---------------- */
+  const navItems = useMemo(() => [
+    { to: "/", label: "Home", end: true },
+    { to: "/about", label: "About" },
+    { to: "/blogs", label: "Blogs" },
+    { to: "/contact", label: "Contact" }
+  ], []);
 
-  const linkClass = ({ isActive }) => (isActive ? "active" : undefined);
+  /* ---------------- Close menus on route change ---------------- */
+  useEffect(() => {
+    setMobileOpen(false);
+    setDropdownOpen(false);
+  }, [location.pathname]);
+
+  /* ---------------- Sticky Navbar (Optimised) ---------------- */
+  useEffect(() => {
+    const onScroll = () => {
+      const shouldScroll = window.scrollY > 20;
+      setScrolled(prev => (prev !== shouldScroll ? shouldScroll : prev));
+    };
+
+    window.addEventListener("scroll", onScroll);
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  /* ---------------- Lock Body Scroll ---------------- */
+  useEffect(() => {
+    document.body.style.overflow =
+      mobileOpen || authOpen ? "hidden" : "";
+    return () => (document.body.style.overflow = "");
+  }, [mobileOpen, authOpen]);
+
+  /* ---------------- Click Outside Dropdown ---------------- */
+  useEffect(() => {
+    if (!dropdownOpen) return;
+
+    const handleClick = (e) => {
+      if (!dropdownRef.current?.contains(e.target)) {
+        setDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [dropdownOpen]);
+
+  /* ---------------- ESC Close ---------------- */
+  useEffect(() => {
+    const escHandler = (e) => {
+      if (e.key === "Escape") {
+        setMobileOpen(false);
+        setDropdownOpen(false);
+        setAuthOpen(false);
+      }
+    };
+
+    document.addEventListener("keydown", escHandler);
+    return () => document.removeEventListener("keydown", escHandler);
+  }, []);
+
+  /* ---------------- Logout ---------------- */
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    setToken?.("");
+    setDropdownOpen(false);
+    navigate("/");
+  };
+
+  const linkClass = ({ isActive }) =>
+    `nav-link ${isActive ? "active" : ""}`;
+
+  /* ---------------- Render Nav Links ---------------- */
+  const renderLinks = () => (
+    <>
+      {navItems.map(item => (
+        <NavLink
+          key={item.to}
+          to={item.to}
+          className={linkClass}
+          end={item.end}
+        >
+          {item.label}
+        </NavLink>
+      ))}
+
+      {token && (
+        <NavLink to="/add-blog" className={linkClass}>
+          Add Blog
+        </NavLink>
+      )}
+    </>
+  );
 
   return (
     <>
-      <nav className="navbar" role="navigation" aria-label="Main">
+      <nav className={`navbar ${scrolled ? "scrolled" : ""}`}>
+
+        {/* Logo */}
         <div className="logo">
           <Link to="/">MyEconomics</Link>
         </div>
 
+        {/* Desktop Links */}
         <ul className="nav-links">
-          <li><NavLink to="/" className={linkClass} end>Home</NavLink></li>
-          <li><NavLink to="/about" className={linkClass}>About</NavLink></li>
-          <li><NavLink to="/blogs" className={linkClass}>Blogs</NavLink></li>
-          <li><NavLink to="/contact" className={linkClass}>Contact</NavLink></li>
-          {token && <li><NavLink to="/add-blog" className={linkClass}>Add Blog</NavLink></li>}
+          {renderLinks()}
         </ul>
 
+        {/* Actions */}
         <div className="nav-actions">
-          <button
-            type="button"
-            className="icon-btn"
-            onClick={() => token ? setToken(null) : setAuthOpen(true)}
-            aria-label={token ? "Logout" : "Login / Sign up"}
-          >
-            {token ? "Logout" : <FaUserCircle size={28} />}
-          </button>
 
-          <button
-            type="button"
-            className="icon-btn nav-toggle"
-            onClick={() => setOpen(v => !v)}
-            aria-label={open ? "Close menu" : "Open menu"}
-            aria-expanded={open}
-          >
-            {open ? <FaTimes size={20} /> : <FaBars size={20} />}
-          </button>
-        </div>
+          {/* User Dropdown */}
+          <div className="user-menu" ref={dropdownRef}>
+            <button
+              className="icon-btn"
+              onClick={() =>
+                token
+                  ? setDropdownOpen(v => !v)
+                  : setAuthOpen(true)
+              }
+              aria-expanded={dropdownOpen}
+              aria-haspopup="menu"
+            >
+              <FaUserCircle size={26} />
+            </button>
 
-        {open && (
-          <div className="nav-mobile-overlay open" onClick={() => setOpen(false)}>
-            <div className="nav-mobile" onClick={(e) => e.stopPropagation()}>
-              <NavLink to="/" className={linkClass} end>Home</NavLink>
-              <NavLink to="/about" className={linkClass}>About</NavLink>
-              <NavLink to="/blogs" className={linkClass}>Blogs</NavLink>
-              <NavLink to="/contact" className={linkClass}>Contact</NavLink>
-              {token && <NavLink to="/add-blog" className={linkClass}>Add Blog</NavLink>}
-
-              <div className="nav-mobile-actions">
+            {token && dropdownOpen && (
+              <div className="user-dropdown" role="menu">
                 <button
-                  className="auth-btn"
-                  onClick={() => token ? setToken(null) : setAuthOpen(true)}
-                  type="button"
+                  role="menuitem"
+                  onClick={handleLogout}
                 >
-                  {token ? "Logout" : "Login / Sign up"}
+                  Logout
                 </button>
               </div>
-            </div>
+            )}
           </div>
-        )}
+
+          {/* Mobile Toggle */}
+          <button
+            className="icon-btn nav-toggle"
+            onClick={() => setMobileOpen(v => !v)}
+            aria-expanded={mobileOpen}
+          >
+            {mobileOpen ? <FaTimes /> : <FaBars />}
+          </button>
+
+        </div>
+
+        {/* Mobile Menu */}
+        <div
+          className={`nav-mobile-overlay ${mobileOpen ? "open" : ""}`}
+          onClick={() => setMobileOpen(false)}
+        >
+          <div
+            className="nav-mobile"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {renderLinks()}
+
+            <button
+              className="auth-btn mobile-only"
+              onClick={() =>
+                token ? handleLogout() : setAuthOpen(true)
+              }
+            >
+              {token ? "Logout" : "Login / Sign up"}
+            </button>
+          </div>
+        </div>
       </nav>
 
+      {/* Auth Modal */}
       {authOpen && (
         <AuthModal
           isOpen={authOpen}
@@ -82,6 +198,4 @@ const Navbar = ({ token, setToken }) => {
       )}
     </>
   );
-};
-
-export default Navbar;
+}

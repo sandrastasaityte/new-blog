@@ -1,75 +1,149 @@
-/* ---------------- Desktop Navbar ---------------- */
+:root {
+  --nav-bg: #222;
+  --nav-bg-scroll: #1c1c1c;
+  --accent: #ff6600;
+  --accent-hover: #ff7f33;
+}
+
+/* ---------------- Navbar ---------------- */
 .navbar {
+  position: sticky;
+  top: 0;
+  z-index: 999;
+
   display: flex;
   justify-content: space-between;
   align-items: center;
+
   padding: 1rem 2rem;
-  background: #222;
-  color: #fff;
-  position: relative;
-  z-index: 100;
+  background: var(--nav-bg);
+  color: white;
+
+  transition: background 0.25s ease, box-shadow 0.25s ease;
 }
 
+.navbar.scrolled {
+  background: var(--nav-bg-scroll);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+}
+
+/* ---------------- Logo ---------------- */
 .logo a {
-  color: #ff6600;
+  color: var(--accent);
+  font-size: 1.6rem;
   font-weight: bold;
-  font-size: 1.5rem;
   text-decoration: none;
 }
 
+/* ---------------- Desktop Links ---------------- */
 .nav-links {
   display: flex;
-  gap: 1.5rem;
+  gap: 1.8rem;
+  list-style: none;
 }
 
-.nav-links a {
-  color: #fff;
+.nav-link {
+  color: white;
   text-decoration: none;
-  font-weight: 500;
-  transition: color 0.2s;
+  position: relative;
+  padding-bottom: 4px;
 }
 
-.nav-links a:hover,
-.nav-links a.active {
-  color: #ff6600;
+.nav-link::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 2px;
+  width: 0%;
+  background: var(--accent);
+  transition: width 0.25s ease;
 }
 
+.nav-link:hover::after,
+.nav-link.active::after {
+  width: 100%;
+}
+
+.nav-link.active {
+  color: var(--accent);
+}
+
+/* ---------------- Actions ---------------- */
 .nav-actions {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.6rem;
 }
 
 .icon-btn {
   background: none;
   border: none;
-  color: #fff;
+  color: white;
   cursor: pointer;
-  font-size: 1rem;
+  padding: 0.3rem;
+  border-radius: 6px;
+  transition: transform 0.15s ease, background 0.2s ease;
 }
 
-.auth-btn {
-  background: #ff6600;
-  color: #fff;
+.icon-btn:hover {
+  background: rgba(255,255,255,0.08);
+  transform: scale(1.05);
+}
+
+/* ---------------- Dropdown ---------------- */
+.user-menu {
+  position: relative;
+}
+
+.user-dropdown {
+  position: absolute;
+  top: 130%;
+  right: 0;
+  background: #2a2a2a;
+  border-radius: 8px;
+  padding: 0.5rem;
+  min-width: 140px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+}
+
+.user-dropdown button {
+  width: 100%;
+  background: none;
   border: none;
-  padding: 0.5rem 0.85rem;
+  color: white;
+  padding: 0.5rem;
+  text-align: left;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.user-dropdown button:hover {
+  background: rgba(255,255,255,0.1);
+}
+
+/* ---------------- Auth Button ---------------- */
+.auth-btn {
+  background: var(--accent);
+  border: none;
+  color: white;
+  padding: 0.5rem 0.9rem;
   border-radius: 6px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s, transform 0.15s;
 }
 
 .auth-btn:hover {
-  background: #ff7f33;
-  transform: translateY(-1px);
+  background: var(--accent-hover);
 }
 
-/* ---------------- Mobile Navbar ---------------- */
+/* ---------------- Mobile ---------------- */
 .nav-toggle {
   display: none;
 }
 
 @media (max-width: 768px) {
+
   .nav-links {
     display: none;
   }
@@ -81,83 +155,69 @@
   .nav-mobile-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,0.6);
+    background: rgba(0,0,0,0.7);
+
     display: flex;
     justify-content: center;
     align-items: center;
+
     opacity: 0;
     visibility: hidden;
-    transition: opacity 0.3s ease, visibility 0.3s ease;
-    pointer-events: none;
+    transition: opacity 0.25s ease;
   }
 
   .nav-mobile-overlay.open {
     opacity: 1;
     visibility: visible;
-    pointer-events: auto;
   }
 
   .nav-mobile {
-    background: #222;
-    color: #fff;
-    padding: 2rem 1.5rem;
+    background: var(--nav-bg);
+    padding: 2rem;
+    border-radius: 12px;
+
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
-    text-align: center;
-    border-radius: 10px;
-    transform: scale(0.95);
-    transition: transform 0.25s ease, opacity 0.25s ease;
+    gap: 1.4rem;
+
+    width: 80%;
+    max-width: 300px;
+
+    transform: translateY(40px);
+    opacity: 0;
+    transition: all 0.3s ease;
   }
 
   .nav-mobile-overlay.open .nav-mobile {
-    transform: scale(1);
-  }
-
-  .nav-mobile a,
-  .nav-mobile-actions button {
-    font-size: 1.2rem;
-    text-decoration: none;
-    color: #fff;
-  }
-
-  .nav-mobile a.active,
-  .nav-mobile a:hover {
-    color: #ff6600;
-  }
-
-  .nav-mobile-actions {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    margin-top: 1rem;
-  }
-
-  .nav-mobile {
-    max-height: 80vh;
-    overflow-y: auto;
+    transform: translateY(0);
+    opacity: 1;
   }
 }
 
-/* ---------------- Accessibility & Focus ---------------- */
-.nav-links a:focus,
-.nav-mobile a:focus,
+/* ---------------- Accessibility ---------------- */
+.nav-link:focus,
 .icon-btn:focus,
 .auth-btn:focus {
-  outline: 2px solid #ff6600;
-  outline-offset: 2px;
-  border-radius: 4px;
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+.mobile-only {
+  display: none;
 }
 
-/* ---------------- Remove bullets ---------------- */
-ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
+@media (max-width: 768px) {
+  .mobile-only {
+    display: block;
+  }
 }
-.nav-links,
-.nav-mobile {
-  list-style: none;
-  padding: 0;
-  margin: 0;
+/* Hide mobile menu on desktop */
+.nav-mobile-overlay {
+  display: none;
+}
+
+/* Show only on small screens */
+@media (max-width: 768px) {
+  .nav-mobile-overlay {
+    display: flex;
+  }
 }

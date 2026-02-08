@@ -1,5 +1,27 @@
-import React, { useId, useMemo, useState, useRef, useEffect } from "react";
+import React, {
+  useId,
+  useMemo,
+  useState,
+  useRef,
+  useEffect,
+  useCallback,
+} from "react";
+
+import StarRating from "../StarRating/StarRating";
 import "./CommentSection.css";
+
+/* ============================= */
+/* Get Logged User */
+/* ============================= */
+
+function getCurrentUser() {
+  try {
+    const raw = localStorage.getItem("user");
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
 
 export default function CommentSection({
   comments = [],
@@ -10,138 +32,205 @@ export default function CommentSection({
   const nameId = useId();
   const textId = useId();
 
-  // Normalize comments
+  /* ============================= */
+  /* Logged User */
+  /* ============================= */
+
+  const currentUser = useMemo(() => getCurrentUser(), []);
+
+  /* ============================= */
+  /* Normalize Comments */
+  /* ============================= */
+
   const normalized = useMemo(
     () =>
       (comments || [])
         .map((c) => ({
-          name: String(c?.name || "Anonymous").trim() || "Anonymous",
-          text: String(c?.text || "").trim(),
+          name: String(c?.name || "Guest"),
+          text: String(c?.text || ""),
+          rating: Number(c?.rating || 0),
           date: c?.date ? String(c.date) : "",
         }))
         .filter((c) => c.text),
     [comments]
   );
 
+  /* ============================= */
+  /* Average Rating */
+  /* ============================= */
+
+  const averageRating = useMemo(() => {
+    if (!normalized.length) return 0;
+
+    const total = normalized.reduce((sum, c) => sum + c.rating, 0);
+    return (total / normalized.length).toFixed(1);
+  }, [normalized]);
+
+  /* ============================= */
+  /* State */
+  /* ============================= */
+
   const [name, setName] = useState("");
   const [text, setText] = useState("");
+  const [rating, setRating] = useState(0);
   const [error, setError] = useState("");
 
   const listRef = useRef(null);
   const remaining = maxLength - text.length;
 
-  // Scroll to bottom smoothly on new comment
+  /* ============================= */
+  /* Autofill user name */
+  /* ============================= */
+
   useEffect(() => {
-    if (listRef.current) {
-      listRef.current.scrollTo({
-        top: listRef.current.scrollHeight,
-        behavior: "smooth",
-      });
+    if (currentUser?.name && !name) {
+      setName(currentUser.name);
     }
+  }, [currentUser, name]);
+
+  /* ============================= */
+  /* Scroll on new comment */
+  /* ============================= */
+
+  useEffect(() => {
+    listRef.current?.scrollTo({
+      top: listRef.current.scrollHeight,
+      behavior: "smooth",
+    });
   }, [normalized.length]);
 
-  const submit = (e) => {
-    e.preventDefault();
-    if (busy) return;
+  /* ============================= */
+  /* Submit */
+  /* ============================= */
 
-    const payload = {
-      name: name.trim() || "Anonymous",
-      text: text.trim(),
-      date: new Date().toISOString(),
-    };
+  const submit = useCallback(
+    (e) => {
+      e.preventDefault();
+      if (busy) return;
 
-    if (!payload.text) return;
+      if (!rating) {
+        setError("Please select rating.");
+        return;
+      }
 
-    if (payload.text.length > maxLength) {
-      setError(`Comment is too long (max ${maxLength} characters).`);
-      return;
-    }
+      const payload = {
+        name:
+          name.trim() ||
+          currentUser?.name ||
+          currentUser?.email ||
+          "Guest",
 
-    setError("");
-    onAddComment?.(payload);
-    setText("");
-  };
+        text: text.trim(),
+        rating,
+        date: new Date().toISOString(),
+      };
 
-  const onTextChange = (e) => {
-    setText(e.target.value);
-    if (error) setError("");
-  };
+      if (!payload.text) return;
 
-  const onNameBlur = () => setName((n) => n.trim());
+      if (payload.text.length > maxLength) {
+        setError(`Comment too long (max ${maxLength}).`);
+        return;
+      }
+
+      setError("");
+      onAddComment?.(payload);
+
+      setText("");
+      setRating(0);
+    },
+    [busy, rating, name, text, maxLength, onAddComment, currentUser]
+  );
+
+  /* ============================= */
+  /* Render */
+  /* ============================= */
 
   return (
-    <section className="comment-section" aria-label="Comments">
-      <h3 className="comment-title">Comments</h3>
+    <section className="comment-section" aria-label="Reviews">
+      {/* ===== Header ===== */}
+
+      <div className="review-header">
+        <h3>Reviews</h3>
+
+        {normalized.length > 0 && (
+          <div className="review-summary">
+            <StarRating value={Number(averageRating)} disabled />
+            <span className="review-average">
+              {averageRating} / 5 ({normalized.length})
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* ===== Comment List ===== */}
 
       {normalized.length === 0 ? (
-        <p className="comment-empty" role="status">
-          No comments yet. Be the first!
-        </p>
+        <p className="comment-empty">No reviews yet</p>
       ) : (
-        <div className="comment-list" ref={listRef} role="list">
+        <div className="comment-list" ref={listRef}>
           {normalized.map((c, idx) => (
-            <div
-              key={`${c.date}-${idx}`}
-              className="comment-item fade-in"
-              role="listitem"
-            >
+            <div key={`${c.date}-${idx}`} className="comment-item">
               <div className="comment-head">
-                <strong className="comment-name">{c.name}</strong>
+                <strong>{c.name}</strong>
+
+                {c.rating > 0 && (
+                  <StarRating value={c.rating} disabled />
+                )}
+
                 {c.date && (
                   <span className="comment-date">
                     {new Date(c.date).toLocaleDateString()}
                   </span>
                 )}
               </div>
-              <p className="comment-text">{c.text}</p>
+
+              <p>{c.text}</p>
             </div>
           ))}
         </div>
       )}
 
+      {/* ===== Form ===== */}
+
       <form className="comment-form" onSubmit={submit}>
-        <label className="sr-only" htmlFor={nameId}>
-          Your name
-        </label>
         <input
           id={nameId}
-          type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          onBlur={onNameBlur}
           placeholder="Your name (optional)"
           autoComplete="name"
           disabled={busy}
         />
 
-        <div className="comment-textarea-wrap">
-          <label className="sr-only" htmlFor={textId}>
-            Write a comment
-          </label>
-          <textarea
-            id={textId}
-            value={text}
-            onChange={onTextChange}
-            placeholder="Write a comment…"
-            required
-            rows={3}
-            maxLength={maxLength}
+        {/* ⭐ Rating */}
+        <div className="rating-field">
+          <span>Your rating</span>
+          <StarRating
+            value={rating}
+            onChange={setRating}
             disabled={busy}
-            className={remaining <= 10 ? "warning" : ""}
           />
-          <div className="comment-counter" role="status">
-            {remaining} characters left
-          </div>
         </div>
 
-        {error && (
-          <p className="comment-error" role="alert">
-            {error}
-          </p>
-        )}
+        <textarea
+          id={textId}
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder="Write your review…"
+          required
+          rows={3}
+          maxLength={maxLength}
+          disabled={busy}
+        />
 
-        <button type="submit" disabled={busy || !text.trim()}>
-          {busy ? "Posting…" : "Post"}
+        <div className="comment-counter">
+          {remaining} characters left
+        </div>
+
+        {error && <p className="comment-error">{error}</p>}
+
+        <button disabled={busy || !text.trim()}>
+          {busy ? "Posting…" : "Post Review"}
         </button>
       </form>
     </section>

@@ -1,81 +1,159 @@
-// src/pages/Dashboard.jsx
 import React, { useMemo } from "react";
 import { usePosts } from "../Context/PostsContext";
 import "./Admin.css";
 
-// Format numbers nicely
+/* -----------------------------------------
+   Format Helpers
+----------------------------------------- */
+
+const numberFormatter = new Intl.NumberFormat();
+
 function fmt(n) {
-  return new Intl.NumberFormat().format(Number(n || 0));
+  return numberFormatter.format(Number(n || 0));
 }
 
-// Check if a date is within the last X days
+function safeDate(value) {
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
 function isWithinDays(isoDate, days) {
-  if (!isoDate) return false;
-  const d = new Date(isoDate);
-  if (Number.isNaN(d.getTime())) return false;
-  const now = Date.now();
-  const diff = now - d.getTime();
-  return diff >= 0 && diff <= days * 24 * 60 * 60 * 1000;
+  const d = safeDate(isoDate);
+  if (!d) return false;
+
+  const diff = Date.now() - d.getTime();
+  return diff >= 0 && diff <= days * 86400000;
 }
 
-// Format date for display
 function prettyDate(iso) {
-  if (!iso) return "-";
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "-";
-  return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "2-digit" });
+  const d = safeDate(iso);
+  if (!d) return "-";
+
+  return d.toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "2-digit"
+  });
 }
+
+/* -----------------------------------------
+   Component
+----------------------------------------- */
 
 export default function Dashboard() {
+
   const { posts = [] } = usePosts();
 
-  const { stats, recent } = useMemo(() => {
-    const sorted = [...posts].sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
+  /* -----------------------------------------
+     Derived Analytics
+  ----------------------------------------- */
 
-    const totalPosts = sorted.length;
-    const totalViews = sorted.reduce((sum, p) => sum + (p.views || 0), 0);
-    const totalLikes = sorted.reduce((sum, p) => sum + (p.likes || 0), 0);
-    const totalComments = sorted.reduce((sum, p) => sum + (p.comments?.length || 0), 0);
+  const analytics = useMemo(() => {
 
-    const last7 = sorted.filter((p) => isWithinDays(p.publishedAt, 7));
-    const last7Posts = last7.length;
-    const last7Likes = last7.reduce((sum, p) => sum + (p.likes || 0), 0);
+    if (!posts.length) {
+      return {
+        stats: {
+          totalPosts: 0,
+          totalViews: 0,
+          totalLikes: 0,
+          totalComments: 0,
+          last7Posts: 0,
+          last7Likes: 0
+        },
+        recent: []
+      };
+    }
+
+    /* ---------- Sort only once ---------- */
+
+    const sorted = [...posts].sort((a, b) => {
+      return safeDate(b.publishedAt)?.getTime() -
+             safeDate(a.publishedAt)?.getTime();
+    });
+
+    /* ---------- Aggregations ---------- */
+
+    let totalViews = 0;
+    let totalLikes = 0;
+    let totalComments = 0;
+
+    let last7Posts = 0;
+    let last7Likes = 0;
+
+    for (const p of sorted) {
+
+      totalViews += p.views || 0;
+      totalLikes += p.likes || 0;
+      totalComments += p.comments?.length || 0;
+
+      if (isWithinDays(p.publishedAt, 7)) {
+        last7Posts++;
+        last7Likes += p.likes || 0;
+      }
+    }
 
     return {
-      stats: { totalPosts, totalViews, totalLikes, totalComments, last7Posts, last7Likes },
-      recent: sorted.slice(0, 5),
+      stats: {
+        totalPosts: sorted.length,
+        totalViews,
+        totalLikes,
+        totalComments,
+        last7Posts,
+        last7Likes
+      },
+      recent: sorted.slice(0, 5)
     };
+
   }, [posts]);
+
+  const { stats, recent } = analytics;
+
+  /* -----------------------------------------
+     UI
+  ----------------------------------------- */
 
   return (
     <div className="admin-page">
+
       <div className="admin-head">
         <h1>Dashboard</h1>
-        <p className="admin-muted">Quick overview of your blog performance.</p>
+        <p className="admin-muted">
+          Quick overview of your blog performance.
+        </p>
       </div>
+
+      {/* ---------- Stats ---------- */}
 
       <div className="admin-grid">
-        <div className="admin-card">
-          <p className="admin-card-label">Posts</p>
-          <p className="admin-card-value">{fmt(stats.totalPosts)}</p>
-          {stats.last7Posts > 0 && <p className="admin-muted">+{fmt(stats.last7Posts)} last 7 days</p>}
-        </div>
-        <div className="admin-card">
-          <p className="admin-card-label">Views</p>
-          <p className="admin-card-value">{fmt(stats.totalViews)}</p>
-        </div>
-        <div className="admin-card">
-          <p className="admin-card-label">Likes</p>
-          <p className="admin-card-value">{fmt(stats.totalLikes)}</p>
-          {stats.last7Likes > 0 && <p className="admin-muted">+{fmt(stats.last7Likes)} last 7 days</p>}
-        </div>
-        <div className="admin-card">
-          <p className="admin-card-label">Comments</p>
-          <p className="admin-card-value">{fmt(stats.totalComments)}</p>
-        </div>
+
+        <DashboardCard
+          label="Posts"
+          value={fmt(stats.totalPosts)}
+          delta={stats.last7Posts}
+        />
+
+        <DashboardCard
+          label="Views"
+          value={fmt(stats.totalViews)}
+        />
+
+        <DashboardCard
+          label="Likes"
+          value={fmt(stats.totalLikes)}
+          delta={stats.last7Likes}
+        />
+
+        <DashboardCard
+          label="Comments"
+          value={fmt(stats.totalComments)}
+        />
+
       </div>
 
-      <div style={{ marginTop: 14 }} className="table">
+      {/* ---------- Recent Posts ---------- */}
+
+      <div className="table" style={{ marginTop: 14 }}>
+
         <div className="row head">
           <div>Title</div>
           <div className="right">Likes</div>
@@ -83,20 +161,45 @@ export default function Dashboard() {
           <div className="right">Date</div>
         </div>
 
-        {recent.length ? recent.map((p) => (
-          <div className="row" key={p.id}>
-            <div className="strong">{p.title || "Untitled"}</div>
-            <div className="right">{fmt(p.likes)}</div>
-            <div className="right">{fmt(p.comments?.length || 0)}</div>
-            <div className="right">{prettyDate(p.publishedAt)}</div>
-          </div>
-        )) : (
+        {recent.length ? (
+          recent.map(p => (
+            <div className="row" key={p.id}>
+              <div className="strong">{p.title || "Untitled"}</div>
+              <div className="right">{fmt(p.likes)}</div>
+              <div className="right">{fmt(p.comments?.length)}</div>
+              <div className="right">{prettyDate(p.publishedAt)}</div>
+            </div>
+          ))
+        ) : (
           <div className="row">
             <div className="admin-muted">No posts yet.</div>
-            <div /><div /><div />
+            <div />
+            <div />
+            <div />
           </div>
         )}
+
       </div>
+
+    </div>
+  );
+}
+
+/* -----------------------------------------
+   Reusable Card Component
+----------------------------------------- */
+
+function DashboardCard({ label, value, delta }) {
+  return (
+    <div className="admin-card">
+      <p className="admin-card-label">{label}</p>
+      <p className="admin-card-value">{value}</p>
+
+      {delta > 0 && (
+        <p className="admin-muted">
+          +{fmt(delta)} last 7 days
+        </p>
+      )}
     </div>
   );
 }

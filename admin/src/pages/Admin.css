@@ -1,157 +1,476 @@
-/* src/pages/Admin.css (or wherever you keep it) */
+/* =====================================================
+   DESIGN TOKENS
+===================================================== */
 
-/* Basic page */
-.admin-page { padding: 0; } /* ✅ avoid double padding (admin-content already has padding) */
-.admin-head { display:flex; align-items:flex-end; justify-content:space-between; gap:12px; margin-bottom:14px; }
-.admin-head h1 { margin:0; font-size:26px; font-weight:900; color:#0f172a; }
-.admin-muted { margin:6px 0 0; color: rgba(15,23,42,0.65); font-weight:600; }
+:root {
 
-/* Dashboard cards */
-.admin-grid { display:grid; gap:12px; grid-template-columns:1fr; }
-@media (min-width:720px){ .admin-grid{ grid-template-columns:repeat(2,1fr);} }
-@media (min-width:980px){ .admin-grid{ grid-template-columns:repeat(4,1fr);} }
-.admin-card { background:#fff; border:1px solid rgba(0,0,0,0.07); border-radius:16px; padding:14px; box-shadow:0 18px 50px rgba(0,0,0,0.06); }
-.admin-card-label { margin:0; font-weight:900; font-size:12px; color: rgba(15,23,42,0.65); text-transform:uppercase; letter-spacing:0.6px; }
-.admin-card-value { margin:8px 0 0; font-size:30px; font-weight:900; color:#0f172a; }
+  --admin-bg: #f6f7fb;
+  --surface: #ffffff;
 
-/* Form + buttons */
-.admin-form { display:grid; gap:14px; }
-.admin-form label { display:block; font-weight:800; font-size:13px; color:#0f172a; margin:0; }
-.admin-form input, .admin-form textarea {
-  display:block;
+  --text-main: #0f172a;
+  --text-muted: rgba(15,23,42,0.65);
+
+  --border-light: rgba(0,0,0,0.07);
+  --border-mid: rgba(0,0,0,0.14);
+
+  --primary: #0077ff;
+  --primary-soft: rgba(0,119,255,0.12);
+  --danger: #b00020;
+  --success: #00b45a;
+
+  --radius-lg: 16px;
+  --radius-md: 12px;
+
+  --shadow-soft: 0 18px 50px rgba(0,0,0,0.06);
+  --shadow-hover: 0 8px 20px rgba(0,0,0,0.12);
+
+  --transition-fast: 0.18s ease;
+}
+
+/* =====================================================
+   DARK MODE READY
+===================================================== */
+
+[data-theme="dark"] {
+
+  --admin-bg: #0b1220;
+  --surface: #121a2b;
+
+  --text-main: #f1f5f9;
+  --text-muted: rgba(255,255,255,0.65);
+
+  --border-light: rgba(255,255,255,0.08);
+  --border-mid: rgba(255,255,255,0.16);
+}
+
+/* =====================================================
+   PAGE
+===================================================== */
+
+.admin-page {
+  padding: 0;
+  background: var(--admin-bg);
+}
+
+/* =====================================================
+   HEADER
+===================================================== */
+
+.admin-head {
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:14px;
+}
+
+.admin-head h1 {
+  margin:0;
+  font-size: clamp(22px, 2.4vw, 26px);
+  font-weight:900;
+  color:var(--text-main);
+}
+
+.admin-muted {
+  margin-top:6px;
+  color: var(--text-muted);
+  font-weight:600;
+}
+
+/* =====================================================
+   DASHBOARD GRID
+===================================================== */
+
+.admin-grid {
+  display:grid;
+  gap:12px;
+  grid-template-columns:1fr;
+
+  container-type: inline-size;
+}
+
+@container (min-width:720px){
+  .admin-grid { grid-template-columns:repeat(2,1fr); }
+}
+
+@container (min-width:980px){
+  .admin-grid { grid-template-columns:repeat(4,1fr); }
+}
+
+/* =====================================================
+   CARD
+===================================================== */
+
+.admin-card {
+  background:var(--surface);
+  border:1px solid var(--border-light);
+  border-radius:var(--radius-lg);
+  padding:14px;
+  box-shadow:var(--shadow-soft);
+}
+
+.admin-card-label {
+  font-weight:900;
+  font-size:12px;
+  color:var(--text-muted);
+  text-transform:uppercase;
+  letter-spacing:0.6px;
+}
+
+.admin-card-value {
+  margin-top:8px;
+  font-size:30px;
+  font-weight:900;
+  color:var(--text-main);
+}
+
+/* =====================================================
+   FORM
+===================================================== */
+
+.admin-form {
+  display:grid;
+  gap:14px;
+}
+
+.admin-form label {
+  font-weight:800;
+  font-size:13px;
+  color:var(--text-main);
+}
+
+.admin-form input,
+.admin-form textarea {
+
   width:100%;
   margin-top:6px;
   padding:12px;
-  border-radius:12px;
-  border:1px solid rgba(0,0,0,0.14);
+
+  border-radius:var(--radius-md);
+  border:1px solid var(--border-mid);
+
+  background:var(--surface);
   outline:none;
-  background:#fff;
   font-size:14px;
+
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast);
 }
-.admin-form textarea { resize:vertical; min-height:120px; }
-.admin-form input:focus, .admin-form textarea:focus {
-  border-color: rgba(0,119,255,0.5);
-  box-shadow:0 0 0 4px rgba(0,119,255,0.12);
+
+.admin-form textarea {
+  resize:vertical;
+  min-height:120px;
+  font-family:inherit;
+  line-height:1.4;
 }
+
+.admin-form input:focus,
+.admin-form textarea:focus {
+
+  border-color:var(--primary);
+  box-shadow:0 0 0 4px var(--primary-soft);
+}
+
+/* =====================================================
+   BUTTONS
+===================================================== */
 
 .btn {
+
   padding:10px 12px;
-  border-radius:12px;
-  border:1px solid rgba(0,0,0,0.12);
-  background:#fff;
-  cursor:pointer;
+  border-radius:var(--radius-md);
+  border:1px solid var(--border-mid);
+
+  background:var(--surface);
   font-weight:900;
   font-size:14px;
-}
-.btn.primary { background: rgba(0,119,255,0.92); border-color: rgba(0,119,255,0.25); color:#fff; }
-.btn.danger { background: rgba(176,0,32,0.92); border-color: rgba(176,0,32,0.25); color:#fff; }
-.btn:disabled { opacity:0.6; cursor:not-allowed; }
+  cursor:pointer;
 
-.form-actions { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
-
-.form-ok {
-  padding:10px 12px;
-  border-radius:12px;
-  background: rgba(0,180,90,0.12);
-  border:1px solid rgba(0,180,90,0.22);
-  color:#05603a;
-  font-size:14px;
-  font-weight:700;
-  margin-bottom:10px;
-}
-.form-error {
-  padding:10px 12px;
-  border-radius:12px;
-  background: rgba(176,0,32,0.08);
-  border:1px solid rgba(176,0,32,0.2);
-  color:#b00020;
-  font-size:14px;
-  font-weight:700;
-  margin-bottom:10px;
+  transition:
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast),
+    background var(--transition-fast);
 }
 
-/* Tags */
-.tags-preview { display:flex; flex-wrap:wrap; gap:8px; }
-.tag-chip { font-size:12px; font-weight:800; padding:6px 10px; border-radius:999px; background: rgba(0,0,0,0.04); border:1px solid rgba(0,0,0,0.08); }
-
-/* Table */
-.table { background:#fff; border:1px solid rgba(0,0,0,0.07); border-radius:16px; padding:10px; box-shadow:0 18px 50px rgba(0,0,0,0.06); }
-.row { display:grid; grid-template-columns: 2fr 1fr 1fr 1.5fr; gap:10px; padding:10px; align-items:center; border-top:1px solid rgba(0,0,0,0.06); }
-.row.head { border-top:none; font-weight:900; color: rgba(15,23,42,0.7); text-transform:uppercase; font-size:12px; letter-spacing:0.6px; }
-.strong { font-weight:900; }
-.right { justify-self:end; }
-.actions { display:flex; gap:8px; justify-content:flex-end; }
-
-/* Login page */
-.auth-wrapper {
-  max-width: 420px;
-  margin: 3rem auto;
-  padding: 2.1rem 2rem;
-  border-radius: 16px;
-  background: #fff;
-  border: 1px solid rgba(0, 0, 0, 0.07);
-  box-shadow: 0 18px 55px rgba(0, 0, 0, 0.08);
+.btn.primary {
+  background:var(--primary);
+  border-color:var(--primary);
+  color:#fff;
 }
 
-/* Hover styles */
-.btn:hover:not(:disabled):not(.primary):not(.danger) { background: rgba(0,0,0,0.04); }
-.btn.primary:hover:not(:disabled) { filter: brightness(0.98); }
-.btn.danger:hover:not(:disabled) { filter: brightness(0.98); }
+.btn.danger {
+  background:var(--danger);
+  border-color:var(--danger);
+  color:#fff;
+}
+
+.btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow:var(--shadow-hover);
+}
+
+.btn:disabled {
+  opacity:0.6;
+  cursor:not-allowed;
+}
 
 .btn:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(0,119,255,0.22);
-  border-color: rgba(0,119,255,0.35);
+  outline:none;
+  box-shadow:0 0 0 3px var(--primary-soft);
 }
 
-/* Mobile table */
-@media (max-width: 680px) {
-  .row { grid-template-columns: 1fr; gap: 6px; }
-  .row.head { display: none; }
-  .actions { justify-content: flex-start; }
-  .right { justify-self: start; }
+/* =====================================================
+   FORM ALERTS
+===================================================== */
+
+.form-ok,
+.form-error {
+
+  padding:10px 12px;
+  border-radius:var(--radius-md);
+  font-size:14px;
+  font-weight:700;
+  margin-bottom:10px;
 }
-/* Login form */
+
+.form-ok {
+  background:rgba(0,180,90,0.12);
+  border:1px solid rgba(0,180,90,0.22);
+  color:#05603a;
+}
+
+.form-error {
+  background:rgba(176,0,32,0.08);
+  border:1px solid rgba(176,0,32,0.2);
+  color:var(--danger);
+}
+
+/* =====================================================
+   TAGS
+===================================================== */
+
+.tags-preview {
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+}
+
+.tag-chip {
+
+  font-size:12px;
+  font-weight:800;
+  padding:6px 10px;
+
+  border-radius:999px;
+  background:rgba(0,0,0,0.04);
+  border:1px solid var(--border-light);
+}
+
+/* =====================================================
+   TABLE
+===================================================== */
+
+.table {
+  background:var(--surface);
+  border:1px solid var(--border-light);
+  border-radius:var(--radius-lg);
+  padding:10px;
+  box-shadow:var(--shadow-soft);
+
+  overflow-x:auto;
+}
+
+.row {
+  display:grid;
+  grid-template-columns:2fr 1fr 1fr 1.5fr;
+  gap:10px;
+
+  padding:10px;
+  align-items:center;
+
+  border-top:1px solid var(--border-light);
+}
+
+.row.head {
+  border-top:none;
+  font-weight:900;
+  color:var(--text-muted);
+  text-transform:uppercase;
+  font-size:12px;
+  letter-spacing:0.6px;
+}
+
+.strong { font-weight:900; }
+.right { justify-self:end; }
+
+.actions {
+  display:flex;
+  gap:8px;
+  justify-content:flex-end;
+}
+
+/* =====================================================
+   AUTH PANEL
+===================================================== */
+
+.auth-wrapper {
+
+  max-width:420px;
+  margin:3rem auto;
+  padding:2.1rem 2rem;
+
+  border-radius:var(--radius-lg);
+  background:var(--surface);
+  border:1px solid var(--border-light);
+  box-shadow:var(--shadow-soft);
+}
+
 .auth-form input {
-  display: block;
-  width: 100%;
-  padding: 0.85rem 1rem;
-  margin-bottom: 12px;
-  border-radius: 12px;
-  border: 1px solid rgba(0, 0, 0, 0.14);
-  outline: none;
-  font-size: 0.98rem;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
-  background: #fff;
+
+  width:100%;
+  padding:0.85rem 1rem;
+  margin-bottom:12px;
+
+  border-radius:var(--radius-md);
+  border:1px solid var(--border-mid);
+  outline:none;
+
+  background:var(--surface);
 }
 
 .auth-form input:focus {
-  border-color: rgba(0, 119, 255, 0.7);
-  box-shadow: 0 0 0 4px rgba(0, 119, 255, 0.12);
+  border-color:var(--primary);
+  box-shadow:0 0 0 4px var(--primary-soft);
 }
 
-.auth-form button {
+/* =====================================================
+   MOBILE TABLE
+===================================================== */
+
+@media (max-width:680px) {
+
+  .row {
+    grid-template-columns:1fr;
+    gap:6px;
+  }
+
+  .row.head { display:none; }
+
+  .actions { justify-content:flex-start; }
+  .right { justify-self:start; }
+}
+/* =====================================================
+   COMMENT ROW
+===================================================== */
+
+.comment-row {
+  grid-template-columns: 1fr;
+  background: rgba(0,0,0,0.02);
+}
+
+.comment-row input {
   width: 100%;
-}
-/* Prevent long words/URLs breaking layout */
-.admin-card,
-.table,
-.row,
-.admin-form input,
-.admin-form textarea {
-  min-width: 0;
-  overflow-wrap: anywhere;
+  padding: 8px 10px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-mid);
+  font-size: 13px;
 }
 
-/* Better textarea font */
-.admin-form textarea {
-  font-family: inherit;
-  line-height: 1.4;
+/* =====================================================
+   COMMENT LIST (Admin moderation)
+===================================================== */
+
+.comment-list {
+  grid-column: 1 / -1;
+  padding: 8px 0 4px;
+  display: grid;
+  gap: 6px;
 }
 
-/* Buttons in tables look nicer */
-.actions .btn {
-  white-space: nowrap;
+.comment-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  padding: 8px 10px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-light);
+  background: rgba(0,0,0,0.02);
+
+  font-size: 13px;
 }
 
-/* Make table scroll
+/* Guest badge */
+
+.comment-author {
+  font-weight: 700;
+  margin-right: 6px;
+}
+
+.comment-author.guest {
+  color: var(--text-muted);
+}
+
+/* Comment text */
+
+.comment-text {
+  flex: 1;
+  margin-right: 10px;
+  word-break: break-word;
+}
+
+/* Delete comment button */
+
+.comment-delete {
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--danger);
+  background: transparent;
+  color: var(--danger);
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.comment-delete:hover {
+  background: var(--danger);
+  color: #fff;
+}
+
+/* =====================================================
+   LIKE COUNTER
+===================================================== */
+
+.like-counter {
+  font-weight: 700;
+  color: var(--primary);
+}
+
+/* =====================================================
+   EMPTY COMMENT STATE
+===================================================== */
+
+.comment-empty {
+  font-size: 12px;
+  color: var(--text-muted);
+  padding: 4px 6px;
+}
+
+/* =====================================================
+   MOBILE COMMENT LAYOUT
+===================================================== */
+
+@media (max-width: 680px) {
+
+  .comment-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .comment-delete {
+    align-self: flex-end;
+  }
+
+}

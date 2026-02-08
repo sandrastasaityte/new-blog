@@ -1,3 +1,5 @@
+// src/Components/Footer/Footer.jsx
+
 import React, { useEffect, useId, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import "./Footer.css";
@@ -7,11 +9,12 @@ import whatsapp from "../../assets/whatsapp.png";
 import instagram from "../../assets/instagram.png";
 import telegram from "../../assets/telegram.png";
 
-const isValidEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+const isValidEmail = (value) =>
+  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 
-const Footer = () => {
+export default function Footer() {
   const emailId = useId();
-  const successTimerRef = useRef(null);
+  const timerRef = useRef(null);
 
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState({
@@ -20,15 +23,13 @@ const Footer = () => {
     error: "",
   });
 
+  // Cleanup timer
   useEffect(() => {
-    return () => {
-      if (successTimerRef.current) clearTimeout(successTimerRef.current);
-    };
+    return () => timerRef.current && clearTimeout(timerRef.current);
   }, []);
 
-  const clearSuccessSoon = () => {
-    if (successTimerRef.current) clearTimeout(successTimerRef.current);
-    successTimerRef.current = setTimeout(() => {
+  const autoClearSuccess = () => {
+    timerRef.current = setTimeout(() => {
       setStatus((s) => ({ ...s, success: false }));
     }, 3000);
   };
@@ -40,26 +41,30 @@ const Footer = () => {
     const trimmed = email.trim();
 
     if (!trimmed) {
-      setStatus({ loading: false, success: false, error: "Please enter your email." });
-      return;
+      return setStatus({
+        loading: false,
+        success: false,
+        error: "Please enter your email.",
+      });
     }
 
     if (!isValidEmail(trimmed)) {
-      setStatus({ loading: false, success: false, error: "Please enter a valid email." });
-      return;
+      return setStatus({
+        loading: false,
+        success: false,
+        error: "Enter a valid email address.",
+      });
     }
 
     try {
       setStatus({ loading: true, success: false, error: "" });
 
-      // 🔌 Connect backend here later
-      console.log("Subscribed email:", trimmed);
-
+      // 👉 connect backend later
       await new Promise((res) => setTimeout(res, 700));
 
       setEmail("");
       setStatus({ loading: false, success: true, error: "" });
-      clearSuccessSoon();
+      autoClearSuccess();
     } catch {
       setStatus({
         loading: false,
@@ -75,21 +80,22 @@ const Footer = () => {
   };
 
   return (
-    <footer className="footer" aria-label="Footer">
+    <footer className="footer">
       <div className="footer-container">
+
         {/* About */}
-        <div className="footer-section about">
+        <div className="footer-section">
           <h3>About</h3>
           <p>
-            My Creative Blog is a space to share ideas, stories, and tips.
-            Connect, learn, and get inspired!
+            My Creative Blog shares ideas, tech tips and inspiration
+            for creators and developers.
           </p>
         </div>
 
-        {/* Quick Links */}
-        <nav className="footer-section links" aria-label="Quick links">
+        {/* Links */}
+        <nav className="footer-section">
           <h3>Quick Links</h3>
-          <ul>
+          <ul className="footer-links">
             <li><Link to="/">Home</Link></li>
             <li><Link to="/blogs">Blogs</Link></li>
             <li><Link to="/about">About</Link></li>
@@ -98,58 +104,41 @@ const Footer = () => {
         </nav>
 
         {/* Contact */}
-        <div className="footer-section contact">
+        <div className="footer-section">
           <h3>Contact</h3>
           <p>Email: contact@mycreativeblog.com</p>
           <p>Phone: +44 123 456 789</p>
 
-          <div className="social-icons" aria-label="Social links">
-            <a
-              href="https://t.me/"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Telegram"
-            >
+          <div className="social-icons">
+
+            <a href="https://t.me/" target="_blank" rel="noopener noreferrer" aria-label="Telegram">
               <img src={telegram} alt="" loading="lazy" />
             </a>
 
-            <a
-              href="https://instagram.com/"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Instagram"
-            >
+            <a href="https://instagram.com/" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
               <img src={instagram} alt="" loading="lazy" />
             </a>
 
-            <a
-              href="https://linkedin.com/"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="LinkedIn"
-            >
+            <a href="https://linkedin.com/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
               <img src={linkedin} alt="" loading="lazy" />
             </a>
 
-            <a
-              href="https://wa.me/"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="WhatsApp"
-            >
+            <a href="https://wa.me/" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">
               <img src={whatsapp} alt="" loading="lazy" />
             </a>
+
           </div>
         </div>
 
         {/* Subscribe */}
-        <div className="footer-section subscribe">
+        <div className="footer-section">
           <h3>Subscribe</h3>
-          <p>Get our latest posts directly in your inbox!</p>
+          <p>Get latest posts in your inbox</p>
 
-          <form onSubmit={handleSubscribe} className="subscribe-form" noValidate>
-            <label className="sr-only" htmlFor={emailId}>
-              Email address
+          <form className="subscribe-form" onSubmit={handleSubscribe} noValidate>
+
+            <label htmlFor={emailId} className="sr-only">
+              Email
             </label>
 
             <input
@@ -159,34 +148,31 @@ const Footer = () => {
               value={email}
               onChange={onEmailChange}
               disabled={status.loading}
-              autoComplete="email"
               required
             />
 
-            <button type="submit" disabled={status.loading}>
+            <button disabled={status.loading}>
               {status.loading ? "Subscribing…" : "Subscribe"}
             </button>
+
           </form>
 
-          {status.error ? (
-            <p className="subscribe-error" role="alert" aria-live="polite">
-              {status.error}
-            </p>
-          ) : null}
+          {status.error && (
+            <p className="subscribe-error">{status.error}</p>
+          )}
 
-          {status.success ? (
-            <p className="subscribe-success" role="status" aria-live="polite">
-              Thanks for subscribing! 🎉
+          {status.success && (
+            <p className="subscribe-success">
+              ✅ Subscribed successfully!
             </p>
-          ) : null}
+          )}
         </div>
+
       </div>
 
       <div className="footer-bottom">
-        <p>© {new Date().getFullYear()} My Creative Blog. All rights reserved.</p>
+        © {new Date().getFullYear()} My Creative Blog
       </div>
     </footer>
   );
-};
-
-export default Footer;
+}

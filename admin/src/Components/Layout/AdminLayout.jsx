@@ -1,5 +1,10 @@
-// src/components/layout/AdminLayout.jsx
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  useCallback,
+  useId,
+} from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
@@ -9,81 +14,182 @@ const LS_KEY = "admin_sidebar_collapsed_v1";
 
 export default function AdminLayout() {
   const location = useLocation();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [collapsed, setCollapsed] = useState(() => {
-    try { return JSON.parse(localStorage.getItem(LS_KEY)) || false; } 
-    catch { return false; }
+  const drawerId = useId();
+
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    try {
+      const stored = localStorage.getItem(LS_KEY);
+      return stored ? JSON.parse(stored) : false;
+    } catch {
+      return false;
+    }
   });
 
   const drawerRef = useRef(null);
   const lastFocusRef = useRef(null);
-  const prevOverflowRef = useRef("");
-  const prevPaddingRightRef = useRef("");
 
-  useEffect(() => { localStorage.setItem(LS_KEY, JSON.stringify(collapsed)); }, [collapsed]);
-  useEffect(() => setSidebarOpen(false), [location.pathname]);
-  const handleCloseMobile = useCallback(() => setSidebarOpen(false), []);
-  const handleOpenMobile = useCallback(() => setSidebarOpen(true), []);
-  const handleToggleCollapse = useCallback(() => setCollapsed((v) => !v), []);
-
-  // Focus trap + ESC
+  // -----------------------------
+  // Persist collapsed state
+  // -----------------------------
   useEffect(() => {
-    if (!sidebarOpen) return;
+    localStorage.setItem(LS_KEY, JSON.stringify(isCollapsed));
+  }, [isCollapsed]);
+
+  // -----------------------------
+  // Close mobile sidebar on route change
+  // -----------------------------
+  useEffect(() => {
+    setIsSidebarOpen(false);
+  }, [location.pathname]);
+
+  // -----------------------------
+  // Toggle Handlers
+  // -----------------------------
+  const toggleMobile = useCallback(() => {
+    setIsSidebarOpen((v) => !v);
+  }, []);
+
+  const closeMobile = useCallback(() => {
+    setIsSidebarOpen(false);
+  }, []);
+
+  const toggleCollapse = useCallback(() => {
+    setIsCollapsed((v) => !v);
+  }, []);
+
+  // ---------------------------------------------------
+  // Focus trap + ESC close
+  // ---------------------------------------------------
+  useEffect(() => {
+    if (!isSidebarOpen) return;
+
     const drawer = drawerRef.current;
     if (!drawer) return;
+
     lastFocusRef.current = document.activeElement;
-    const focusables = drawer.querySelectorAll(
-      'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
-    );
-    const first = focusables[0], last = focusables[focusables.length - 1];
-    (first || drawer).focus?.();
 
-    const onKeyDown = (e) => {
-      if (e.key === "Escape") { e.preventDefault(); setSidebarOpen(false); return; }
-      if (e.key !== "Tab") return;
-      const active = document.activeElement;
-      if (e.shiftKey) { if (active === first || !drawer.contains(active)) { e.preventDefault(); last.focus(); } }
-      else { if (active === last) { e.preventDefault(); first.focus(); } }
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [sidebarOpen]);
+    const getFocusables = () =>
+      drawer.querySelectorAll(
+        'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])'
+      );
 
-  // restore focus
-  useEffect(() => { if (!sidebarOpen && lastFocusRef.current?.focus) lastFocusRef.current.focus(); lastFocusRef.current = null; }, [sidebarOpen]);
+    const focusables = getFocusables();
 
-  // lock scroll
-  useEffect(() => {
-    if (sidebarOpen) {
-      prevOverflowRef.current = document.body.style.overflow || "";
-      prevPaddingRightRef.current = document.body.style.paddingRight || "";
-      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
-      document.body.style.overflow = "hidden";
-      if (scrollbarWidth > 0) document.body.style.paddingRight = `${scrollbarWidth}px`;
+    if (focusables.length > 0) {
+      focusables[0].focus();
     } else {
-      document.body.style.overflow = prevOverflowRef.current || "";
-      document.body.style.paddingRight = prevPaddingRightRef.current || "";
+      drawer.setAttribute("tabindex", "0");
+      drawer.focus();
     }
-    return () => { document.body.style.overflow = prevOverflowRef.current || ""; document.body.style.paddingRight = prevPaddingRightRef.current || ""; };
-  }, [sidebarOpen]);
+
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        closeMobile();
+        return;
+      }
+
+      if (e.key !== "Tab") return;
+
+      const focusables = getFocusables();
+      if (!focusables.length) return;
+
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      const active = document.activeElement;
+
+      if (e.shiftKey) {
+        if (active === first || !drawer.contains(active)) {
+          e.preventDefault();
+          last.focus();
+        }
+      } else {
+        if (active === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isSidebarOpen, closeMobile]);
+
+  // ---------------------------------------------------
+  // Restore focus when drawer closes
+  // ---------------------------------------------------
+  useEffect(() => {
+    if (!isSidebarOpen && lastFocusRef.current?.focus) {
+      lastFocusRef.current.focus();
+      lastFocusRef.current = null;
+    }
+  }, [isSidebarOpen]);
+
+  // ---------------------------------------------------
+  // Body scroll lock
+  // ---------------------------------------------------
+  useEffect(() => {
+    if (!isSidebarOpen) return;
+
+    const originalOverflow = document.body.style.overflow;
+    const scrollbarWidth =
+      window.innerWidth - document.documentElement.clientWidth;
+
+    document.body.style.overflow = "hidden";
+
+    if (scrollbarWidth > 0) {
+      document.body.style.paddingRight = `${scrollbarWidth}px`;
+    }
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      document.body.style.paddingRight = "";
+    };
+  }, [isSidebarOpen]);
 
   return (
-    <div className={`admin-shell ${collapsed ? "is-collapsed" : ""}`}>
-      <aside className="admin-sidebar-desktop"><Sidebar collapsed={collapsed} /></aside>
-      <div className={`admin-sidebar-mobile ${sidebarOpen ? "open" : ""}`} aria-hidden={!sidebarOpen}>
-        <button className="admin-overlay" onClick={handleCloseMobile} aria-label="Close menu" />
-        <div id="admin-mobile-drawer" className="admin-drawer" role="dialog" aria-modal="true" ref={drawerRef} tabIndex={-1}>
-          <Sidebar collapsed={false} onNavigate={handleCloseMobile} />
+    <div className={`admin-shell ${isCollapsed ? "is-collapsed" : ""}`}>
+      
+      {/* Desktop Sidebar */}
+      <aside className="admin-sidebar-desktop">
+        <Sidebar collapsed={isCollapsed} />
+      </aside>
+
+      {/* Mobile Sidebar */}
+      <div
+        className={`admin-sidebar-mobile ${isSidebarOpen ? "open" : ""}`}
+        aria-hidden={!isSidebarOpen}
+        inert={!isSidebarOpen ? "" : undefined}
+      >
+        <button
+          type="button"
+          className="admin-overlay"
+          aria-label="Close menu"
+          onClick={closeMobile}
+        />
+
+        <div
+          id={drawerId}
+          className="admin-drawer"
+          role="dialog"
+          aria-modal="true"
+          ref={drawerRef}
+        >
+          <Sidebar collapsed={false} onNavigate={closeMobile} />
         </div>
       </div>
+
+      {/* Main */}
       <div className="admin-main">
         <Topbar
-          collapsed={collapsed}
-          onToggleCollapse={handleToggleCollapse}
-          onOpenMobileMenu={() => setSidebarOpen((v) => !v)}
-          mobileDrawerId="admin-mobile-drawer"
-          isMobileMenuOpen={sidebarOpen}
+          collapsed={isCollapsed}
+          onToggleCollapse={toggleCollapse}
+          onOpenMobileMenu={toggleMobile}
+          mobileDrawerId={drawerId}
+          isMobileMenuOpen={isSidebarOpen}
         />
+
         <main className="admin-content">
           <Outlet />
         </main>

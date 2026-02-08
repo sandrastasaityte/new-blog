@@ -1,4 +1,133 @@
-:root { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
-* { box-sizing: border-box; }
-body { margin: 0; background: #f6f7fb; color: #0f172a; }
-a { color: inherit; }
+/* =====================================================
+   ROOT TOKENS
+===================================================== */
+
+:root {
+
+  /* Typography */
+  font-family:
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    Arial,
+    sans-serif;
+
+  line-height: 1.5;
+  font-weight: 400;
+
+  /* Colors */
+  --bg-page: #f6f7fb;
+  --text-main: #0f172a;
+  --text-muted: rgba(15,23,42,0.65);
+
+  /* Motion */
+  --transition-fast: 0.18s ease;
+
+  /* Accessibility */
+  color-scheme: light;
+}
+
+/* =====================================================
+   DARK MODE SUPPORT
+===================================================== */
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-page: #0b1220;
+    --text-main: #f1f5f9;
+    --text-muted: rgba(255,255,255,0.65);
+
+    color-scheme: dark;
+  }
+}
+
+/* =====================================================
+   GLOBAL RESET (SAFE)
+===================================================== */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* =====================================================
+   BODY
+===================================================== */
+
+body {
+
+  margin: 0;
+
+  background: var(--bg-page);
+  color: var(--text-main);
+
+  /* Font Rendering */
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+
+  /* Scroll Behaviour */
+  scroll-behavior: smooth;
+
+  min-height: 100vh;
+}
+
+/* =====================================================
+   LINKS
+===================================================== */
+
+a {
+  color: inherit;
+  text-decoration: none;
+  transition: opacity var(--transition-fast);
+}
+
+a:hover {
+  opacity: 0.85;
+}
+
+/* =====================================================
+   MEDIA DEFAULTS
+===================================================== */
+
+img,
+picture,
+video,
+canvas,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+/* =====================================================
+   FORM CONTROLS BASE
+===================================================== */
+
+input,
+button,
+textarea,
+select {
+  font: inherit;
+}
+
+/* =====================================================
+   ACCESSIBILITY
+===================================================== */
+
+:focus-visible {
+  outline: 2px solid #0077ff;
+  outline-offset: 2px;
+}
+
+/* =====================================================
+   MOTION REDUCTION
+===================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}

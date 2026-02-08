@@ -176,3 +176,17 @@
     font-size: 1.2rem;
   }
 }
+.review-sort {
+  margin-bottom: 10px;
+}
+
+.comment-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.verified {
+  color: green;
+  margin-left: 5px;
+}

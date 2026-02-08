@@ -1,13 +1,19 @@
+// src/Components/Auth/AuthForm.jsx
 import React, { useState, useMemo, useRef, useEffect } from "react";
 import "./AuthForm.css";
 import { login, register } from "../../lib/authApi";
 
-const initialState = { email: "", password: "", confirmPassword: "" };
+const initialState = {
+  email: "",
+  password: "",
+  confirmPassword: "",
+};
 
 function isValidEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
+/* ---------- Universal token extractor ---------- */
 function extractToken(data) {
   return (
     data?.token ||
@@ -20,46 +26,71 @@ function extractToken(data) {
   );
 }
 
-const AuthForm = ({ setToken, onClose, setBusy }) => {
+export default function AuthForm({ setToken, onClose, setBusy }) {
   const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState(initialState);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const errorRef = useRef(null);
 
-  const emailTrimmed = useMemo(() => formData.email.trim(), [formData.email]);
-  const passwordTrimmed = useMemo(
-    () => formData.password.trim(),
-    [formData.password]
+  /* ---------- Trimmed values ---------- */
+  const email = useMemo(() => formData.email.trim(), [formData.email]);
+  const password = useMemo(() => formData.password.trim(), [formData.password]);
+  const confirm = useMemo(
+    () => formData.confirmPassword.trim(),
+    [formData.confirmPassword]
   );
 
+  /* ---------- Reset form when switching modes ---------- */
   useEffect(() => {
     setFormData(initialState);
     setError("");
   }, [isLogin]);
 
+  /* ---------- Focus error ---------- */
   useEffect(() => {
-    if (error && errorRef.current) errorRef.current.focus();
+    if (error && errorRef.current) {
+      errorRef.current.focus();
+    }
   }, [error]);
 
+  /* ---------- Close modal on ESC ---------- */
+  useEffect(() => {
+    const handleEsc = (e) => {
+      if (e.key === "Escape") onClose?.();
+    };
+
+    document.addEventListener("keydown", handleEsc);
+    return () => document.removeEventListener("keydown", handleEsc);
+  }, [onClose]);
+
+  /* ---------- Input change ---------- */
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((p) => ({ ...p, [name]: value }));
+
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+
     if (error) setError("");
   };
 
+  /* ---------- Validation ---------- */
   const validate = () => {
-    if (!emailTrimmed || !passwordTrimmed) return "Please fill all fields.";
-    if (!isValidEmail(emailTrimmed)) return "Please enter a valid email.";
-    if (passwordTrimmed.length < 6) return "Password must be at least 6 characters.";
+    if (!email || !password) return "Please fill all fields.";
+    if (!isValidEmail(email)) return "Invalid email address.";
+    if (password.length < 6) return "Password must be at least 6 characters.";
+
     if (!isLogin) {
-      const confirmTrimmed = formData.confirmPassword.trim();
-      if (!confirmTrimmed) return "Please confirm your password.";
-      if (passwordTrimmed !== confirmTrimmed) return "Passwords do not match.";
+      if (!confirm) return "Please confirm your password.";
+      if (confirm !== password) return "Passwords do not match.";
     }
+
     return "";
   };
 
+  /* ---------- Submit ---------- */
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (loading) return;
@@ -72,41 +103,56 @@ const AuthForm = ({ setToken, onClose, setBusy }) => {
       setBusy?.(true);
       setError("");
 
-      const data = isLogin
-        ? await login(emailTrimmed, passwordTrimmed)
-        : await register(emailTrimmed, passwordTrimmed);
+      const response = isLogin
+        ? await login(email, password)
+        : await register(email, password);
 
-      const token = extractToken(data) || localStorage.getItem("token");
+      const token =
+        extractToken(response) || localStorage.getItem("token");
 
       if (!token) {
-        setError((data?.message || data?.error) ?? "No token returned from server.");
+        setError("Authentication failed. No token returned.");
         return;
       }
 
+      /* ---------- Save auth ---------- */
       localStorage.setItem("token", token);
-      const user = data?.user || data?.data?.user;
-      if (user) localStorage.setItem("user", JSON.stringify(user));
+
+      const user = response?.user || response?.data?.user;
+      if (user) {
+        localStorage.setItem("user", JSON.stringify(user));
+      }
 
       setToken?.(token);
+
       setFormData(initialState);
-      setError("");
       onClose?.();
+
     } catch (err) {
-      setError(err?.message || "Something went wrong. Please try again.");
+      setError(err?.message || "Authentication failed.");
     } finally {
       setLoading(false);
       setBusy?.(false);
     }
   };
 
+  /* ---------- Render ---------- */
   return (
-    <div className="auth-modal-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose?.()}>
-      <div className="auth-modal" onMouseDown={(e) => e.stopPropagation()}>
+    <div
+      className="auth-modal-overlay"
+      onMouseDown={(e) =>
+        e.target === e.currentTarget && onClose?.()
+      }
+    >
+      <div
+        className="auth-modal"
+        onMouseDown={(e) => e.stopPropagation()}
+        aria-busy={loading}
+      >
         <button
           className="auth-close-btn"
           onClick={onClose}
           type="button"
-          aria-label="Close modal"
           disabled={loading}
         >
           ×
@@ -114,16 +160,16 @@ const AuthForm = ({ setToken, onClose, setBusy }) => {
 
         <h2>{isLogin ? "Login" : "Sign Up"}</h2>
 
-        <form onSubmit={handleSubmit} aria-busy={loading}>
+        <form onSubmit={handleSubmit}>
           <input
             type="email"
             name="email"
             placeholder="Email"
             value={formData.email}
             onChange={handleChange}
-            required
             autoComplete="email"
             disabled={loading}
+            required
           />
 
           <input
@@ -132,10 +178,12 @@ const AuthForm = ({ setToken, onClose, setBusy }) => {
             placeholder="Password"
             value={formData.password}
             onChange={handleChange}
-            required
-            minLength={6}
-            autoComplete={isLogin ? "current-password" : "new-password"}
+            autoComplete={
+              isLogin ? "current-password" : "new-password"
+            }
             disabled={loading}
+            minLength={6}
+            required
           />
 
           {!isLogin && (
@@ -145,10 +193,10 @@ const AuthForm = ({ setToken, onClose, setBusy }) => {
               placeholder="Confirm Password"
               value={formData.confirmPassword}
               onChange={handleChange}
-              required
-              minLength={6}
               autoComplete="new-password"
               disabled={loading}
+              minLength={6}
+              required
             />
           )}
 
@@ -156,7 +204,6 @@ const AuthForm = ({ setToken, onClose, setBusy }) => {
             <p
               className="error"
               role="alert"
-              aria-live="assertive"
               tabIndex={-1}
               ref={errorRef}
             >
@@ -176,13 +223,15 @@ const AuthForm = ({ setToken, onClose, setBusy }) => {
         </form>
 
         <p className="toggle-text">
-          {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
+          {isLogin
+            ? "Don't have an account?"
+            : "Already have an account?"}
+
           <button
             type="button"
             className="toggle-link"
             onClick={() => setIsLogin((v) => !v)}
             disabled={loading}
-            aria-pressed={isLogin}
           >
             {isLogin ? "Sign Up" : "Login"}
           </button>
@@ -190,6 +239,4 @@ const AuthForm = ({ setToken, onClose, setBusy }) => {
       </div>
     </div>
   );
-};
-
-export default AuthForm;
+}

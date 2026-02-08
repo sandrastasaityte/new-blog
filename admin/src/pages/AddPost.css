@@ -1,175 +1,293 @@
-/* ============================= */
-/* Admin Panel AddPost Form CSS   */
-/* ============================= */
+/* =====================================================
+   THEME TOKENS
+===================================================== */
+
+:root {
+
+  --primary: #0077ff;
+  --primary-soft: rgba(0,119,255,0.1);
+  --danger: #b42318;
+
+  --text-main: #0f172a;
+  --text-muted: rgba(0,0,0,0.6);
+
+  --border-light: rgba(0,0,0,0.08);
+  --border-mid: rgba(0,0,0,0.14);
+
+  --bg-soft: rgba(0,0,0,0.03);
+
+  --shadow-soft: 0 18px 40px rgba(0,0,0,0.06);
+  --shadow-hover: 0 8px 20px rgba(0,0,0,0.12);
+
+  --radius-lg: 16px;
+  --radius-md: 12px;
+  --radius-sm: 10px;
+
+  --transition-fast: 0.18s ease;
+}
+
+/* =====================================================
+   DARK MODE READY
+===================================================== */
+
+[data-theme="dark"] {
+
+  --text-main: #f1f5f9;
+  --text-muted: rgba(255,255,255,0.6);
+
+  --bg-soft: rgba(255,255,255,0.04);
+
+  --border-light: rgba(255,255,255,0.08);
+  --border-mid: rgba(255,255,255,0.14);
+
+}
+
+/* =====================================================
+   FORM CONTAINER
+===================================================== */
 
 .add-blog-form {
+
   max-width: 720px;
   margin: 2rem auto;
-  padding: 1.5rem;
+  padding: 1.6rem;
+
   background: #fff;
-  border: 1px solid rgba(0,0,0,0.06);
-  border-radius: 16px;
-  box-shadow: 0 12px 28px rgba(0,0,0,0.05);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+
+  box-shadow: var(--shadow-soft);
+
+  animation: formFade 0.28s ease;
+
+  container-type: inline-size;
+}
+
+@keyframes formFade {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .add-blog-form h3 {
-  margin-bottom: 1rem;
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #0f172a;
+  margin-bottom: 1.2rem;
+  font-size: clamp(1.35rem, 2vw, 1.55rem);
+  font-weight: 800;
+  color: var(--text-main);
 }
 
-/* --- Fields --- */
+/* =====================================================
+   FIELDS
+===================================================== */
+
 .field {
   display: grid;
-  gap: 0.5rem;
-  margin: 0.9rem 0;
+  gap: 0.55rem;
+  margin: 1rem 0;
 }
 
 .field span {
   font-weight: 600;
   font-size: 0.92rem;
-  color: #0f172a;
+  color: var(--text-main);
 }
+
+/* =====================================================
+   INPUTS
+===================================================== */
 
 .field input,
 .field textarea {
-  padding: 0.8rem 1rem;
-  border-radius: 10px;
-  border: 1px solid rgba(0,0,0,0.14);
-  font-size: 0.95rem;
-  outline: none;
+
+  padding: 0.82rem 1rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-mid);
+
+  font-size: 0.96rem;
   width: 100%;
+
   background: #fff;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  outline: none;
+
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast);
 }
 
 .field textarea {
-  min-height: 140px;
+  min-height: 150px;
   resize: vertical;
 }
 
 .field input:focus,
 .field textarea:focus {
-  border-color: rgba(0,119,255,0.5);
-  box-shadow: 0 0 0 4px rgba(0,119,255,0.12);
+
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px rgba(0,119,255,0.15);
 }
 
-/* --- Errors --- */
+/* =====================================================
+   ERRORS
+===================================================== */
+
 .field-error,
 .form-error {
   font-size: 0.9rem;
-  color: #b42318;
-  line-height: 1.3;
+  color: var(--danger);
+  font-weight: 500;
 }
 
 .form-error {
-  padding: 0.7rem 0.9rem;
+  padding: 0.75rem 1rem;
   background: rgba(180,35,24,0.08);
   border: 1px solid rgba(180,35,24,0.16);
-  border-radius: 10px;
-  margin: 0.7rem 0 1rem;
+  border-radius: var(--radius-sm);
 }
 
-/* --- Tags --- */
+/* =====================================================
+   SLUG PREVIEW
+===================================================== */
+
+.slug-preview {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+/* =====================================================
+   TAGS
+===================================================== */
+
 .tag-preview {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.4rem;
-  margin-top: 0.4rem;
+  gap: 0.45rem;
 }
 
 .tag-chip {
+
   font-size: 0.82rem;
-  font-weight: 500;
-  padding: 0.25rem 0.6rem;
+  padding: 0.25rem 0.65rem;
+
   border-radius: 999px;
-  background: rgba(0,0,0,0.05);
-  border: 1px solid rgba(0,0,0,0.12);
+  background: var(--bg-soft);
+  border: 1px solid var(--border-mid);
 }
 
-.tag-suggestions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-  margin-top: 0.3rem;
-}
+/* =====================================================
+   TAG SUGGESTIONS
+===================================================== */
 
 .tag-suggestion-btn {
-  padding: 0.25rem 0.5rem;
+
+  padding: 0.28rem 0.65rem;
   border-radius: 999px;
-  background: rgba(0,119,255,0.1);
-  border: 1px solid rgba(0,119,255,0.25);
+
+  background: var(--primary-soft);
+  border: 1px solid rgba(0,119,255,0.3);
+
   font-size: 0.82rem;
   cursor: pointer;
-  transition: all 0.2s ease;
+
+  transition: all var(--transition-fast);
 }
 
 .tag-suggestion-btn:hover {
-  background: rgba(0,119,255,0.92);
+  background: var(--primary);
   color: #fff;
-  border-color: rgba(0,119,255,0.92);
 }
 
-/* --- Image preview --- */
+/* =====================================================
+   IMAGE PREVIEW
+===================================================== */
+
 .image-preview-wrap {
-  margin-top: 0.7rem;
-  border-radius: 12px;
+
+  margin-top: 0.75rem;
+  border-radius: var(--radius-md);
   overflow: hidden;
-  border: 1px solid rgba(0,0,0,0.08);
-  background: rgba(0,0,0,0.03);
+
+  border: 1px solid var(--border-light);
+  background: var(--bg-soft);
 }
 
 .image-preview {
   width: 100%;
-  height: 200px;
+  height: 210px;
   object-fit: cover;
-  display: block;
 }
 
-/* --- Markdown preview --- */
+/* =====================================================
+   MARKDOWN PREVIEW
+===================================================== */
+
 .markdown-preview {
-  margin-top: 0.6rem;
-  padding: 0.8rem;
-  background: rgba(0,0,0,0.03);
-  border-radius: 12px;
-  border: 1px solid rgba(0,0,0,0.08);
+
+  margin-top: 0.7rem;
+  padding: 0.9rem;
+
+  background: var(--bg-soft);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-light);
+
   font-size: 0.95rem;
-  line-height: 1.5;
+  line-height: 1.6;
+
   overflow: auto;
+  max-height: 280px;
 }
 
-/* --- Actions --- */
+/* Typography */
+
+.markdown-preview h1,
+.markdown-preview h2,
+.markdown-preview h3 {
+  margin-top: 0.8rem;
+  margin-bottom: 0.5rem;
+}
+
+.markdown-preview code {
+  background: rgba(0,0,0,0.08);
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+
+/* =====================================================
+   BUTTONS
+===================================================== */
+
 .form-actions {
   display: flex;
-  gap: 0.75rem;
+  gap: 0.8rem;
   justify-content: flex-end;
-  margin-top: 1rem;
+  margin-top: 1.2rem;
   flex-wrap: wrap;
 }
 
 .btn {
-  padding: 0.7rem 1rem;
-  border-radius: 10px;
+
+  padding: 0.72rem 1.2rem;
+  border-radius: var(--radius-sm);
   border: 1px solid rgba(0,0,0,0.12);
+
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+
+  transition: all var(--transition-fast);
 }
 
 .btn.primary {
-  background: rgba(0,119,255,0.92);
+  background: var(--primary);
   color: #fff;
-  border-color: rgba(0,119,255,0.25);
+  border-color: var(--primary);
 }
 
 .btn.secondary {
   background: #f3f4f6;
-  color: #0f172a;
+  color: var(--text-main);
 }
 
 .btn:hover:not(:disabled) {
-  filter: brightness(0.95);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-hover);
 }
 
 .btn:disabled {
@@ -177,15 +295,218 @@
   cursor: not-allowed;
 }
 
-/* --- Responsive --- */
-@media (max-width: 520px) {
-  .image-preview {
-    height: 160px;
+/* =====================================================
+   ACCESSIBILITY
+===================================================== */
+
+.btn:focus-visible,
+.tag-suggestion-btn:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 3px;
+}
+
+/* =====================================================
+   TOUCH DEVICE OPTIMISATION
+===================================================== */
+
+@media (hover: none) {
+  .btn:hover {
+    transform: none;
+    box-shadow: none;
   }
+}
+
+/* =====================================================
+   CONTAINER QUERY
+===================================================== */
+
+@container (max-width: 520px) {
+
   .form-actions {
     flex-direction: column;
   }
+
   .btn {
     width: 100%;
   }
+
+  .image-preview {
+    height: 160px;
+  }
+}
+/* =====================================================
+   POST INTERACTION PANEL
+===================================================== */
+
+.post-interactions {
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-light);
+
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* =====================================================
+   LIKE BUTTON
+===================================================== */
+
+.like-btn {
+
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border-mid);
+
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+
+  transition: var(--transition-fast);
+}
+
+.like-btn:hover {
+  background: var(--primary-soft);
+  border-color: var(--primary);
+}
+
+.like-count {
+  font-weight: 700;
+  color: var(--primary);
+}
+
+/* =====================================================
+   COMMENT BLOCK
+===================================================== */
+
+.comment-section {
+  margin-top: 14px;
+}
+
+/* Comment Input */
+
+.comment-input {
+
+  width: 100%;
+  padding: 0.65rem 0.85rem;
+
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-mid);
+
+  font-size: 0.9rem;
+  outline: none;
+
+  transition: var(--transition-fast);
+}
+
+.comment-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px var(--primary-soft);
+}
+
+/* =====================================================
+   COMMENT LIST
+===================================================== */
+
+.comment-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+/* Individual comment */
+
+.comment-item {
+
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+
+  padding: 8px 10px;
+
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-light);
+
+  background: var(--bg-soft);
+
+  font-size: 0.85rem;
+}
+
+/* Author */
+
+.comment-author {
+  font-weight: 700;
+  margin-right: 6px;
+}
+
+.comment-author.guest {
+  opacity: 0.75;
+}
+
+/* Comment text */
+
+.comment-text {
+  flex: 1;
+  word-break: break-word;
+}
+
+/* Delete comment */
+
+.comment-delete {
+
+  padding: 4px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--danger);
+
+  background: transparent;
+  color: var(--danger);
+  font-size: 0.75rem;
+  cursor: pointer;
+
+  transition: var(--transition-fast);
+}
+
+.comment-delete:hover {
+  background: var(--danger);
+  color: #fff;
+}
+
+/* =====================================================
+   EMPTY COMMENTS STATE
+===================================================== */
+
+.comment-empty {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+/* =====================================================
+   ADMIN COMMENT BADGE
+===================================================== */
+
+.comment-author.admin {
+  color: var(--primary);
+}
+
+/* =====================================================
+   MOBILE RESPONSIVE
+===================================================== */
+
+@media (max-width: 600px) {
+
+  .comment-item {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .comment-delete {
+    align-self: flex-end;
+  }
+
 }

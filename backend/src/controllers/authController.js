@@ -1,45 +1,54 @@
-// src/controllers/authController.js
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 
-// Helper to generate JWT
+// ---------------- TOKEN ----------------
 const generateToken = (id) => {
-  if (!process.env.JWT_SECRET) throw new Error("JWT_SECRET missing in .env");
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRES_IN || "7d",
-  });
+  if (!process.env.JWT_SECRET) throw new Error("JWT_SECRET missing");
+
+  return jwt.sign(
+    { id },
+    process.env.JWT_SECRET,
+    { expiresIn: process.env.JWT_EXPIRES_IN || "7d" }
+  );
+};
+
+// Remove sensitive data
+const sanitizeUser = (user) => {
+  const obj = user.toObject();
+  delete obj.passwordHash;
+  delete obj.__v;
+  return obj;
 };
 
 // ---------------- REGISTER ----------------
 export async function register(req, res, next) {
   try {
-    const { username, password, email } = req.body;
+    let { username, password, email } = req.body;
 
-    if (!username || !password) {
-      res.status(400);
-      throw new Error("Username and password are required");
-    }
+    if (!username || !password)
+      return res.status(400).json({ message: "Username and password required" });
 
-    // Check if username exists
-    const existingUser = await User.findOne({ username: username.toLowerCase() });
-    if (existingUser) {
-      res.status(400);
-      throw new Error("Username already exists");
-    }
+    username = username.toLowerCase().trim();
+    email = email?.toLowerCase().trim();
 
-    // Hash password
-    const salt = await bcrypt.genSalt(10);
-    const passwordHash = await bcrypt.hash(password, salt);
+    const exists = await User.findOne({ username });
+    if (exists)
+      return res.status(400).json({ message: "Username already exists" });
+
+    const passwordHash = await bcrypt.hash(password, 10);
 
     const user = await User.create({
       username,
       passwordHash,
-      email: email || undefined,
+      email,
     });
 
-    const token = generateToken(user._id);
-    res.status(201).json({ token, user });
+    res.status(201).json({
+      token: generateToken(user._id),
+      user: sanitizeUser(user),
+    });
+
   } catch (err) {
     next(err);
   }
@@ -48,45 +57,38 @@ export async function register(req, res, next) {
 // ---------------- LOGIN ----------------
 export async function login(req, res, next) {
   try {
-    const { username, password } = req.body;
+    let { username, password } = req.body;
 
-    if (!username || !password) {
-      res.status(400);
-      throw new Error("Username and password are required");
-    }
+    if (!username || !password)
+      return res.status(400).json({ message: "Username and password required" });
 
-    const user = await User.findOne({ username: username.toLowerCase() });
-    if (!user) {
-      res.status(401);
-      throw new Error("Invalid credentials");
-    }
+    username = username.toLowerCase().trim();
 
-    const isMatch = await bcrypt.compare(password, user.passwordHash);
-    if (!isMatch) {
-      res.status(401);
-      throw new Error("Invalid credentials");
-    }
+    const user = await User.findOne({ username });
+    if (!user)
+      return res.status(401).json({ message: "Invalid credentials" });
 
-    // Optional: update last login
+    const match = await bcrypt.compare(password, user.passwordHash);
+    if (!match)
+      return res.status(401).json({ message: "Invalid credentials" });
+
     user.lastLogin = new Date();
     await user.save();
 
-    const token = generateToken(user._id);
-    res.json({ token, user });
+    res.json({
+      token: generateToken(user._id),
+      user: sanitizeUser(user),
+    });
+
   } catch (err) {
     next(err);
   }
 }
 
 // ---------------- ME ----------------
-export async function me(req, res, next) {
-  try {
-    if (!req.user) {
-      res.status(401);
-      throw new Error("Not authorized");
-    }
-    res.json(req.user);
-  } catch (err) {
-    next(err);
-  }
+export async function me(req, res) {
+  if (!req.user)
+    return res.status(401).json({ message: "Not authorized" });
+
+  res.json(sanitizeUser(req.user));
 }

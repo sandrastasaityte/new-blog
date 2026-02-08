@@ -1,103 +1,96 @@
 .contact-wrapper {
   max-width: 600px;
   margin: 2rem auto;
-  padding: 1.5rem;
+  padding: 1.8rem;
   background: #fff;
-  border-radius: 1rem;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  border-radius: 14px;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.08);
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  font-family: inherit;
 }
 
 .contact-wrapper h1 {
-  margin: 0 0 0.5rem 0;
-  font-size: 1.5rem;
   text-align: center;
+  margin-bottom: 0.2rem;
 }
 
 .contact-wrapper p {
-  font-size: 0.95rem;
-  color: #555;
   text-align: center;
-  margin: 0 0 1rem 0;
-}
-
-/* ---------------- Error ---------------- */
-.contact-error {
-  color: #ff4d4f;
-  background: #ffe6e6;
-  border-radius: 0.5rem;
-  padding: 0.5rem 0.75rem;
-  font-size: 0.9rem;
-  margin-bottom: 0.5rem;
-}
-
-/* ---------------- Success ---------------- */
-.success-message {
-  color: #0f5132;
-  background: #d1e7dd;
-  border-radius: 0.5rem;
-  padding: 0.5rem 0.75rem;
+  color: #666;
   font-size: 0.95rem;
-  text-align: center;
-  animation: fadeIn 0.4s ease forwards;
 }
 
-/* Fade-in animation */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-4px); }
-  to { opacity: 1; transform: translateY(0); }
-}
+/* -------- Form -------- */
 
-/* ---------------- Form ---------------- */
 .contact-form {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.6rem;
 }
 
 .contact-form input,
 .contact-form textarea {
-  padding: 0.6rem 0.75rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid rgba(0,0,0,0.15);
   font-size: 0.95rem;
-  border-radius: 0.5rem;
-  border: 1px solid rgba(0, 0, 0, 0.16);
-  font-family: inherit;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: 0.2s;
 }
 
 .contact-form input:focus,
 .contact-form textarea:focus {
   outline: none;
   border-color: #0077ff;
-  box-shadow: 0 0 0 4px rgba(0, 119, 255, 0.12);
+  box-shadow: 0 0 0 3px rgba(0,119,255,0.15);
 }
 
-/* Max-length warning */
-.contact-form textarea.warning {
+.contact-form textarea {
+  resize: vertical;
+  min-height: 120px;
+}
+
+/* -------- Warning -------- */
+
+.warning {
   border-color: #ff4d4f;
 }
 
-/* ---------------- Counter ---------------- */
+/* -------- Errors -------- */
+
+.field-error {
+  font-size: 0.8rem;
+  color: #ff4d4f;
+  margin-top: -2px;
+}
+
+.contact-error {
+  background: #ffeaea;
+  color: #ff4d4f;
+  padding: 0.5rem;
+  border-radius: 6px;
+}
+
+/* -------- Counter -------- */
+
 .contact-counter {
   font-size: 0.75rem;
   text-align: right;
-  color: #666;
+  color: #777;
 }
 
-/* ---------------- Submit Button ---------------- */
+/* -------- Button -------- */
+
 .contact-form button {
   align-self: flex-end;
+  padding: 0.55rem 1.2rem;
   background: #0077ff;
-  color: #fff;
   border: none;
-  border-radius: 0.5rem;
-  padding: 0.5rem 1.2rem;
-  font-size: 0.95rem;
+  border-radius: 8px;
+  color: white;
   cursor: pointer;
-  transition: background 0.2s, opacity 0.2s;
+  font-weight: 500;
+  transition: 0.2s;
 }
 
 .contact-form button:hover:not(:disabled) {
@@ -109,25 +102,49 @@
   cursor: not-allowed;
 }
 
-/* ---------------- Screen Reader Only ---------------- */
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
+/* -------- Success -------- */
+
+.success-message {
+  background: #d1e7dd;
+  color: #0f5132;
+  padding: 0.6rem;
+  border-radius: 8px;
+  text-align: center;
+  animation: fadeIn 0.4s ease;
 }
 
-/* ---------------- Responsive ---------------- */
-@media (max-width: 600px) {
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* -------- Dark Mode -------- */
+
+@media (prefers-color-scheme: dark) {
   .contact-wrapper {
-    padding: 1rem;
+    background: #1f2937;
+    color: #eee;
   }
 
+  .contact-form input,
+  .contact-form textarea {
+    background: #2a3441;
+    color: white;
+    border-color: rgba(255,255,255,0.2);
+  }
+
+  .contact-error {
+    background: #4a1d1d;
+  }
+
+  .success-message {
+    background: #1e4620;
+  }
+}
+
+/* -------- Mobile -------- */
+
+@media (max-width: 600px) {
   .contact-form button {
     width: 100%;
   }

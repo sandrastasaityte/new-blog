@@ -7,34 +7,55 @@
   gap: 3rem;
 }
 
-/* FADE IN */
+/* =========================
+   Fade In Animation
+========================= */
+
 .fade-in {
-  animation: fadeIn 0.6s ease;
+  animation: fadeIn 0.6s ease both;
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-/* HERO */
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .fade-in {
+    animation: none;
+  }
+}
+
+/* =========================
+   HERO
+========================= */
+
 .home-hero {
   text-align: center;
-  padding: 3rem 1rem;
+  padding: clamp(2.2rem, 5vw, 3rem) 1rem;
   background: linear-gradient(135deg, #0077ff, #00c6ff);
   color: white;
   border-radius: 14px;
 }
 
 .home-hero h1 {
-  font-size: 2rem;
-  margin-bottom: 1rem;
+  font-size: clamp(1.7rem, 4vw, 2.2rem);
+  margin-bottom: 0.8rem;
+  line-height: 1.2;
 }
 
 .home-hero p {
   max-width: 600px;
   margin: auto;
   line-height: 1.6;
+  opacity: 0.95;
 }
 
 .hero-btn {
@@ -46,13 +67,28 @@
   border-radius: 8px;
   font-weight: 600;
   text-decoration: none;
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
 }
 
-/* TAGS */
+.hero-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.15);
+}
+
+.hero-btn:focus-visible {
+  outline: 3px solid rgba(255, 255, 255, 0.8);
+  outline-offset: 3px;
+}
+
+/* =========================
+   TAG FILTER
+========================= */
+
 .home-tags-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 1rem;
 }
 
 .clear-tag-btn {
@@ -61,6 +97,16 @@
   color: #0077ff;
   cursor: pointer;
   font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.clear-tag-btn:hover {
+  text-decoration: underline;
+}
+
+.clear-tag-btn:focus-visible {
+  outline: 2px solid #0077ff;
+  outline-offset: 2px;
 }
 
 .home-tags {
@@ -76,6 +122,12 @@
   padding: 0.35rem 0.9rem;
   border-radius: 999px;
   cursor: pointer;
+  font-size: 0.85rem;
+  transition: background 0.2s ease, transform 0.12s ease;
+}
+
+.home-tag:hover {
+  transform: translateY(-1px);
 }
 
 .home-tag.active {
@@ -83,7 +135,15 @@
   color: white;
 }
 
-/* BLOG GRID */
+.home-tag:focus-visible {
+  outline: 2px solid #0077ff;
+  outline-offset: 2px;
+}
+
+/* =========================
+   BLOG GRID
+========================= */
+
 .home-blogs {
   display: grid;
   grid-template-columns: 1fr;
@@ -102,26 +162,42 @@
   }
 }
 
-/* SKELETON */
+/* =========================
+   SKELETON
+========================= */
+
 .home-skeleton-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 1rem;
 }
 
 .skeleton-card {
   height: 240px;
   border-radius: 12px;
-  background: linear-gradient(90deg,#eee,#ddd,#eee);
-  animation: shimmer 1.4s infinite;
+  background: linear-gradient(
+    90deg,
+    #eee 25%,
+    #ddd 37%,
+    #eee 63%
+  );
+  background-size: 400% 100%;
+  animation: shimmer 1.4s ease infinite;
 }
 
 @keyframes shimmer {
-  0% { background-position: -200px 0 }
-  100% { background-position: 200px 0 }
+  0% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0 50%;
+  }
 }
 
-/* EMPTY */
+/* =========================
+   EMPTY STATE
+========================= */
+
 .home-empty {
   text-align: center;
 }
@@ -133,9 +209,18 @@
   border: none;
   padding: 0.5rem 1rem;
   border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s ease;
 }
 
-/* CTA */
+.home-empty button:hover {
+  background: #005fcc;
+}
+
+/* =========================
+   CTA
+========================= */
+
 .home-cta {
   text-align: center;
 }
@@ -146,10 +231,38 @@
   padding: 0.6rem 1.4rem;
   border-radius: 8px;
   text-decoration: none;
+  font-weight: 600;
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
 }
 
-/* DARK MODE */
+.cta-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.15);
+}
+
+/* =========================
+   DARK MODE
+========================= */
+
 @media (prefers-color-scheme: dark) {
-  .home-tag { background: #1f2937; color: #60a5fa; }
-  .home-tag.active { background: #60a5fa; color: #111827; }
+  .home-tag {
+    background: #1f2937;
+    color: #60a5fa;
+  }
+
+  .home-tag.active {
+    background: #60a5fa;
+    color: #111827;
+  }
+
+  .home-empty button,
+  .cta-button {
+    background: #60a5fa;
+    color: #111827;
+  }
+
+  .home-empty button:hover,
+  .cta-button:hover {
+    background: #3b82f6;
+  }
 }

@@ -1,6 +1,8 @@
 import Blog from "../models/Blog.js";
 
-// ---------------- Helpers ----------------
+/* =========================================================
+   Helpers
+========================================================= */
 
 const sanitize = (doc) => {
   const obj = doc.toObject();
@@ -21,25 +23,34 @@ const parseTags = (tags) => {
 const slugify = (text) =>
   text.toLowerCase().replace(/[^\w\s-]/g, "").replace(/\s+/g, "-");
 
-// ---------------- GET BLOGS ----------------
+
+/* =========================================================
+   GET BLOGS
+========================================================= */
+
 export async function getBlogs(req, res, next) {
   try {
     const blogs = await Blog.find().sort({ createdAt: -1 });
-
     res.json(blogs.map(sanitize));
-
   } catch (e) {
     next(e);
   }
 }
 
-// ---------------- CREATE BLOG ----------------
+
+/* =========================================================
+   CREATE BLOG
+========================================================= */
+
 export async function createBlog(req, res, next) {
   try {
     const { title, content, image, tags, author } = req.body;
 
-    if (!title?.trim() || !content?.trim())
-      return res.status(400).json({ message: "Title and content required" });
+    if (!title?.trim() || !content?.trim()) {
+      return res.status(400).json({
+        message: "Title and content required"
+      });
+    }
 
     const blog = await Blog.create({
       title: title.trim(),
@@ -47,11 +58,11 @@ export async function createBlog(req, res, next) {
       content: content.trim(),
       image: image || "",
       tags: parseTags(tags),
-      author: author || "Admin",
+      author: author || req.user?.username || "Admin",
       likes: 0,
       views: 0,
       comments: [],
-      likedBy: [],
+      likedBy: []
     });
 
     res.status(201).json(sanitize(blog));
@@ -61,10 +72,15 @@ export async function createBlog(req, res, next) {
   }
 }
 
-// ---------------- UPDATE BLOG ----------------
+
+/* =========================================================
+   UPDATE BLOG
+========================================================= */
+
 export async function updateBlog(req, res, next) {
   try {
     const blog = await Blog.findById(req.params.id);
+
     if (!blog)
       return res.status(404).json({ message: "Post not found" });
 
@@ -88,10 +104,15 @@ export async function updateBlog(req, res, next) {
   }
 }
 
-// ---------------- DELETE BLOG ----------------
+
+/* =========================================================
+   DELETE BLOG
+========================================================= */
+
 export async function deleteBlog(req, res, next) {
   try {
     const blog = await Blog.findById(req.params.id);
+
     if (!blog)
       return res.status(404).json({ message: "Post not found" });
 
@@ -104,10 +125,15 @@ export async function deleteBlog(req, res, next) {
   }
 }
 
-// ---------------- LIKE BLOG ----------------
+
+/* =========================================================
+   LIKE BLOG
+========================================================= */
+
 export async function likeBlog(req, res, next) {
   try {
     const blog = await Blog.findById(req.params.id);
+
     if (!blog)
       return res.status(404).json({ message: "Post not found" });
 
@@ -135,21 +161,27 @@ export async function likeBlog(req, res, next) {
   }
 }
 
-// ---------------- ADD COMMENT ----------------
+
+/* =========================================================
+   ADD COMMENT  ⭐ THIS WAS MISSING
+========================================================= */
+
 export async function addComment(req, res, next) {
   try {
     const blog = await Blog.findById(req.params.id);
+
     if (!blog)
       return res.status(404).json({ message: "Post not found" });
 
     const text = String(req.body.text || "").trim();
+
     if (!text)
       return res.status(400).json({ message: "Comment required" });
 
     blog.comments.push({
-      name: req.user?.username || "Guest",
-      text,
-      date: new Date(),
+      user: req.user?.username || "Guest",
+      content: text,
+      createdAt: new Date()
     });
 
     await blog.save();

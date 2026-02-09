@@ -3,6 +3,9 @@
   --nav-bg-scroll: #1c1c1c;
   --accent: #ff6600;
   --accent-hover: #ff7f33;
+
+  --dropdown-bg: #2a2a2a;
+  --overlay-bg: rgba(0,0,0,0.7);
 }
 
 /* ---------------- Navbar ---------------- */
@@ -100,11 +103,17 @@
   position: absolute;
   top: 130%;
   right: 0;
-  background: #2a2a2a;
+  background: var(--dropdown-bg);
   border-radius: 8px;
   padding: 0.5rem;
   min-width: 140px;
   box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+  animation: dropdownFade 0.2s ease;
+}
+
+@keyframes dropdownFade {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .user-dropdown button {
@@ -116,10 +125,13 @@
   text-align: left;
   border-radius: 6px;
   cursor: pointer;
+  transition: background 0.2s ease;
 }
 
-.user-dropdown button:hover {
+.user-dropdown button:hover,
+.user-dropdown button:focus {
   background: rgba(255,255,255,0.1);
+  outline: none;
 }
 
 /* ---------------- Auth Button ---------------- */
@@ -137,8 +149,66 @@
   background: var(--accent-hover);
 }
 
-/* ---------------- Mobile ---------------- */
+/* ---------------- Mobile Toggle ---------------- */
 .nav-toggle {
+  display: none;
+}
+
+/* ---------------- Mobile Menu ---------------- */
+.nav-mobile-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--overlay-bg);
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+
+  transition: opacity 0.25s ease;
+}
+
+.nav-mobile-overlay.open {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.nav-mobile {
+  background: var(--nav-bg);
+  padding: 2rem;
+  border-radius: 12px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 1.4rem;
+
+  width: 80%;
+  max-width: 300px;
+
+  transform: translateY(40px);
+  opacity: 0;
+  transition: all 0.3s ease;
+}
+
+.nav-mobile-overlay.open .nav-mobile {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+/* ---------------- Accessibility ---------------- */
+.nav-link:focus,
+.icon-btn:focus,
+.auth-btn:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+/* ---------------- Mobile Only ---------------- */
+.mobile-only {
   display: none;
 }
 
@@ -152,72 +222,15 @@
     display: inline-flex;
   }
 
-  .nav-mobile-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.7);
-
-    display: flex;
-    justify-content: center;
-    align-items: center;
-
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.25s ease;
-  }
-
-  .nav-mobile-overlay.open {
-    opacity: 1;
-    visibility: visible;
-  }
-
-  .nav-mobile {
-    background: var(--nav-bg);
-    padding: 2rem;
-    border-radius: 12px;
-
-    display: flex;
-    flex-direction: column;
-    gap: 1.4rem;
-
-    width: 80%;
-    max-width: 300px;
-
-    transform: translateY(40px);
-    opacity: 0;
-    transition: all 0.3s ease;
-  }
-
-  .nav-mobile-overlay.open .nav-mobile {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-/* ---------------- Accessibility ---------------- */
-.nav-link:focus,
-.icon-btn:focus,
-.auth-btn:focus {
-  outline: 2px solid var(--accent);
-  outline-offset: 3px;
-}
-.mobile-only {
-  display: none;
-}
-
-@media (max-width: 768px) {
   .mobile-only {
     display: block;
   }
 }
-/* Hide mobile menu on desktop */
-.nav-mobile-overlay {
-  display: none;
-}
 
-/* Show only on small screens */
-@media (max-width: 768px) {
-  .nav-mobile-overlay {
-    display: flex;
+/* ---------------- Reduced Motion ---------------- */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
   }
 }

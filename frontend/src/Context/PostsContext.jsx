@@ -1,4 +1,4 @@
-//frontend... src/Context/PostsContext.jsx
+// src/Context/PostsContext.jsx
 
 import React, {
   createContext,
@@ -7,6 +7,7 @@ import React, {
   useEffect,
   useCallback,
   useMemo,
+  useRef,
 } from "react";
 
 import { USE_POSTS_BACKEND, USE_BACKEND_AUTH } from "../lib/env";
@@ -25,7 +26,19 @@ import {
 
 const PostsContext = createContext(null);
 
-/* ---------------- Normalizer ---------------- */
+/* ========================= */
+/* Helpers */
+/* ========================= */
+
+const safeJSON = (value, fallback = {}) => {
+  try {
+    return JSON.parse(value);
+  } catch {
+    return fallback;
+  }
+};
+
+const getId = (p) => String(p?._id || p?.id);
 
 const normalizePost = (p) => ({
   ...p,
@@ -37,7 +50,9 @@ const normalizePost = (p) => ({
   tags: Array.isArray(p.tags) ? p.tags : [],
 });
 
-/* ---------------- Provider ---------------- */
+/* ========================= */
+/* Provider */
+/* ========================= */
 
 export function PostsProvider({ children }) {
   const [posts, setPosts] = useState(() =>
@@ -47,22 +62,19 @@ export function PostsProvider({ children }) {
   const [loading, setLoading] = useState(USE_POSTS_BACKEND);
   const [error, setError] = useState("");
 
-  /* ---------------- Auth Helpers ---------------- */
+  const likeLock = useRef(new Set());
 
-  const getAuthToken = useCallback(() => {
-    return USE_BACKEND_AUTH ? localStorage.getItem("token") : null;
-  }, []);
+  /* ---------------- Auth ---------------- */
+
+  const getAuthToken = useCallback(
+    () => (USE_BACKEND_AUTH ? localStorage.getItem("token") : null),
+    []
+  );
 
   const getUserKey = useCallback(() => {
-    try {
-      const user = JSON.parse(localStorage.getItem("user") || "{}");
-      return user?.id || user?.email || "guest";
-    } catch {
-      return "guest";
-    }
+    const user = safeJSON(localStorage.getItem("user") || "{}");
+    return user?.id || user?.email || "guest";
   }, []);
-
-  const getId = (p) => String(p?._id || p?.id);
 
   /* ---------------- Local Storage Sync ---------------- */
 
@@ -72,16 +84,16 @@ export function PostsProvider({ children }) {
     }
   }, [posts]);
 
-  /* ---------------- Error Wrapper ---------------- */
+  /* ---------------- Safe API Wrapper ---------------- */
 
-  const tryApi = useCallback(async (fn, fallback) => {
+  const tryApi = useCallback(async (fn, rollback) => {
     setError("");
+
     try {
       return await fn();
     } catch (e) {
-      const msg = e?.message || "Operation failed";
-      setError(msg);
-      fallback?.();
+      rollback?.();
+      setError(e?.message || "Operation failed");
       throw e;
     }
   }, []);
@@ -92,16 +104,10 @@ export function PostsProvider({ children }) {
     if (!USE_POSTS_BACKEND) return;
 
     setLoading(true);
-    setError("");
 
     try {
       const data = await api.getPosts();
-
-      setPosts(
-        Array.isArray(data)
-          ? data.map(normalizePost)
-          : []
-      );
+      setPosts(Array.isArray(data) ? data.map(normalizePost) : []);
     } catch (e) {
       setError(e?.message || "Failed to fetch posts");
     } finally {
@@ -113,184 +119,212 @@ export function PostsProvider({ children }) {
     if (USE_POSTS_BACKEND) refetch();
   }, [refetch]);
 
-  /* ---------------- CRUD ---------------- */
+  /* ========================= */
+  /* ADD POST */
+  /* ========================= */
 
-  const addPost = useCallback(async (post) =>
-    tryApi(async () => {
+  const addPost = useCallback(
+    async (post) =>
+      tryApi(async () => {
+        const tempId = `temp-${Date.now()}-${Math.random()
+          .toString(36)
+          .slice(2, 6)}`;
 
-      const normalized = normalizePost(post);
+        const optimistic = normalizePost({
+          ...post,
+          _id: tempId,
+        });
 
-      if (!USE_POSTS_BACKEND) {
-        setPosts((prev) => [normalized, ...prev]);
-        return normalized;
-      }
+        setPosts((prev) => [optimistic, ...prev]);
 
-      const token = getAuthToken();
+        if (!USE_POSTS_BACKEND) return optimistic;
 
-      // optimistic update
-      setPosts((prev) => [normalized, ...prev]);
+        const token = getAuthToken();
+        const created = normalizePost(
+          await api.createPost(post, token)
+        );
 
-      const created = await api.createPost(post, token);
+        setPosts((prev) =>
+          prev.map((p) => (getId(p) === tempId ? created : p))
+        );
 
-      setPosts((prev) =>
-        prev.map((p) =>
-          getId(p) === getId(normalized) ? normalizePost(created) : p
-        )
-      );
+        return created;
+      }, () => {
+        setPosts((prev) =>
+          prev.filter((p) => !String(p._id).startsWith("temp-"))
+        );
+      }),
+    [getAuthToken, tryApi]
+  );
 
-      return created;
+  /* ========================= */
+  /* UPDATE POST */
+  /* ========================= */
 
-    }),
-  [getAuthToken, tryApi]);
+  const updatePost = useCallback(
+    async (id, patch) =>
+      tryApi(
+        async () => {
+          const prevSnapshot = [...posts];
 
-  /* ---------------- Update ---------------- */
+          setPosts((prev) =>
+            prev.map((p) =>
+              getId(p) === String(id) ? { ...p, ...patch } : p
+            )
+          );
 
-  const updatePost = useCallback(async (id, patch) =>
-    tryApi(async () => {
+          if (!USE_POSTS_BACKEND) return;
 
-      if (!USE_POSTS_BACKEND) {
-        setPosts((prev) => updatePostLS(prev, id, patch));
-        return;
-      }
+          const token = getAuthToken();
+          await api.updatePost(id, patch, token);
+        },
+        () => setPosts([...posts])
+      ),
+    [posts, getAuthToken, tryApi]
+  );
 
-      const token = getAuthToken();
+  /* ========================= */
+  /* DELETE POST */
+  /* ========================= */
 
-      // optimistic update
-      setPosts((prev) =>
-        prev.map((p) =>
-          getId(p) === String(id)
-            ? { ...p, ...patch }
-            : p
-        )
-      );
+  const deletePost = useCallback(
+    async (id) =>
+      tryApi(
+        async () => {
+          const prevSnapshot = [...posts];
 
-      await api.updatePost(id, patch, token);
+          setPosts((prev) =>
+            prev.filter((p) => getId(p) !== String(id))
+          );
 
-    }),
-  [getAuthToken, tryApi]);
+          if (!USE_POSTS_BACKEND) return;
 
-  /* ---------------- Delete ---------------- */
+          const token = getAuthToken();
+          await api.deletePost(id, token);
+        },
+        () => setPosts([...posts])
+      ),
+    [posts, getAuthToken, tryApi]
+  );
 
-  const deletePost = useCallback(async (id) =>
-    tryApi(async () => {
-
-      if (!USE_POSTS_BACKEND) {
-        setPosts((prev) => deletePostLS(prev, id));
-        return;
-      }
-
-      const token = getAuthToken();
-
-      // optimistic
-      setPosts((prev) =>
-        prev.filter((p) => getId(p) !== String(id))
-      );
-
-      await api.deletePost(id, token);
-
-    }),
-  [getAuthToken, tryApi]);
-
-  /* ---------------- Views ---------------- */
+  /* ========================= */
+  /* VIEWS */
+  /* ========================= */
 
   const incViews = useCallback((id) => {
     setPosts((prev) => incViewsLS(prev, id));
   }, []);
 
-  /* ---------------- Likes ---------------- */
+  /* ========================= */
+  /* LIKE */
+  /* ========================= */
 
-  const toggleLike = useCallback(async (id) => {
+  const toggleLike = useCallback(
+    async (id) => {
+      if (likeLock.current.has(id)) return;
+      likeLock.current.add(id);
 
-    const userKey = getUserKey();
+      const userKey = getUserKey();
+      const prevSnapshot = [...posts];
 
-    // optimistic update always
-    setPosts((prev) => toggleLikeLS(prev, id, userKey));
+      setPosts((prev) => toggleLikeLS(prev, id, userKey));
 
-    if (!USE_POSTS_BACKEND) return;
+      try {
+        if (USE_POSTS_BACKEND) {
+          const token = getAuthToken();
+          await api.likeBlog(id, token);
+        }
+      } catch {
+        setPosts(prevSnapshot);
+      } finally {
+        likeLock.current.delete(id);
+      }
+    },
+    [posts, getUserKey, getAuthToken]
+  );
 
-    const token = getAuthToken();
+  /* ========================= */
+  /* COMMENTS */
+  /* ========================= */
 
-    await tryApi(async () => {
-      await api.likeBlog(id, token);
-    });
+  const addComment = useCallback(
+    async (id, comment) => {
+      const enriched = {
+        ...comment,
+        createdAt: new Date().toISOString(),
+      };
 
-  }, [getUserKey, getAuthToken, tryApi]);
+      const prevSnapshot = [...posts];
 
-  /* ---------------- Comments ---------------- */
+      setPosts((prev) => addCommentLS(prev, id, enriched));
 
-  const addComment = useCallback(async (id, comment) => {
+      if (!USE_POSTS_BACKEND) return;
 
-    const enriched = {
-      ...comment,
-      createdAt: new Date().toISOString(),
-    };
+      const token = getAuthToken();
 
-    setPosts((prev) =>
-      addCommentLS(prev, id, enriched)
-    );
+      try {
+        await api.addComment(id, enriched, token);
+      } catch {
+        setPosts(prevSnapshot);
+      }
+    },
+    [posts, getAuthToken]
+  );
 
-    if (!USE_POSTS_BACKEND) return;
-
-    const token = getAuthToken();
-
-    await tryApi(async () => {
-      await api.addComment(id, enriched, token);
-    });
-
-  }, [getAuthToken, tryApi]);
-
-  /* ---------------- Helpers ---------------- */
+  /* ========================= */
+  /* HELPERS */
+  /* ========================= */
 
   const getPostById = useCallback(
-    (id) =>
-      posts.find((p) => getId(p) === String(id)) || null,
+    (id) => posts.find((p) => getId(p) === String(id)) || null,
     [posts]
   );
 
   const uniqueTags = useMemo(() => {
     const set = new Set();
-
     posts.forEach((p) =>
-      p.tags?.forEach((t) =>
-        t && set.add(t.toLowerCase())
-      )
+      p.tags?.forEach((t) => t && set.add(t.toLowerCase()))
     );
-
-    return Array.from(set);
+    return [...set].sort();
   }, [posts]);
 
-  /* ---------------- Context ---------------- */
+  /* ========================= */
+  /* CONTEXT VALUE */
+  /* ========================= */
 
-  const value = useMemo(() => ({
-    posts,
-    loading,
-    error,
-    refetch,
-    addPost,
-    updatePost,
-    deletePost,
-    incViews,
-    toggleLike,
-    addComment,
-    getPostById,
-    uniqueTags,
-    USE_POSTS_BACKEND,
-    USE_BACKEND_AUTH,
-    getId,
-  }), [
-    posts,
-    loading,
-    error,
-    refetch,
-    addPost,
-    updatePost,
-    deletePost,
-    incViews,
-    toggleLike,
-    addComment,
-    getPostById,
-    uniqueTags,
-  ]);
+  const value = useMemo(
+    () => ({
+      posts,
+      loading,
+      error,
+      refetch,
+      addPost,
+      updatePost,
+      deletePost,
+      incViews,
+      toggleLike,
+      addComment,
+      getPostById,
+      uniqueTags,
+      USE_POSTS_BACKEND,
+      USE_BACKEND_AUTH,
+      getId,
+    }),
+    [
+      posts,
+      loading,
+      error,
+      refetch,
+      addPost,
+      updatePost,
+      deletePost,
+      incViews,
+      toggleLike,
+      addComment,
+      getPostById,
+      uniqueTags,
+    ]
+  );
 
   return (
     <PostsContext.Provider value={value}>
@@ -299,7 +333,9 @@ export function PostsProvider({ children }) {
   );
 }
 
-/* ---------------- Hook ---------------- */
+/* ========================= */
+/* Hook */
+/* ========================= */
 
 export function usePosts() {
   const ctx = useContext(PostsContext);

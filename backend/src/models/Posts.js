@@ -1,112 +1,224 @@
-import User from "../models/User.js";
-import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
+import Blog from "../models/Blog.js";
 
-const JWT_SECRET = process.env.JWT_SECRET;
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "7d";
+/* =========================================================
+   HELPERS
+========================================================= */
 
-// ---------------- TOKEN HELPER ----------------
-const generateToken = (user) =>
-  jwt.sign(
-    { id: user._id, username: user.username, role: user.role },
-    JWT_SECRET,
-    { expiresIn: JWT_EXPIRES_IN }
-  );
+const sanitize = (doc) => {
+  const obj = doc.toObject();
+  delete obj.__v;
+  return obj;
+};
 
-// ---------------- SAFE USER ----------------
-const safeUser = (user) => ({
-  id: user._id,
-  username: user.username,
-  email: user.email,
-  role: user.role,
-  lastLogin: user.lastLogin,
-});
+const parseTags = (tags) => {
+  if (Array.isArray(tags)) {
+    return tags.map(t => String(t).trim()).filter(Boolean);
+  }
 
-// ================= REGISTER =================
-export async function register(req, res) {
+  if (typeof tags === "string") {
+    return tags
+      .split(",")
+      .map(t => t.trim())
+      .filter(Boolean);
+  }
+
+  return [];
+};
+
+const slugify = (text) =>
+  text
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, "")
+    .replace(/\s+/g, "-");
+
+/* =========================================================
+   GET ALL POSTS
+========================================================= */
+
+export async function getPosts(req, res, next) {
   try {
-    const { username, password, email } = req.body;
-
-    if (!username || !password) {
-      return res.status(400).json({ message: "Username and password required" });
-    }
-
-    if (password.length < 6) {
-      return res.status(400).json({ message: "Password must be 6+ chars" });
-    }
-
-    const existing = await User.findOne({
-      $or: [
-        { username: new RegExp(`^${username}$`, "i") },
-        { email }
-      ],
-    });
-
-    if (existing) {
-      return res.status(409).json({ message: "User already exists" });
-    }
-
-    const passwordHash = await bcrypt.hash(password, 10);
-
-    const user = await User.create({
-      username: username.trim(),
-      email: email?.trim(),
-      passwordHash,
-      role: "user",
-      isActive: true,
-    });
-
-    const token = generateToken(user);
-
-    res.status(201).json({
-      token,
-      user: safeUser(user),
-    });
-
+    const posts = await Blog.find().sort({ createdAt: -1 });
+    res.json(posts.map(sanitize));
   } catch (err) {
-    console.error("REGISTER ERROR:", err);
-    res.status(500).json({ message: "Server error" });
+    next(err);
   }
 }
 
-// ================= LOGIN =================
-export async function login(req, res) {
-  try {
-    const { identifier, password } = req.body;
+/* =========================================================
+   GET SINGLE POST
+========================================================= */
 
-    if (!identifier || !password) {
-      return res.status(400).json({ message: "Identifier and password required" });
+export async function getPostById(req, res, next) {
+  try {
+    const post = await Blog.findById(req.params.id);
+    if (!post) {
+      return res.status(404).json({ message: "Post not found" });
     }
 
-    const user = await User.findOne({
-      $or: [
-        { username: identifier },
-        { email: identifier }
-      ],
+    res.json(sanitize(post));
+  } catch (err) {
+    next(err);
+  }
+}
+
+/* =========================================================
+   CREATE POST (AUTH REQUIRED)
+========================================================= */
+
+export async function createPost(req, res, next) {
+  try {
+    const { title, content, image, tags } = req.body;
+
+    if (!title?.trim() || !content?.trim()) {
+      return res
+        .status(400)
+        .json({ message: "Title and content are required" });
+    }
+
+    const post = await Blog.create({
+      title: title.trim(),
+      slug: slugify(title),
+      content: content.trim(),
+      image: image || "",
+      tags: parseTags(tags),
+      author: req.user?.username || "Admin",
+      likes: 0,
+      likedBy: [],
+      views: 0,
+      comments: [],
     });
 
-    if (!user || !user.isActive) {
-      return res.status(401).json({ message: "Invalid credentials" });
+    res.status(201).json(sanitize(post));
+  } catch (err) {
+    next(err);
+  }
+}
+
+/* =========================================================
+   UPDATE POST (AUTH REQUIRED)
+========================================================= */
+
+export async function updatePost(req, res, next) {
+  try {
+    const post = await Blog.findById(req.params.id);
+    if (!post) {
+      return res.status(404).json({ message: "Post not found" });
     }
 
-    const valid = await bcrypt.compare(password, user.passwordHash);
+    const { title, content, tags, image } = req.body;
 
-    if (!valid) {
-      return res.status(401).json({ message: "Invalid credentials" });
+    if (title) {
+      post.title = title.trim();
+      post.slug = slugify(title);
     }
 
-    user.lastLogin = new Date();
-    await user.save();
+    if (content) post.content = content.trim();
+    if (tags) post.tags = parseTags(tags);
+    if (image !== undefined) post.image = image;
 
-    const token = generateToken(user);
+    await post.save();
+
+    res.json(sanitize(post));
+  } catch (err) {
+    next(err);
+  }
+}
+
+/* =========================================================
+   DELETE POST (AUTH REQUIRED)
+========================================================= */
+
+export async function deletePost(req, res, next) {
+  try {
+    const post = await Blog.findById(req.params.id);
+    if (!post) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+
+    await post.deleteOne();
+    res.json({ message: "Post deleted" });
+  } catch (err) {
+    next(err);
+  }
+}
+
+/* =========================================================
+   LIKE / UNLIKE POST (AUTH REQUIRED)
+========================================================= */
+
+export async function likePost(req, res, next) {
+  try {
+    const post = await Blog.findById(req.params.id);
+    if (!post) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+
+    const userKey = String(req.user._id);
+    const alreadyLiked = post.likedBy.includes(userKey);
+
+    if (alreadyLiked) {
+      post.likedBy = post.likedBy.filter(id => id !== userKey);
+      post.likes = Math.max(0, post.likes - 1);
+    } else {
+      post.likedBy.push(userKey);
+      post.likes += 1;
+    }
+
+    await post.save();
 
     res.json({
-      token,
-      user: safeUser(user),
+      likes: post.likes,
+      liked: !alreadyLiked,
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+/* =========================================================
+   ADD COMMENT
+========================================================= */
+
+export async function addComment(req, res, next) {
+  try {
+    const post = await Blog.findById(req.params.id);
+    if (!post) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+
+    const text = String(req.body.text || "").trim();
+    if (!text) {
+      return res.status(400).json({ message: "Comment text required" });
+    }
+
+    post.comments.push({
+      user: req.user?.username || "Guest",
+      content: text,
+      createdAt: new Date(),
     });
 
+    await post.save();
+
+    res.status(201).json(sanitize(post));
   } catch (err) {
-    console.error("LOGIN ERROR:", err);
-    res.status(500).json({ message: "Server error" });
+    next(err);
+  }
+}
+
+/* =========================================================
+   INCREMENT VIEWS
+========================================================= */
+
+export async function incViews(req, res, next) {
+  try {
+    const post = await Blog.findById(req.params.id);
+    if (!post) return res.status(404).json({ message: "Post not found" });
+
+    post.views += 1;
+    await post.save();
+
+    res.json({ views: post.views });
+  } catch (err) {
+    next(err);
   }
 }

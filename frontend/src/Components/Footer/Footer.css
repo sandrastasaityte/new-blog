@@ -161,3 +161,42 @@
     width: 100%;
   }
 }
+.subscribe-form input[aria-invalid="true"] {
+  border-color: #ff6b6b;
+  box-shadow: 0 0 0 3px rgba(255,107,107,0.25);
+}
+.subscribe-form button:focus-visible {
+  outline: 3px solid rgba(77,166,255,0.4);
+  outline-offset: 2px;
+}
+
+.footer-links a:focus-visible {
+  outline: 2px solid #4da6ff;
+  outline-offset: 2px;
+}
+.subscribe-form input[aria-invalid="true"] {
+  border-color: #ff6b6b;
+  box-shadow: 0 0 0 3px rgba(255,107,107,0.25);
+}
+
+.subscribe-form button:focus-visible {
+  outline: 3px solid rgba(77,166,255,0.4);
+  outline-offset: 2px;
+}
+
+.footer-links a:focus-visible {
+  outline: 2px solid #4da6ff;
+  outline-offset: 2px;
+}
+
+.subscribe-error,
+.subscribe-success {
+  min-height: 18px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}

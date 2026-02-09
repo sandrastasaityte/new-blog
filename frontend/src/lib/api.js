@@ -1,92 +1,94 @@
-import { apiFetch } from "./apiFetch";
+// src/lib/api.js
 
-/* ---------------- Token Helper ---------------- */
-const getToken = (token) => token || localStorage.getItem("token") || "";
+import { API_URL, USE_BACKEND_AUTH } from "./env";
+import { authHelpers } from "./authApi";
 
-/* ---------------- Auth Header Helper ---------------- */
-const authHeader = (token) => {
-  const t = getToken(token);
-  return t ? { Authorization: `Bearer ${t}` } : {};
+/* =========================================================
+   BASE FETCH WRAPPER
+========================================================= */
+
+async function handleResponse(res) {
+  const contentType = res.headers.get("content-type") || "";
+
+  let data = null;
+
+  try {
+    data = contentType.includes("application/json")
+      ? await res.json()
+      : await res.text();
+  } catch {}
+
+  /* ---- Auto logout on 401 ---- */
+  if (res.status === 401) {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+  }
+
+  if (!res.ok) {
+    const msg =
+      (typeof data === "object" && (data?.message || data?.error)) ||
+      (typeof data === "string" && data) ||
+      `Request failed (${res.status})`;
+
+    throw new Error(msg);
+  }
+
+  return data;
+}
+
+/* =========================================================
+   CORE FETCH FUNCTION
+========================================================= */
+
+export async function apiFetch(endpoint, options = {}) {
+  const token = authHelpers?.getToken?.();
+
+  const headers = {
+    ...(options.headers || {}),
+    ...(USE_BACKEND_AUTH && token
+      ? { Authorization: `Bearer ${token}` }
+      : {}),
+  };
+
+  /* ---- Add JSON header if body present ---- */
+  if (options.body && !headers["Content-Type"]) {
+    headers["Content-Type"] = "application/json";
+  }
+
+  const res = await fetch(`${API_URL}${endpoint}`, {
+    ...options,
+    headers,
+  });
+
+  return handleResponse(res);
+}
+
+/* =========================================================
+   HTTP HELPERS (Optional but Nice)
+========================================================= */
+
+export const api = {
+  get: (url) =>
+    apiFetch(url, { method: "GET" }),
+
+  post: (url, body) =>
+    apiFetch(url, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+
+  patch: (url, body) =>
+    apiFetch(url, {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    }),
+
+  put: (url, body) =>
+    apiFetch(url, {
+      method: "PUT",
+      body: JSON.stringify(body),
+    }),
+
+  delete: (url) =>
+    apiFetch(url, { method: "DELETE" }),
 };
-
-/* ---------------- Get All Blogs ---------------- */
-export async function getBlogs() {
-  return apiFetch("/blogs");
-}
-
-/* ---------------- Get Single Blog ---------------- */
-export async function getBlogById(id) {
-  if (!id) throw new Error("Blog id is required");
-  return apiFetch(`/blogs/${id}`);
-}
-
-/* ---------------- Create Blog ---------------- */
-export async function createBlog(blog, token) {
-  if (!blog) throw new Error("Blog data is required");
-
-  return apiFetch("/blogs", {
-    method: "POST",
-    headers: {
-      ...authHeader(token),
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(blog),
-  });
-}
-
-/* ---------------- Update Blog ---------------- */
-export async function updateBlog(id, patch, token) {
-  if (!id) throw new Error("Blog id is required");
-
-  return apiFetch(`/blogs/${id}`, {
-    method: "PATCH",
-    headers: {
-      ...authHeader(token),
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(patch),
-  });
-}
-
-/* ---------------- Delete Blog ---------------- */
-export async function deleteBlog(id, token) {
-  if (!id) throw new Error("Blog id is required");
-
-  return apiFetch(`/blogs/${id}`, {
-    method: "DELETE",
-    headers: authHeader(token),
-  });
-}
-
-/* ---------------- Toggle Like ---------------- */
-export async function likeBlog(id, token) {
-  if (!id) throw new Error("Blog id is required");
-
-  return apiFetch(`/blogs/${id}/like`, {
-    method: "POST",
-    headers: authHeader(token),
-  });
-}
-
-/* ---------------- Add Comment ---------------- */
-export async function addComment(id, comment, token) {
-  if (!id) throw new Error("Blog id is required");
-
-  return apiFetch(`/blogs/${id}/comments`, {
-    method: "POST",
-    headers: {
-      ...authHeader(token),
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ text: comment }),
-  });
-}
-
-/* ---------------- Increment Views ---------------- */
-export async function incViews(id) {
-  if (!id) return;
-
-  return apiFetch(`/blogs/${id}/view`, {
-    method: "POST",
-  });
-}

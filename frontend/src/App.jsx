@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from "react";
+// src/App.jsx
+import React, { useState, useCallback } from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -8,10 +9,6 @@ import {
   useLocation,
 } from "react-router-dom";
 
-// Context
-import { PostsProvider } from "./Context/PostsContext";
-
-// Components
 import Navbar from "./Components/Navbar/Navbar";
 import Footer from "./Components/Footer/Footer";
 import Home from "./Components/Home/Home";
@@ -23,9 +20,8 @@ import BlogDetails from "./Components/BlogDetails/BlogDetails";
 import AuthModal from "./Components/Auth/AuthModal";
 import ProtectedRoute from "./Components/ProtectedRoute";
 
-/* ========================================================
-   ROUTES
-======================================================== */
+/* ======================================================== */
+
 function AppRoutes({ token, onRequireAuth }) {
   return (
     <Routes>
@@ -49,9 +45,8 @@ function AppRoutes({ token, onRequireAuth }) {
   );
 }
 
-/* ========================================================
-   APP SHELL
-======================================================== */
+/* ======================================================== */
+
 function Shell({ token, setToken }) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -59,19 +54,6 @@ function Shell({ token, setToken }) {
   const [authOpen, setAuthOpen] = useState(false);
   const [redirectTo, setRedirectTo] = useState(null);
 
-  /* ---------------- Sync token across tabs ---------------- */
-  useEffect(() => {
-    const handleStorage = (e) => {
-      if (e.key === "token") {
-        setToken(e.newValue || "");
-      }
-    };
-
-    window.addEventListener("storage", handleStorage);
-    return () => window.removeEventListener("storage", handleStorage);
-  }, [setToken]);
-
-  /* ---------------- Logout ---------------- */
   const logout = useCallback(() => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
@@ -79,27 +61,23 @@ function Shell({ token, setToken }) {
     navigate("/", { replace: true });
   }, [navigate, setToken]);
 
-  /* ---------------- Require Auth ---------------- */
   const onRequireAuth = useCallback(
     (loc) => {
       const target =
         (loc?.pathname || location.pathname) +
         (loc?.search || location.search || "");
-
       setRedirectTo(target);
       setAuthOpen(true);
     },
     [location]
   );
 
-  /* ---------------- Login Success ---------------- */
   const handleSetToken = useCallback(
     (newToken) => {
       if (!newToken) return;
 
       localStorage.setItem("token", newToken);
       setToken(newToken);
-
       setAuthOpen(false);
 
       if (redirectTo) {
@@ -113,9 +91,7 @@ function Shell({ token, setToken }) {
   return (
     <>
       <Navbar token={token} setToken={logout} />
-
       <AppRoutes token={token} onRequireAuth={onRequireAuth} />
-
       <Footer />
 
       {authOpen && (
@@ -129,19 +105,16 @@ function Shell({ token, setToken }) {
   );
 }
 
-/* ========================================================
-   ROOT APP
-======================================================== */
+/* ======================================================== */
+
 export default function App() {
   const [token, setToken] = useState(
     () => localStorage.getItem("token") || ""
   );
 
   return (
-    <PostsProvider>
-      <Router>
-        <Shell token={token} setToken={setToken} />
-      </Router>
-    </PostsProvider>
+    <Router>
+      <Shell token={token} setToken={setToken} />
+    </Router>
   );
 }

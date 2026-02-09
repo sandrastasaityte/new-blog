@@ -9,8 +9,7 @@ import whatsapp from "../../assets/whatsapp.png";
 import instagram from "../../assets/instagram.png";
 import telegram from "../../assets/telegram.png";
 
-const isValidEmail = (value) =>
-  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+const isValidEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 
 export default function Footer() {
   const emailId = useId();
@@ -82,13 +81,12 @@ export default function Footer() {
   return (
     <footer className="footer">
       <div className="footer-container">
-
         {/* About */}
         <div className="footer-section">
           <h3>About</h3>
           <p>
-            My Creative Blog shares ideas, tech tips and inspiration
-            for creators and developers.
+            My Creative Blog shares ideas, tech tips and inspiration for
+            creators and developers.
           </p>
         </div>
 
@@ -96,10 +94,18 @@ export default function Footer() {
         <nav className="footer-section">
           <h3>Quick Links</h3>
           <ul className="footer-links">
-            <li><Link to="/">Home</Link></li>
-            <li><Link to="/blogs">Blogs</Link></li>
-            <li><Link to="/about">About</Link></li>
-            <li><Link to="/contact">Contact</Link></li>
+            <li>
+              <Link to="/">Home</Link>
+            </li>
+            <li>
+              <Link to="/blogs">Blogs</Link>
+            </li>
+            <li>
+              <Link to="/about">About</Link>
+            </li>
+            <li>
+              <Link to="/contact">Contact</Link>
+            </li>
           </ul>
         </nav>
 
@@ -110,23 +116,41 @@ export default function Footer() {
           <p>Phone: +44 123 456 789</p>
 
           <div className="social-icons">
-
-            <a href="https://t.me/" target="_blank" rel="noopener noreferrer" aria-label="Telegram">
-              <img src={telegram} alt="" loading="lazy" />
+            <a
+              href="https://t.me/"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Telegram"
+            >
+              <img src={telegram} alt="Telegram" />
             </a>
 
-            <a href="https://instagram.com/" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+            <a
+              href="https://instagram.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Instagram"
+            >
               <img src={instagram} alt="" loading="lazy" />
             </a>
 
-            <a href="https://linkedin.com/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
+            <a
+              href="https://linkedin.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="LinkedIn"
+            >
               <img src={linkedin} alt="" loading="lazy" />
             </a>
 
-            <a href="https://wa.me/" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">
+            <a
+              href="https://wa.me/"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="WhatsApp"
+            >
               <img src={whatsapp} alt="" loading="lazy" />
             </a>
-
           </div>
         </div>
 
@@ -135,8 +159,11 @@ export default function Footer() {
           <h3>Subscribe</h3>
           <p>Get latest posts in your inbox</p>
 
-          <form className="subscribe-form" onSubmit={handleSubscribe} noValidate>
-
+          <form
+            className="subscribe-form"
+            onSubmit={handleSubscribe}
+            noValidate
+          >
             <label htmlFor={emailId} className="sr-only">
               Email
             </label>
@@ -148,26 +175,27 @@ export default function Footer() {
               value={email}
               onChange={onEmailChange}
               disabled={status.loading}
+              aria-invalid={!!status.error}
               required
             />
 
             <button disabled={status.loading}>
               {status.loading ? "Subscribing…" : "Subscribe"}
             </button>
-
           </form>
 
           {status.error && (
-            <p className="subscribe-error">{status.error}</p>
+            <p className="subscribe-error" role="alert">
+              {status.error}
+            </p>
           )}
 
           {status.success && (
-            <p className="subscribe-success">
+            <p className="subscribe-success" role="status">
               ✅ Subscribed successfully!
             </p>
           )}
         </div>
-
       </div>
 
       <div className="footer-bottom">

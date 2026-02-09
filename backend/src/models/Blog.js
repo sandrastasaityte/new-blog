@@ -10,6 +10,7 @@ const blogSchema = new mongoose.Schema({
   tags: { type: [String], default: [] },
 
   image: String,
+
   author: { type: String, default: "Admin" },
 
   likes: { type: Number, default: 0 },
@@ -18,13 +19,13 @@ const blogSchema = new mongoose.Schema({
 
   comments: [
     {
-      user: String,
-      content: String,
-      createdAt: { type: Date, default: Date.now },
-    },
+      name: String,
+      text: String,
+      date: { type: Date, default: Date.now }
+    }
   ],
 
-  createdAt: { type: Date, default: Date.now },
+  createdAt: { type: Date, default: Date.now }
 });
 
 export default mongoose.model("Blog", blogSchema);
